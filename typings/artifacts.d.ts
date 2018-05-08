@@ -73,6 +73,8 @@ declare global {
       JSLibraries: {name: string, version: string, npmPkgName: string}[];
       /** JS coverage information for code used during page load. */
       JsUsage: Crdp.Profiler.ScriptCoverage[];
+      /** JSON-LD structured data information. */
+      JsonLD: string[];
       /** Parsed version of the page's Web App Manifest, or null if none found. */
       Manifest: Artifacts.Manifest | null;
       /** The value of the <meta name="description">'s content attribute, or null. */
