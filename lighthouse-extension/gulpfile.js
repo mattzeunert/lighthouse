@@ -1,8 +1,10 @@
 // generated on 2016-03-19 using generator-chrome-extension 0.5.4
 
 'use strict';
+
 const fs = require('fs');
-// HACK: patch astw, see https://github.com/GoogleChrome/lighthouse/issues/5152
+// HACK: patch astw before it's required to use acorn with ES2018
+// see https://github.com/GoogleChrome/lighthouse/issues/5152
 const acornPath = require.resolve('acorn');
 const astwPath = require.resolve('astw/index.js');
 const astwOriginalContent = fs.readFileSync(astwPath, 'utf8');
