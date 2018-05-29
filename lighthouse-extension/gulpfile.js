@@ -8,7 +8,7 @@ const astwPath = require.resolve('astw/index.js');
 const astwOriginalContent = fs.readFileSync(astwPath, 'utf8');
 const astwPatchedContent = astwOriginalContent
   .replace(/ecmaVersion: .* 8,/, 'ecmaVersion: 2018,')
-  .replace(/require\('acorn'\)/, `require("${acornPath}")`);
+  .replace(/require\('acorn'\)/, `require(${JSON.stringify(acornPath)})`);
 fs.writeFileSync(astwPath, astwPatchedContent);
 
 const del = require('del');
