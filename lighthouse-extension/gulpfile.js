@@ -1,20 +1,7 @@
 // generated on 2016-03-19 using generator-chrome-extension 0.5.4
 
 'use strict';
-
 const fs = require('fs');
-// HACK: patch astw before it's required to use acorn with ES2018
-// We add the right acorn version to package.json deps, resolve the path to it here,
-// and then inject the modified require statement into astw's code.
-// see https://github.com/GoogleChrome/lighthouse/issues/5152
-const acornPath = require.resolve('acorn');
-const astwPath = require.resolve('astw/index.js');
-const astwOriginalContent = fs.readFileSync(astwPath, 'utf8');
-const astwPatchedContent = astwOriginalContent
-  .replace('ecmaVersion: opts.ecmaVersion || 8', 'ecmaVersion: 2018')
-  .replace(`require('acorn')`, `require(${JSON.stringify(acornPath)})`);
-fs.writeFileSync(astwPath, astwPatchedContent);
-
 const del = require('del');
 const gutil = require('gulp-util');
 const runSequence = require('run-sequence');
@@ -33,6 +20,12 @@ const LighthouseRunner = require('../lighthouse-core/runner');
 const pkg = require('../package.json');
 
 const distDir = 'dist';
+
+// HACK: patch astw, see https://github.com/GoogleChrome/lighthouse/issues/5152
+const ASTW_PATH = require.resolve('astw/index.js');
+const astwOriginalContent = fs.readFileSync(ASTW_PATH, 'utf8');
+const astwPatchedContent = astwOriginalContent.replace(/ecmaVersion: .* 8,/, 'ecmaVersion: 2018,');
+fs.writeFileSync(ASTW_PATH, astwPatchedContent);
 
 const VERSION = pkg.version;
 const COMMIT_HASH = require('child_process')
