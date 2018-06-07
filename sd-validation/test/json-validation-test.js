@@ -17,7 +17,8 @@ describe('JSON validation', () => {
     `);
 
     assert.equal(errors.length, 1);
-    assert.ok(errors[0].message.indexOf('Parse error on line 2') === 0);
+    assert.equal(errors[0].path, 2);
+    assert.ok(errors[0].message.indexOf('Expecting \'}\'') === 0);
   });
 
   it('reports missing coma', async () => {
@@ -27,7 +28,8 @@ describe('JSON validation', () => {
     }`);
 
     assert.equal(errors.length, 1);
-    assert.ok(errors[0].message.indexOf('Parse error on line 2') === 0);
+    assert.equal(errors[0].path, 2);
+    assert.ok(errors[0].message.indexOf('Expecting \'EOF\', \'}\', \':\', \',\', \']\'') === 0);
   });
 
   it('reports duplicated property', async () => {

@@ -63,5 +63,4 @@ describe('JSON-LD validation', () => {
     assert.equal(errors.length, 1);
     assert.equal(errors[0].message, 'Error parsing URL: http://');
   });
-
 });

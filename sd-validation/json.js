@@ -9,9 +9,45 @@ const jsonlint = require('jsonlint-mod');
 
 /**
  * @param {string} input
- * @returns {Object}
+ * @returns {{error: {message: string, line: string|null}|null, result: Object|null}}
  */
 module.exports = function parseJSON(input) {
-  jsonlint.parse(input);
-  return JSON.parse(input);
+  let result;
+
+  try {
+    jsonlint.parse(input);
+    result = JSON.parse(input);
+  } catch (error) {
+    let line = error.at;
+    let message = error.message;
+
+    // extract line number from message
+    if (!line) {
+      const regexLineResult = error.message.match(/Parse error on line (\d+)/);
+
+      if (regexLineResult) {
+        line = regexLineResult[1];
+      }
+    }
+
+    // adjust jsonlint error output to our needs
+    const regexMessageResult = error.message.match(/-+\^\n(.+)$/);
+
+    if (regexMessageResult) {
+      message = regexMessageResult[1];
+    }
+
+    return {
+      error: {
+        message,
+        line,
+      },
+      result,
+    };
+  }
+
+  return {
+    error: null,
+    result,
+  };
 };

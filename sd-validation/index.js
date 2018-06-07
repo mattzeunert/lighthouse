@@ -21,19 +21,19 @@ module.exports = async function validate(textInput) {
   const errors = [];
 
   // STEP 1: VALIDATE JSON
-  let inputObject;
+  const parseOutput = parseJSON(textInput);
 
-  try {
-    inputObject = parseJSON(textInput);
-  } catch (error) {
+  if (parseOutput.error) {
     errors.push({
       validator: 'json',
-      path: null,
-      message: error.message.toString(),
+      path: parseOutput.error.line,
+      message: parseOutput.error.message,
     });
 
     return errors;
   }
+
+  const inputObject = parseOutput.result;
 
   // STEP 2: VALIDATE JSONLD
   const jsonLdErrors = validateJsonLD(inputObject);
