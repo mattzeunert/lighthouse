@@ -56,8 +56,8 @@ class StructuredDataAutomatic extends Audit {
 
     const headings = [
       {key: 'idx', itemType: 'text', text: 'Index'},
-      {key: 'path', itemType: 'text', text: 'Path'},
-      {key: 'message', itemType: 'code', text: 'Error'},
+      {key: 'path', itemType: 'text', text: 'Line/Path'},
+      {key: 'message', itemType: 'text', text: 'Error'},
     ];
 
     const details = Audit.makeTableDetails(headings, tableData);
