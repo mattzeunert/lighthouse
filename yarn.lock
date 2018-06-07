@@ -3001,9 +3001,9 @@ jsonfile@^2.1.0:
   optionalDependencies:
     graceful-fs "^4.1.6"
 
-jsonld@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/jsonld/-/jsonld-1.0.1.tgz#97c6ca0db65edce1d7677e319e973aab932b5cba"
+jsonld@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/jsonld/-/jsonld-1.0.2.tgz#c08118a4fa4a8457bf98891653ed1f1613eb6152"
   dependencies:
     rdf-canonize "^0.2.1"
     request "^2.83.0"
@@ -3460,14 +3460,15 @@ mime-types@^2.1.11, mime-types@^2.1.12, mime-types@~2.1.7:
   dependencies:
     mime-db "~1.24.0"
 
-mime@^2.0.3:
-  version "2.3.1"
-  resolved "https://registry.yarnpkg.com/mime/-/mime-2.3.1.tgz#b1621c54d63b97c47d3cfe7f7215f7d64517c369"
 mime-types@~2.1.17:
   version "2.1.18"
   resolved "https://registry.npmjs.org/mime-types/-/mime-types-2.1.18.tgz#6f323f60a83d11146f831ff11fd66e2fe5503bb8"
   dependencies:
     mime-db "~1.33.0"
+
+mime@^2.0.3:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/mime/-/mime-2.3.1.tgz#b1621c54d63b97c47d3cfe7f7215f7d64517c369"
 
 mimic-fn@^1.0.0:
   version "1.1.0"
@@ -4623,8 +4624,7 @@ source-map@^0.4.4:
   dependencies:
     amdefine ">=0.0.4"
 
-
-source-map@^0.5.1, source-map@^0.5.3, source-map@^0.5.6, source-map@^0.5.7, source-map@~0.5.1:
+source-map@^0.5.3, source-map@^0.5.6, source-map@^0.5.7, source-map@~0.5.1:
   version "0.5.7"
   resolved "https://registry.yarnpkg.com/source-map/-/source-map-0.5.7.tgz#8a039d2d1021d22d1ea14c80d8ea468ba2ef3fcc"
 
