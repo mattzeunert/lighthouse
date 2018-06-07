@@ -6,6 +6,7 @@
 'use strict';
 
 const walkObject = require('./helpers/walkObject');
+// @ts-ignore
 const schemaStructure = new Map(require('./assets/schema_google'));
 const TYPE_KEYWORD = '@type';
 const SCHEMA_ORG_URL = 'http://schema.org/';
@@ -79,10 +80,6 @@ function validateObjectKeys(typeOrTypes, keys) {
   types.forEach(type => {
     const typeSettings = getTypeSettingsForType(type);
 
-    if (!typeSettings) {
-      // should we fail here? type is unrecognized
-    }
-
     if (typeSettings.props) {
       typeSettings.props.forEach(key => safelist.push(key));
     }
@@ -97,12 +94,12 @@ function validateObjectKeys(typeOrTypes, keys) {
   });
 
   const cleanKeys = keys
-    // skip keywords
+    // skip JSON-LD keywords
     .filter(key => key.indexOf('@') !== 0)
     .map(key => cleanName(key));
 
   cleanKeys
-    // remove input/output constraints http://schema.org/docs/actions.html#part-4
+    // remove Schema.org input/output constraints http://schema.org/docs/actions.html#part-4
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
     .forEach(key => errors.push(`Unexpected property "${key}"`));
@@ -139,7 +136,7 @@ module.exports = function validateSchemaOrg(expandedObj) {
 
       keyErrors.forEach(e =>
         errors.push({
-          // get rid of /@type
+          // get rid of the first chunk (/@type) as it's the same for all errors
           path: '/' + path.slice(0, -1).map(cleanName).join('/'),
           message: e,
         })

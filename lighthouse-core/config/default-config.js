@@ -181,7 +181,7 @@ module.exports = {
     'seo/hreflang',
     'seo/plugins',
     'seo/canonical',
-    'seo/structured-data',
+    'seo/structured-data-automatic',
     'seo/manual/mobile-friendly',
     'seo/manual/structured-data',
   ],

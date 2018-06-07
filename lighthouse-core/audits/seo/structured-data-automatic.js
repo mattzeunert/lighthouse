@@ -27,7 +27,7 @@ class StructuredDataAutomatic extends Audit {
 
   /**
    * @param {LH.Artifacts} artifacts
-   * @return {LH.Audit.Product}
+   * @return {Promise<LH.Audit.Product>}
    */
   static async audit(artifacts) {
     if (artifacts.JsonLD.length === 0) {
@@ -37,7 +37,7 @@ class StructuredDataAutomatic extends Audit {
       };
     }
 
-    /** @type {Array<{idx: number, message: string, path: string|null}>} */
+    /** @type {Array<Object<string, LH.Audit.DetailsItem>>} */
     const tableData = [];
 
     await Promise.all(
@@ -48,7 +48,7 @@ class StructuredDataAutomatic extends Audit {
           tableData.push({
             idx,
             message,
-            path,
+            path: path || '',
           });
         });
       })

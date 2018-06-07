@@ -7,6 +7,7 @@
 
 const {URL} = require('url');
 const jsonld = require('jsonld');
+// @ts-ignore
 const schemaOrgContext = require('./assets/jsonldcontext');
 const SCHEMA_ORG_HOST = 'schema.org';
 
