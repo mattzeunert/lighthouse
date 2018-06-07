@@ -1,15 +1,21 @@
+/**
+ * @license Copyright 2018 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ */
 'use strict';
 
 const walkObject = require('./helpers/walkObject');
 const schemaStructure = new Map(require('./assets/schema_google'));
 const TYPE_KEYWORD = '@type';
+const SCHEMA_ORG_URL = 'http://schema.org/';
 
 /**
  * @param {string} uri
  * @returns {string}
  */
 function cleanName(uri) {
-  return uri.replace('http://schema.org/', '');
+  return uri.replace(SCHEMA_ORG_URL, '');
 }
 
 /**
@@ -30,10 +36,21 @@ function isKnownType(type) {
   return schemaStructure.has(type);
 }
 
+/**
+ * Validates keys of given object based on it's type(s). Returns an array of error messages.
+ *
+ * @param {String|Array<String>} typeOrTypes
+ * @param {Array<String>} keys
+ * @returns {Array<String>}
+ */
 function validateObjectKeys(typeOrTypes, keys) {
+  /** @type {Array<String>} */
   const errors = [];
+  /** @type {Array<String>} */
   const safelist = [];
+  /** @type {Array<String>} */
   const required = [];
+  /** @type {Array<String>} */
   const recommended = [];
 
   let types = [];
@@ -50,7 +67,7 @@ function validateObjectKeys(typeOrTypes, keys) {
 
   unknownTypes
     .forEach(type => {
-      if (type.indexOf('http://schema.org/') === 0) {
+      if (type.indexOf(SCHEMA_ORG_URL) === 0) {
         errors.push(`Unrecognized schema.org type ${type}`);
       }
     });
@@ -85,7 +102,7 @@ function validateObjectKeys(typeOrTypes, keys) {
     .map(key => cleanName(key));
 
   cleanKeys
-    // input/output constraints http://schema.org/docs/actions.html#part-4
+    // remove input/output constraints http://schema.org/docs/actions.html#part-4
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
     .forEach(key => errors.push(`Unexpected property "${key}"`));
@@ -101,7 +118,11 @@ function validateObjectKeys(typeOrTypes, keys) {
   return errors;
 }
 
+/**
+ * @param {Object} expandedObj Valid JSON-LD object in expanded form
+ */
 module.exports = function validateSchemaOrg(expandedObj) {
+  /** @type {Array<{path: String, message: String}>} */
   const errors = [];
 
   if (expandedObj === null) {

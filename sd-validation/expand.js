@@ -1,3 +1,8 @@
+/**
+ * @license Copyright 2018 Google Inc. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+ */
 'use strict';
 
 const {URL} = require('url');
@@ -5,15 +10,28 @@ const jsonld = require('jsonld');
 const schemaOrgContext = require('./assets/jsonldcontext');
 const SCHEMA_ORG_HOST = 'schema.org';
 
+/**
+ * Takes JSON-LD object and normalizes it by following the expansion algorithm
+ * (https://json-ld.org/spec/latest/json-ld-api/#expansion).
+ *
+ * @param {Object} inputObject
+ * @returns {Object}
+ */
 module.exports = function expand(inputObject) {
+  /** @type {function(String):void} */
   let resolve;
+  /** @type {function(String):void} */
   let reject;
   const promise = new Promise((res, rej) => {
     resolve = res; reject = rej;
   });
 
   jsonld.expand(inputObject, {
-    documentLoader: (url, callback) => {
+    // custom loader prevents network calls and alows us to return local version of the schema.org document
+    documentLoader: (
+        /** @type {String} **/url,
+        /** @type {function(null, Object):void} **/callback
+    ) => {
       let urlObj = null;
 
       try {
@@ -27,13 +45,13 @@ module.exports = function expand(inputObject) {
           document: schemaOrgContext,
         });
       } else {
-        // Unknown schema
+        // We only process schema.org, for other schemas we return an empty object
         callback(null, {
           document: {},
         });
       }
     },
-  }, (e, expanded) => {
+  }, (/** @type {String} */e, /** @type {Object} **/expanded) => {
     if (e) {
       reject('Expansion error: ' + e);
     } else {
