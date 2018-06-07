@@ -58,7 +58,7 @@ module.exports = async function validate(textInput) {
     errors.push({
       validator: 'json-ld',
       path: null,
-      message: error.message.toString(),
+      message: error && error.toString(),
     });
 
     return errors;

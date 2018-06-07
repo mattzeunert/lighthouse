@@ -54,7 +54,7 @@ module.exports = function expand(inputObject) {
     },
   }, (/** @type {string} */e, /** @type {Object} **/expanded) => {
     if (e) {
-      reject('Expansion error: ' + e);
+      reject('Expansion error: ' + e.toString());
     } else {
       resolve(expanded);
     }

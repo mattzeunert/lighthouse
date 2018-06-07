@@ -68,7 +68,7 @@ function validateObjectKeys(typeOrTypes, keys) {
 
   unknownTypes
     .forEach(type => {
-      if (type.indexOf(SCHEMA_ORG_URL) === 0) {
+      if (typeof type !== 'string' || type.indexOf(SCHEMA_ORG_URL) === 0) {
         errors.push(`Unrecognized schema.org type ${type}`);
       }
     });
