@@ -18,9 +18,9 @@ const SCHEMA_ORG_HOST = 'schema.org';
  * @returns {Object}
  */
 module.exports = function expand(inputObject) {
-  /** @type {function(String):void} */
+  /** @type {function(string):void} */
   let resolve;
-  /** @type {function(String):void} */
+  /** @type {function(string):void} */
   let reject;
   const promise = new Promise((res, rej) => {
     resolve = res; reject = rej;
@@ -29,7 +29,7 @@ module.exports = function expand(inputObject) {
   jsonld.expand(inputObject, {
     // custom loader prevents network calls and alows us to return local version of the schema.org document
     documentLoader: (
-        /** @type {String} **/url,
+        /** @type {string} **/url,
         /** @type {function(null, Object):void} **/callback
     ) => {
       let urlObj = null;
@@ -51,7 +51,7 @@ module.exports = function expand(inputObject) {
         });
       }
     },
-  }, (/** @type {String} */e, /** @type {Object} **/expanded) => {
+  }, (/** @type {string} */e, /** @type {Object} **/expanded) => {
     if (e) {
       reject('Expansion error: ' + e);
     } else {

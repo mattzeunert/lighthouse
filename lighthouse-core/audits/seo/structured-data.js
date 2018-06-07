@@ -8,13 +8,13 @@
 const Audit = require('../audit');
 const validateJsonLD = require('../../../sd-validation/');
 
-class JsonLD extends Audit {
+class StructuredDataAutomatic extends Audit {
   /**
    * @return {LH.Audit.Meta}
    */
   static get meta() {
     return {
-      name: 'json-ld',
+      name: 'structured-data-automatic',
       description: 'Structured data is valid',
       failureDescription: 'Invalid structured data',
       helpText: 'Structured data contains rich metadata about a web page. ' +
@@ -37,6 +37,7 @@ class JsonLD extends Audit {
       };
     }
 
+    /** @type {Array<{idx: number, message: string, path: string|null}>} */
     const tableData = [];
 
     await Promise.all(
@@ -68,4 +69,4 @@ class JsonLD extends Audit {
   }
 }
 
-module.exports = JsonLD;
+module.exports = StructuredDataAutomatic;

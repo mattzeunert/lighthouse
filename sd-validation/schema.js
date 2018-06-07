@@ -44,13 +44,13 @@ function isKnownType(type) {
  * @returns {Array<String>}
  */
 function validateObjectKeys(typeOrTypes, keys) {
-  /** @type {Array<String>} */
+  /** @type {Array<string>} */
   const errors = [];
-  /** @type {Array<String>} */
+  /** @type {Array<string>} */
   const safelist = [];
-  /** @type {Array<String>} */
+  /** @type {Array<string>} */
   const required = [];
-  /** @type {Array<String>} */
+  /** @type {Array<string>} */
   const recommended = [];
 
   let types = [];
@@ -122,7 +122,7 @@ function validateObjectKeys(typeOrTypes, keys) {
  * @param {Object} expandedObj Valid JSON-LD object in expanded form
  */
 module.exports = function validateSchemaOrg(expandedObj) {
-  /** @type {Array<{path: String, message: String}>} */
+  /** @type {Array<{path: string, message: string}>} */
   const errors = [];
 
   if (expandedObj === null) {

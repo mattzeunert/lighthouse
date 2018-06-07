@@ -181,7 +181,7 @@ module.exports = {
     'seo/hreflang',
     'seo/plugins',
     'seo/canonical',
-    'seo/json-ld',
+    'seo/structured-data',
     'seo/manual/mobile-friendly',
     'seo/manual/structured-data',
   ],
@@ -401,7 +401,7 @@ module.exports = {
         {id: 'canonical', weight: 1, group: 'seo-content'},
         {id: 'font-size', weight: 1, group: 'seo-mobile'},
         {id: 'plugins', weight: 1, group: 'seo-content'},
-        {id: 'json-ld', weight: 1, group: 'seo-content'},
+        {id: 'structured-data-automatic', weight: 1, group: 'seo-content'},
         // Manual audits
         {id: 'mobile-friendly', weight: 0},
         {id: 'structured-data', weight: 0},
