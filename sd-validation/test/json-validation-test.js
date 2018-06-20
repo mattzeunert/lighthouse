@@ -18,10 +18,10 @@ describe('JSON validation', () => {
 
     assert.equal(errors.length, 1);
     assert.equal(errors[0].path, 2);
-    assert.ok(errors[0].message.indexOf('Expecting \'}\'') === 0);
+    assert.ok(errors[0].message.indexOf(`Expecting '}'`) === 0);
   });
 
-  it('reports missing coma', async () => {
+  it('reports missing comma', async () => {
     const errors = await validateJSONLD(`{
       "test": "test"
       "test2": "test2"
@@ -29,7 +29,7 @@ describe('JSON validation', () => {
 
     assert.equal(errors.length, 1);
     assert.equal(errors[0].path, 2);
-    assert.ok(errors[0].message.indexOf('Expecting \'EOF\', \'}\', \':\', \',\', \']\'') === 0);
+    assert.ok(errors[0].message.indexOf(`Expecting 'EOF', '}', ':', ',', ']'`) === 0);
   });
 
   it('reports duplicated property', async () => {
@@ -42,7 +42,7 @@ describe('JSON validation', () => {
     }`);
 
     assert.equal(errors.length, 1);
-    assert.ok(errors[0].message, 'Duplicate key \'test2-1\'');
+    assert.ok(errors[0].message, `Duplicate key 'test2-1'`);
   });
 
   it('parses valid json', async () => {

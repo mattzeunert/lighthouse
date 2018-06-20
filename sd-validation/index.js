@@ -56,7 +56,7 @@ module.exports = async function validate(textInput) {
     expandedObj = await promiseExpand(inputObject);
   } catch (error) {
     errors.push({
-      validator: 'json-ld',
+      validator: 'json-ld-expand',
       path: null,
       message: error && error.toString(),
     });

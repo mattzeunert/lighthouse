@@ -7,11 +7,11 @@
 
 const walkObject = require('./helpers/walkObject');
 
-const CONTEXT = '@context';
+// This list comes from the JSON-LD 1.1 spec: https://json-ld.org/spec/latest/json-ld/#syntax-tokens-and-keywords
 const KEYWORDS = [
   '@base',
   '@container',
-  CONTEXT,
+  '@context',
   '@graph',
   '@id',
   '@index',
@@ -37,11 +37,11 @@ function validKeyword(fieldName) {
 }
 
 /**
- * @param {string} name
+ * @param {string} keyName
  * @returns {string | null} error
  */
-function validateField(name) {
-  if (name[0] === '@' && !validKeyword(name)) {
+function validateKey(keyName) {
+  if (keyName[0] === '@' && !validKeyword(keyName)) {
     return 'Unknown keyword';
   }
 
@@ -57,7 +57,7 @@ module.exports = function validateJsonLD(json) {
   const errors = [];
 
   walkObject(json, (name, value, path, object) => {
-    const error = validateField.call(null, name, value, path, object);
+    const error = validateKey.call(null, name, value, path, object);
 
     if (error) {
       errors.push({

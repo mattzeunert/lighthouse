@@ -9,14 +9,14 @@ const walkObject = require('./helpers/walkObject');
 // @ts-ignore
 const schemaStructure = new Map(require('./assets/schema_google'));
 const TYPE_KEYWORD = '@type';
-const SCHEMA_ORG_URL = 'http://schema.org/';
+const SCHEMA_ORG_URL_REGEX = /https?:\/\/schema\.org\//;
 
 /**
  * @param {string} uri
  * @returns {string}
  */
 function cleanName(uri) {
-  return uri.replace(SCHEMA_ORG_URL, '');
+  return uri.replace(SCHEMA_ORG_URL_REGEX, '');
 }
 
 /**
@@ -68,7 +68,7 @@ function validateObjectKeys(typeOrTypes, keys) {
 
   unknownTypes
     .forEach(type => {
-      if (typeof type !== 'string' || type.indexOf(SCHEMA_ORG_URL) === 0) {
+      if (typeof type !== 'string' || SCHEMA_ORG_URL_REGEX.test(type)) {
         errors.push(`Unrecognized schema.org type ${type}`);
       }
     });

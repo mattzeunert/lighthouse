@@ -21,7 +21,7 @@ describe('schema.org validation', () => {
     assert.equal(errors[0].message, 'Unrecognized schema.org type http://schema.org/Cat');
   });
 
-  it('reports unknown types', async () => {
+  it('reports unknown types for objects with multiple types', async () => {
     const errors = await validateJSONLD(`{
       "@context": "http://schema.org",
       "@type": ["Article", "Dog"]
@@ -58,7 +58,7 @@ describe('schema.org validation', () => {
 
   it('reports unexpected fields', async () => {
     const errors = await validateJSONLD(`{
-      "@context": "http://schema.org",
+      "@context": "https://schema.org",
       "@type": "Article",
       "author": "Cat",
       "datePublished": "Oct 29th 2017",
