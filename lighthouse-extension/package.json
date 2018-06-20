@@ -8,7 +8,7 @@
     "watch": "gulp watch",
     "build": "gulp build:production",
     "debug-build": "node --inspect-brk ./node_modules/.bin/gulp build:production",
-    "test": "mocha test/extension-test.js"
+    "test": "mocha test/**/*-test.js"
   },
   "devDependencies": {
     "acorn": "^5.5.3",

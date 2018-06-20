@@ -23,12 +23,16 @@
     "build-viewer": "cd ./lighthouse-viewer && yarn build",
     "clean": "rimraf *.report.html *.report.dom.html *.report.json *.screenshots.html *.screenshots.json *.devtoolslog.json *.trace.json || true",
     "lint": "[ \"$CI\" = true ] && eslint --quiet -f codeframe . || eslint .",
+
     "smoke": "node lighthouse-cli/test/smokehouse/run-smoke.js",
+
     "debug": "node --inspect-brk ./lighthouse-cli/index.js",
     "start": "node ./lighthouse-cli/index.js",
     "test": "yarn lint --quiet && yarn unit && yarn type-check && yarn diff:sample-json",
     "test-extension": "cd lighthouse-extension && yarn test",
     "test-viewer": "cd lighthouse-viewer && yarn pptr-test",
+    "test-lantern": "bash lighthouse-core/scripts/test-lantern.sh",
+
     "unit-core": "mocha --reporter dot \"lighthouse-core/test/**/*-test.js\"",
     "unit-cli": "mocha --reporter dot \"lighthouse-cli/test/**/*-test.js\"",
     "unit-viewer": "mocha --reporter dot \"lighthouse-viewer/test/**/*-test.js\"",
@@ -38,13 +42,14 @@
     "cli-unit": "yarn unit-cli",
     "viewer-unit": "yarn unit-viewer",
     "watch": "yarn unit-core --watch",
+
     "unit:silentcoverage": "nyc --silent yarn unit && nyc report --reporter text-lcov > unit-coverage.lcov",
     "coverage": "nyc yarn unit && nyc report --reporter html",
     "smoke:silentcoverage": "nyc --silent yarn smoke && nyc report --reporter text-lcov > smoke-coverage.lcov",
     "coverage:smoke": "nyc yarn smoke && nyc report --reporter html",
     "coveralls": "cat unit-coverage.lcov | coveralls",
     "codecov": "codecov -f unit-coverage.lcov -F unit && codecov -f smoke-coverage.lcov -F smoke",
-    "closure": "cd lighthouse-core && node closure/closure-type-checking.js",
+
     "devtools": "bash lighthouse-core/scripts/roll-to-devtools.sh",
     "compile-devtools": "bash lighthouse-core/scripts/compile-against-devtools.sh",
     "chrome": "node lighthouse-core/scripts/manual-chrome-launcher.js",
