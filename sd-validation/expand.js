@@ -12,6 +12,33 @@ const schemaOrgContext = require('./assets/jsonldcontext');
 const SCHEMA_ORG_HOST = 'schema.org';
 
 /**
+ * Custom loader that prevents network calls and alows us to return local version of the
+ * schema.org document
+ * @param {string} schemaUrl
+ * @param {function(null, Object):void} callback
+ */
+function loadDocument(schemaUrl, callback) {
+  let urlObj = null;
+
+  try {
+    urlObj = new URL(schemaUrl, 'http://example.com');
+  } catch (e) {
+    throw new Error('Error parsing URL: ' + schemaUrl);
+  }
+
+  if (urlObj && urlObj.host === SCHEMA_ORG_HOST && urlObj.pathname === '/') {
+    callback(null, {
+      document: schemaOrgContext,
+    });
+  } else {
+    // We only process schema.org, for other schemas we return an empty object
+    callback(null, {
+      document: {},
+    });
+  }
+}
+
+/**
  * Takes JSON-LD object and normalizes it by following the expansion algorithm
  * (https://json-ld.org/spec/latest/json-ld-api/#expansion).
  *
@@ -28,28 +55,14 @@ module.exports = function expand(inputObject) {
   });
 
   jsonld.expand(inputObject, {
-    // custom loader prevents network calls and alows us to return local version of the schema.org document
     documentLoader: (
-        /** @type {string} **/url,
-        /** @type {function(null, Object):void} **/callback
+        /** @type {string} **/ schemaUrl,
+        /** @type {function(null, Object):void} **/ callback
     ) => {
-      let urlObj = null;
-
       try {
-        urlObj = new URL(url, 'http://example.com');
+        return loadDocument(schemaUrl, callback);
       } catch (e) {
-        reject('Error parsing URL: ' + url);
-      }
-
-      if (urlObj && urlObj.host === SCHEMA_ORG_HOST && urlObj.pathname === '/') {
-        callback(null, {
-          document: schemaOrgContext,
-        });
-      } else {
-        // We only process schema.org, for other schemas we return an empty object
-        callback(null, {
-          document: {},
-        });
+        reject(e.message);
       }
     },
   }, (/** @type {string} */e, /** @type {Object} **/expanded) => {

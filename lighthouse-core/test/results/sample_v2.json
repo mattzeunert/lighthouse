@@ -2766,6 +2766,15 @@
       "scoreDisplayMode": "not-applicable",
       "rawValue": true
     },
+    "structured-data-automatic": {
+      "id": "structured-data-automatic",
+      "title": "Invalid structured data",
+      "description": "Structured data contains rich metadata about a web page. The data is used in search results and social sharing. Invalid metadata will affect how the page appears in these contexts. This audit is currently doing basic JSON-LD validation.",
+      "score": null,
+      "scoreDisplayMode": "error",
+      "rawValue": null,
+      "errorMessage": "Audit error: Required JsonLD gatherer did not run."
+    },
     "mobile-friendly": {
       "id": "mobile-friendly",
       "title": "Page is mobile friendly",
@@ -3380,6 +3389,11 @@
         },
         {
           "id": "plugins",
+          "weight": 1,
+          "group": "seo-content"
+        },
+        {
+          "id": "structured-data-automatic",
           "weight": 1,
           "group": "seo-content"
         },

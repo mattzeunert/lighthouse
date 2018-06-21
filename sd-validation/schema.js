@@ -26,8 +26,9 @@ function cleanName(uri) {
 function getPropsForType(type) {
   const cleanType = cleanName(type);
   const props = schemaStructure.properties
-    .filter(propObj => propObj.parent.includes(cleanType))
-    .map(propObj => propObj.name);
+    .filter((/** @type {{name: string, parent: Array<string>}} */ prop) =>
+      prop.parent.includes(cleanType))
+    .map((/** @type {{name: string, parent: Array<string>}} */ prop) => prop.name);
   const parentTypes = findType(type).parent;
 
   return parentTypes.reduce((allProps, type) => allProps.concat(getPropsForType(type)), props);
@@ -40,7 +41,8 @@ function getPropsForType(type) {
 function findType(type) {
   const cleanType = cleanName(type);
 
-  return schemaStructure.types.find(typeObj => typeObj.name === cleanType);
+  return schemaStructure.types
+    .find((/** @type {{name: string}} */ typeObj) => typeObj.name === cleanType);
 }
 
 /**
