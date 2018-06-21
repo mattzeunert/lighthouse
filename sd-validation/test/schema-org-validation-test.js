@@ -31,31 +31,6 @@ describe('schema.org validation', () => {
     assert.equal(errors[0].message, 'Unrecognized schema.org type http://schema.org/Dog');
   });
 
-  it('reports missing required fields', async () => {
-    const errors = await validateJSONLD(`{
-      "@context": "http://schema.org",
-      "@type": "Article"
-    }`);
-
-    assert.equal(errors.length, 7);
-    assert.equal(errors[0].message, 'Missing required property "author"');
-  });
-
-  it('reports missing recommended fields', async () => {
-    const errors = await validateJSONLD(`{
-      "@context": "http://schema.org",
-      "@type": "Article",
-      "author": "Cat",
-      "datePublished": "Oct 29th 2018",
-      "headline": "Human's New Best Friend - Cat",
-      "image": "https://cats.rock/cat.bmp",
-      "publisher": "Cat Magazine"
-    }`);
-
-    assert.equal(errors.length, 2);
-    assert.equal(errors[0].message, 'Missing recommended property "dateModified"');
-  });
-
   it('reports unexpected fields', async () => {
     const errors = await validateJSONLD(`{
       "@context": "https://schema.org",

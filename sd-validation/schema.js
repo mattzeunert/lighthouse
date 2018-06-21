@@ -7,7 +7,7 @@
 
 const walkObject = require('./helpers/walkObject');
 // @ts-ignore
-const schemaStructure = new Map(require('./assets/schema_google'));
+const schemaStructure = require('./assets/schema-tree');
 const TYPE_KEYWORD = '@type';
 const SCHEMA_ORG_URL_REGEX = /https?:\/\/schema\.org\//;
 
@@ -21,12 +21,26 @@ function cleanName(uri) {
 
 /**
  * @param {string} type
- * @returns {{props: Array<string>, required: ?Array<string>, recommended: ?Array<string>}}
+ * @returns {Array<string>}
  */
-function getTypeSettingsForType(type) {
-  const typeSettings = schemaStructure.get(type);
+function getPropsForType(type) {
+  const cleanType = cleanName(type);
+  const props = schemaStructure.properties
+    .filter(propObj => propObj.parent.includes(cleanType))
+    .map(propObj => propObj.name);
+  const parentTypes = findType(type).parent;
 
-  return typeSettings;
+  return parentTypes.reduce((allProps, type) => allProps.concat(getPropsForType(type)), props);
+}
+
+/**
+ * @param {string} type
+ * @returns {{name: string, parent: Array<string>}}
+ */
+function findType(type) {
+  const cleanType = cleanName(type);
+
+  return schemaStructure.types.find(typeObj => typeObj.name === cleanType);
 }
 
 /**
@@ -34,7 +48,7 @@ function getTypeSettingsForType(type) {
  * @returns {boolean}
  */
 function isKnownType(type) {
-  return schemaStructure.has(type);
+  return findType(type) !== undefined;
 }
 
 /**
@@ -49,10 +63,6 @@ function validateObjectKeys(typeOrTypes, keys) {
   const errors = [];
   /** @type {Array<string>} */
   const safelist = [];
-  /** @type {Array<string>} */
-  const required = [];
-  /** @type {Array<string>} */
-  const recommended = [];
 
   let types = [];
 
@@ -78,19 +88,9 @@ function validateObjectKeys(typeOrTypes, keys) {
   }
 
   types.forEach(type => {
-    const typeSettings = getTypeSettingsForType(type);
+    const knownProps = getPropsForType(type);
 
-    if (typeSettings.props) {
-      typeSettings.props.forEach(key => safelist.push(key));
-    }
-
-    if (typeSettings.required) {
-      typeSettings.required.forEach(key => required.push(key));
-    }
-
-    if (typeSettings.recommended) {
-      typeSettings.recommended.forEach(key => recommended.push(key));
-    }
+    knownProps.forEach(key => safelist.push(key));
   });
 
   const cleanKeys = keys
@@ -103,14 +103,6 @@ function validateObjectKeys(typeOrTypes, keys) {
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
     .forEach(key => errors.push(`Unexpected property "${key}"`));
-
-  required
-    .filter(key => !cleanKeys.includes(key))
-    .forEach(key => errors.push(`Missing required property "${key}"`));
-
-  recommended
-    .filter(key => !cleanKeys.includes(key))
-    .forEach(key => errors.push(`Missing recommended property "${key}"`));
 
   return errors;
 }
