@@ -19,6 +19,26 @@
   <link rel="alternate" href="http://example.com/" hreflang=" x-default" />
   <!-- FAIL(canonical): multiple canonical URLs provided (another one is in the HTTP header) -->
   <link rel="canonical" href="https://example.com/" />
+  <!-- FAIL(structured-data-automatic): invalid JSON -->
+  <script type="application/ld+json">
+    {
+      "@context": "http://schema.org"
+  </script>
+  <!-- FAIL(structured-data-automatic): invalid JSON-LD -->
+  <script type="application/ld+json">
+  {
+    "@invalid-keyword": "oh no"
+  }
+  </script>
+  <!-- FAIL(structured-data-automatic): invalid schema.org type -->
+  <script type="application/ld+json">
+  {
+    "@context": "http://schema.org/",
+    "@type": "Cat",
+    "name": "Garfield",
+    "url": "https://garfield.com/"
+  }
+  </script>
 </head>
 <body>
   <h1>SEO</h1>
