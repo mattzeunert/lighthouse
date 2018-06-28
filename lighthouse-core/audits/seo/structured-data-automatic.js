@@ -14,10 +14,10 @@ class StructuredDataAutomatic extends Audit {
    */
   static get meta() {
     return {
-      name: 'structured-data-automatic',
-      description: 'Structured data is valid',
-      failureDescription: 'Invalid structured data',
-      helpText: 'Structured data contains rich metadata about a web page. ' +
+      id: 'structured-data-automatic',
+      title: 'Structured data is valid',
+      failureTitle: 'Invalid structured data',
+      description: 'Structured data contains rich metadata about a web page. ' +
         'The data is used in search results and social sharing. ' +
         'Invalid metadata will affect how the page appears in these contexts. ' +
         'This audit is currently doing basic JSON-LD validation.',
