@@ -42,11 +42,18 @@ class StructuredDataAutomatic extends Audit {
 
     await Promise.all(
       artifacts.JsonLD.map(async (jsonLD, idx) => {
+        const code = jsonLD.trim();
+        const snippet = code.length > 100 ? code.substr(0, 100) + '…' : code;
+        const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
+          type: 'node',
+          selector: `script[type="application/ld+json" i]:nth-of-type(${idx + 1})`,
+          snippet,
+        });
         const errors = await validateJsonLD(jsonLD);
 
         errors.forEach(({message, path}) => {
           tableData.push({
-            idx,
+            node,
             message,
             path: path || '',
           });
@@ -55,7 +62,7 @@ class StructuredDataAutomatic extends Audit {
     );
 
     const headings = [
-      {key: 'idx', itemType: 'text', text: 'Index'},
+      {key: 'node', itemType: 'node', text: 'Failing Element'},
       {key: 'path', itemType: 'text', text: 'Line/Path'},
       {key: 'message', itemType: 'text', text: 'Error'},
     ];
