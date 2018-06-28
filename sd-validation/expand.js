@@ -12,7 +12,7 @@ const schemaOrgContext = require('./assets/jsonldcontext');
 const SCHEMA_ORG_HOST = 'schema.org';
 
 /**
- * Custom loader that prevents network calls and alows us to return local version of the
+ * Custom loader that prevents network calls and allows us to return local version of the
  * schema.org document
  * @param {string} schemaUrl
  * @param {function(null, Object):void} callback

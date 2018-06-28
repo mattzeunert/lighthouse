@@ -96,7 +96,7 @@ function validateObjectKeys(typeOrTypes, keys) {
   });
 
   const cleanKeys = keys
-    // skip JSON-LD keywords
+    // Skip JSON-LD keywords (including invalid ones as they were already flagged in the json-ld validator)
     .filter(key => key.indexOf('@') !== 0)
     .map(key => cleanName(key));
 
