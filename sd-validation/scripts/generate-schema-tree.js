@@ -19,8 +19,8 @@ request(SCHEMA_ORG_URL)
   .then(text => JSON.parse(text))
   .then(processData)
   .then(result => fs.writeFileSync(SCHEMA_TREE_FILE, JSON.stringify(result, null, 2)))
-  .then(() => console.log('Success.'))
-  .catch(e => console.error(e));
+  .then(() => console.log('Success.'))// eslint-disable-line no-console
+  .catch(e => console.error(e));// eslint-disable-line no-console
 
 function processData(data) {
   const types = [];
