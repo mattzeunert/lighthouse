@@ -17,7 +17,7 @@ const redirectTrace = require('../../../fixtures/traces/site-with-redirect.json'
 
 const assert = require('assert');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 describe('FirstInteractive computed artifact:', () => {
   let computedArtifacts;
   let trace;
@@ -63,9 +63,11 @@ describe('FirstInteractive computed artifact:', () => {
     const artifacts = Runner.instantiateComputedArtifacts();
     const result = await artifacts.requestFirstCPUIdle({trace, devtoolsLog, settings});
 
-    assert.equal(Math.round(result.timing), 4309);
-    assert.equal(Math.round(result.optimisticEstimate.timeInMs), 2451);
-    assert.equal(Math.round(result.pessimisticEstimate.timeInMs), 2752);
+    expect({
+      timing: Math.round(result.timing),
+      optimistic: Math.round(result.optimisticEstimate.timeInMs),
+      pessimistic: Math.round(result.pessimisticEstimate.timeInMs),
+    }).toMatchSnapshot();
     assert.equal(result.optimisticEstimate.nodeTimings.size, 19);
     assert.equal(result.pessimisticEstimate.nodeTimings.size, 79);
     assert.ok(result.optimisticGraph, 'should have created optimistic graph');
@@ -77,14 +79,14 @@ describe('FirstInteractive computed artifact:', () => {
     let originalMainThreadEventsFunc;
     let computeObservedMetric;
 
-    before(() => {
+    beforeAll(() => {
       originalMainThreadEventsFunc = TracingProcessor.getMainThreadTopLevelEvents;
       TracingProcessor.getMainThreadTopLevelEvents = () => mainThreadEvents
           .map(evt => Object.assign(evt, {duration: evt.end - evt.start}));
       computeObservedMetric = traceOfTab => firstCPUIdle.computeObservedMetric({traceOfTab});
     });
 
-    after(() => {
+    afterAll(() => {
       TracingProcessor.getMainThreadTopLevelEvents = originalMainThreadEventsFunc;
     });
 

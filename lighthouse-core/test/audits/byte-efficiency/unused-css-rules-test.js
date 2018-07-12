@@ -8,7 +8,7 @@
 const UnusedCSSAudit = require('../../../audits/byte-efficiency/unused-css-rules.js');
 const assert = require('assert');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 
 describe('Best Practices: unused css rules audit', () => {
   function generate(content, length) {
@@ -123,7 +123,7 @@ describe('Best Practices: unused css rules audit', () => {
         {
           url: 'file://a.css',
           transferSize: 10 * 1024,
-          _resourceType: 'Stylesheet',
+          resourceType: 'Stylesheet',
         },
       ]);
     };

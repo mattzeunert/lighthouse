@@ -15,7 +15,7 @@ const trace = require('../../fixtures/traces/progressive-app-m60.json');
 const devtoolsLog = require('../../fixtures/traces/progressive-app-m60.devtools.log.json');
 const assert = require('assert');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 
 describe('Byte efficiency base audit', () => {
   let graph;
@@ -31,9 +31,9 @@ describe('Byte efficiency base audit', () => {
     const networkRecord = {
       requestId: 1,
       url: 'http://example.com/',
-      parsedURL: {scheme: 'http', securityOrigin: () => 'http://example.com'},
+      parsedURL: {scheme: 'http', securityOrigin: 'http://example.com'},
       transferSize: 400000,
-      _timing: {receiveHeadersEnd: 0},
+      timing: {receiveHeadersEnd: 0},
     };
 
     graph = new NetworkNode(networkRecord);
@@ -57,20 +57,20 @@ describe('Byte efficiency base audit', () => {
     });
 
     it('should return transferSize when asset matches', () => {
-      const _resourceType = 'Stylesheet';
-      const result = estimate({transferSize: 1234, _resourceType}, 10000, 'Stylesheet');
+      const resourceType = 'Stylesheet';
+      const result = estimate({transferSize: 1234, resourceType}, 10000, 'Stylesheet');
       assert.equal(result, 1234);
     });
 
     it('should estimate by network compression ratio when asset does not match', () => {
-      const _resourceType = 'Other';
-      const result = estimate({_resourceSize: 2000, transferSize: 1000, _resourceType}, 100);
+      const resourceType = 'Other';
+      const result = estimate({resourceSize: 2000, transferSize: 1000, resourceType}, 100);
       assert.equal(result, 50);
     });
 
     it('should not error when missing resource size', () => {
-      const _resourceType = 'Other';
-      const result = estimate({transferSize: 1000, _resourceType}, 100);
+      const resourceType = 'Other';
+      const result = estimate({transferSize: 1000, resourceType}, 100);
       assert.equal(result, 100);
     });
   });
@@ -218,12 +218,14 @@ describe('Byte efficiency base audit', () => {
     let settings = {throttlingMethod: 'simulate', throttling: modestThrottling};
     let result = await MockAudit.audit(artifacts, {settings});
     // expect modest savings
-    assert.equal(result.rawValue, 1480);
+    expect(result.rawValue).toBeLessThan(5000);
+    expect(result.rawValue).toMatchSnapshot();
 
     settings = {throttlingMethod: 'simulate', throttling: ultraSlowThrottling};
     result = await MockAudit.audit(artifacts, {settings});
     // expect lots of savings
-    assert.equal(result.rawValue, 22350);
+    expect(result.rawValue).not.toBeLessThan(5000);
+    expect(result.rawValue).toMatchSnapshot();
   });
 
   it('should allow overriding of computeWasteWithTTIGraph', async () => {
@@ -251,8 +253,8 @@ describe('Byte efficiency base audit', () => {
     const settings = {throttlingMethod: 'simulate', throttling: modestThrottling};
     const result = await MockAudit.audit(artifacts, {settings});
     const resultTti = await MockJustTTIAudit.audit(artifacts, {settings});
-    // expect more savings from default
-    assert.equal(result.rawValue, 1480);
-    assert.equal(resultTti.rawValue, 800);
+    // expect less savings with just TTI
+    expect(resultTti.rawValue).toBeLessThan(result.rawValue);
+    expect({default: result.rawValue, justTTI: resultTti.rawValue}).toMatchSnapshot();
   });
 });

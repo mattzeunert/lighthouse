@@ -11,15 +11,17 @@ const assert = require('assert');
 const trace = require('../../../fixtures/traces/progressive-app-m60.json');
 const devtoolsLog = require('../../../fixtures/traces/progressive-app-m60.devtools.log.json');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 describe('Metrics: Lantern TTFCPUI', () => {
   it('should compute predicted value', async () => {
     const artifacts = Runner.instantiateComputedArtifacts();
     const result = await artifacts.requestLanternFirstCPUIdle({trace, devtoolsLog, settings: {}});
 
-    assert.equal(Math.round(result.timing), 4309);
-    assert.equal(Math.round(result.optimisticEstimate.timeInMs), 2451);
-    assert.equal(Math.round(result.pessimisticEstimate.timeInMs), 2752);
+    expect({
+      timing: Math.round(result.timing),
+      optimistic: Math.round(result.optimisticEstimate.timeInMs),
+      pessimistic: Math.round(result.pessimisticEstimate.timeInMs),
+    }).toMatchSnapshot();
     assert.equal(result.optimisticEstimate.nodeTimings.size, 19);
     assert.equal(result.pessimisticEstimate.nodeTimings.size, 79);
     assert.ok(result.optimisticGraph, 'should have created optimistic graph');

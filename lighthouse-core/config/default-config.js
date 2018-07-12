@@ -1,5 +1,5 @@
 /**
- * @license Copyright 2017 Google Inc. All Rights Reserved.
+ * @license Copyright 2018 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
@@ -31,6 +31,7 @@ module.exports = {
       'accessibility',
       'dobetterweb/anchors-with-no-rel-noopener',
       'dobetterweb/appcache',
+      'dobetterweb/doctype',
       'dobetterweb/domstats',
       'dobetterweb/js-libraries',
       'dobetterweb/optimized-images',
@@ -162,6 +163,7 @@ module.exports = {
     'byte-efficiency/uses-responsive-images',
     'byte-efficiency/efficient-animated-content',
     'dobetterweb/appcache-manifest',
+    'dobetterweb/doctype',
     'dobetterweb/dom-size',
     'dobetterweb/external-anchors-use-rel-noopener',
     'dobetterweb/geolocation-on-start',
@@ -304,6 +306,7 @@ module.exports = {
         {id: 'splash-screen', weight: 1},
         {id: 'themed-omnibox', weight: 1},
         {id: 'content-width', weight: 1},
+        {id: 'manifest-short-name-length', weight: 0},
         // Manual audits
         {id: 'pwa-cross-browser', weight: 0},
         {id: 'pwa-page-transitions', weight: 0},
@@ -374,10 +377,10 @@ module.exports = {
         {id: 'no-document-write', weight: 1},
         {id: 'external-anchors-use-rel-noopener', weight: 1},
         {id: 'geolocation-on-start', weight: 1},
+        {id: 'doctype', weight: 1},
         {id: 'no-vulnerable-libraries', weight: 1},
         {id: 'notification-on-start', weight: 1},
         {id: 'deprecations', weight: 1},
-        {id: 'manifest-short-name-length', weight: 1},
         {id: 'password-inputs-can-be-pasted-into', weight: 1},
         {id: 'errors-in-console', weight: 1},
         {id: 'image-aspect-ratio', weight: 1},

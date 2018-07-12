@@ -1,6 +1,6 @@
 {
   "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/66.0.3358.0 Safari/537.36",
-  "lighthouseVersion": "3.0.0-beta.0",
+  "lighthouseVersion": "3.0.2",
   "fetchTime": "2018-03-13T00:55:45.840Z",
   "requestedUrl": "http://localhost:10200/dobetterweb/dbw_tester.html",
   "finalUrl": "http://localhost:10200/dobetterweb/dbw_tester.html",
@@ -314,7 +314,7 @@
               "url": "http://localhost:10200/dobetterweb/dbw_tester.html",
               "startTime": 185603.321221,
               "endTime": 185603.961376,
-              "_responseReceivedTime": 185603.89718499998,
+              "responseReceivedTime": 185603.89718499998,
               "transferSize": 12640
             },
             "children": {
@@ -323,7 +323,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_tester.css?delay=100",
                   "startTime": 185603.956717,
                   "endTime": 185604.52588,
-                  "_responseReceivedTime": 185604.52470399998,
+                  "responseReceivedTime": 185604.52470399998,
                   "transferSize": 821
                 },
                 "children": {}
@@ -333,7 +333,7 @@
                   "url": "http://localhost:10200/dobetterweb/unknown404.css?delay=200",
                   "startTime": 185603.957861,
                   "endTime": 185604.534512,
-                  "_responseReceivedTime": 185604.532778,
+                  "responseReceivedTime": 185604.532778,
                   "transferSize": 139
                 },
                 "children": {}
@@ -343,7 +343,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_tester.css?delay=2200",
                   "startTime": 185603.959225,
                   "endTime": 185606.170588,
-                  "_responseReceivedTime": 185606.169761,
+                  "responseReceivedTime": 185606.169761,
                   "transferSize": 821
                 },
                 "children": {}
@@ -353,7 +353,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_disabled.css?delay=200&isdisabled",
                   "startTime": 185603.960011,
                   "endTime": 185604.541262,
-                  "_responseReceivedTime": 185604.54052399998,
+                  "responseReceivedTime": 185604.54052399998,
                   "transferSize": 1108
                 },
                 "children": {}
@@ -363,7 +363,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_partial_a.html?delay=200",
                   "startTime": 185603.961819,
                   "endTime": 185604.549739,
-                  "_responseReceivedTime": 185604.54903999998,
+                  "responseReceivedTime": 185604.54903999998,
                   "transferSize": 736
                 },
                 "children": {}
@@ -373,7 +373,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_partial_b.html?delay=200&isasync",
                   "startTime": 185603.962566,
                   "endTime": 185605.097653,
-                  "_responseReceivedTime": 185605.096858,
+                  "responseReceivedTime": 185605.096858,
                   "transferSize": 733
                 },
                 "children": {}
@@ -383,7 +383,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_tester.css?delay=3000&async=true",
                   "startTime": 185603.964089,
                   "endTime": 185607.537382,
-                  "_responseReceivedTime": 185607.53660999998,
+                  "responseReceivedTime": 185607.53660999998,
                   "transferSize": 821
                 },
                 "children": {}
@@ -393,7 +393,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_tester.js",
                   "startTime": 185603.965303,
                   "endTime": 185605.113307,
-                  "_responseReceivedTime": 185605.104776,
+                  "responseReceivedTime": 185605.104776,
                   "transferSize": 1703
                 },
                 "children": {}
@@ -403,7 +403,7 @@
                   "url": "http://localhost:10200/dobetterweb/empty_module.js?delay=500",
                   "startTime": 185603.96675,
                   "endTime": 185604.557407,
-                  "_responseReceivedTime": 185604.556719,
+                  "responseReceivedTime": 185604.556719,
                   "transferSize": 144
                 },
                 "children": {}
@@ -413,7 +413,7 @@
                   "url": "http://localhost:10200/zone.js",
                   "startTime": 185606.170955,
                   "endTime": 185607.28227,
-                  "_responseReceivedTime": 185606.742005,
+                  "responseReceivedTime": 185606.742005,
                   "transferSize": 71654
                 },
                 "children": {}
@@ -423,7 +423,7 @@
                   "url": "http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js",
                   "startTime": 185607.195975,
                   "endTime": 185608.117509,
-                  "_responseReceivedTime": 185607.822806,
+                  "responseReceivedTime": 185607.822806,
                   "transferSize": 30174
                 },
                 "children": {}
@@ -433,7 +433,7 @@
                   "url": "http://localhost:10200/dobetterweb/dbw_tester.css?scriptActivated&delay=200",
                   "startTime": 185606.245562,
                   "endTime": 185607.285454,
-                  "_responseReceivedTime": 185606.82147599998,
+                  "responseReceivedTime": 185606.82147599998,
                   "transferSize": 821
                 },
                 "children": {}
@@ -445,7 +445,7 @@
               "url": "http://localhost:10200/favicon.ico",
               "startTime": 185608.288594,
               "endTime": 185608.857719,
-              "_responseReceivedTime": 185608.85586200003,
+              "responseReceivedTime": 185608.85586200003,
               "transferSize": 221
             },
             "children": {}
@@ -543,11 +543,11 @@
     },
     "manifest-short-name-length": {
       "id": "manifest-short-name-length",
-      "title": "Manifest's `short_name` will be truncated when displayed on homescreen",
+      "title": "The `short_name` won't be truncated on the homescreen",
       "description": "Make your app's `short_name` fewer than 12 characters to ensure that it's not truncated on homescreens. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/manifest-short_name-is-not-truncated).",
-      "score": 0,
-      "scoreDisplayMode": "binary",
-      "rawValue": false
+      "score": null,
+      "scoreDisplayMode": "not-applicable",
+      "rawValue": true
     },
     "content-width": {
       "id": "content-width",
@@ -652,103 +652,63 @@
       "id": "mainthread-work-breakdown",
       "title": "Minimizes main thread work",
       "description": "Consider reducing the time spent parsing, compiling and executing JS. You may find delivering smaller JS payloads helps with this.",
-      "score": 0.98,
+      "score": 0.96,
       "scoreDisplayMode": "numeric",
-      "rawValue": 1359.7759999930859,
+      "rawValue": 1548.5690000000002,
       "displayValue": [
         "%10d ms",
-        1359.7759999930859
+        1548.5690000000002
       ],
       "details": {
         "type": "table",
         "headings": [
           {
-            "key": "group",
+            "key": "groupLabel",
             "itemType": "text",
             "text": "Category"
-          },
-          {
-            "key": "category",
-            "itemType": "text",
-            "text": "Work"
           },
           {
             "key": "duration",
             "itemType": "ms",
             "granularity": 1,
-            "text": "Time spent"
+            "text": "Time Spent"
           }
         ],
         "items": [
           {
-            "category": "Evaluate Script",
-            "group": "Script Evaluation",
-            "duration": 1121.2470000088215
+            "group": "scriptEvaluation",
+            "groupLabel": "Script Evaluation",
+            "duration": 1148.6240000000003
           },
           {
-            "category": "Run Microtasks",
-            "group": "Script Evaluation",
-            "duration": 6.680999994277954
+            "group": "other",
+            "groupLabel": "Other",
+            "duration": 177.20099999999977
           },
           {
-            "category": "XHR Ready State Change",
-            "group": "Script Evaluation",
-            "duration": 0.026999980211257935
+            "group": "styleLayout",
+            "groupLabel": "Style & Layout",
+            "duration": 121.584
           },
           {
-            "category": "XHR Load",
-            "group": "Script Evaluation",
-            "duration": 0.011000007390975952
+            "group": "parseHTML",
+            "groupLabel": "Parse HTML & CSS",
+            "duration": 53.65500000000001
           },
           {
-            "category": "Layout",
-            "group": "Style & Layout",
-            "duration": 89.00499999523163
+            "group": "garbageCollection",
+            "groupLabel": "Garbage Collection",
+            "duration": 26.198999999999998
           },
           {
-            "category": "Recalculate Style",
-            "group": "Style & Layout",
-            "duration": 32.57899996638298
+            "group": "paintCompositeRender",
+            "groupLabel": "Rendering",
+            "duration": 13.486999999999998
           },
           {
-            "category": "Parse HTML",
-            "group": "Parsing HTML & CSS",
-            "duration": 63.04200002551079
-          },
-          {
-            "category": "Parse Stylesheet",
-            "group": "Parsing HTML & CSS",
-            "duration": 1.3200000524520874
-          },
-          {
-            "category": "Minor GC",
-            "group": "Garbage collection",
-            "duration": 19.94599997997284
-          },
-          {
-            "category": "DOM GC",
-            "group": "Garbage collection",
-            "duration": 6.252999991178513
-          },
-          {
-            "category": "Compile Script",
-            "group": "Script Parsing & Compile",
-            "duration": 7.7519999742507935
-          },
-          {
-            "category": "Update Layer Tree",
-            "group": "Compositing",
-            "duration": 4.238999992609024
-          },
-          {
-            "category": "Composite Layers",
-            "group": "Compositing",
-            "duration": 2.732000023126602
-          },
-          {
-            "category": "Paint",
-            "group": "Paint",
-            "duration": 4.94200000166893
+            "group": "scriptParseCompile",
+            "groupLabel": "Script Parsing & Compilation",
+            "duration": 7.818999999999999
           }
         ]
       }
@@ -757,12 +717,12 @@
       "id": "bootup-time",
       "title": "JavaScript boot-up time",
       "description": "Consider reducing the time spent parsing, compiling, and executing JS. You may find delivering smaller JS payloads helps with this. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/bootup).",
-      "score": 0.9,
+      "score": 0.92,
       "scoreDisplayMode": "numeric",
-      "rawValue": 1302.3579999804497,
+      "rawValue": 1150.932,
       "displayValue": [
         "%10d ms",
-        1302.3579999804497
+        1150.932
       ],
       "details": {
         "type": "table",
@@ -771,6 +731,12 @@
             "key": "url",
             "itemType": "url",
             "text": "URL"
+          },
+          {
+            "key": "total",
+            "granularity": 1,
+            "itemType": "ms",
+            "text": "Total"
           },
           {
             "key": "scripting",
@@ -782,31 +748,31 @@
             "key": "scriptParseCompile",
             "granularity": 1,
             "itemType": "ms",
-            "text": "Script Parsing & Compile"
+            "text": "Script Parsing & Compilation"
           }
         ],
         "items": [
           {
             "url": "http://localhost:10200/dobetterweb/dbw_tester.html",
-            "sum": 957.277999997139,
-            "scripting": 954.5010000169277,
-            "scriptParseCompile": 2.776999980211258
-          },
-          {
-            "url": "http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js",
-            "sum": 81.23699998855591,
-            "scripting": 80.03200000524521,
-            "scriptParseCompile": 1.2049999833106995
+            "total": 966.9800000000001,
+            "scripting": 957.494,
+            "scriptParseCompile": 2.777
           },
           {
             "url": "http://localhost:10200/zone.js",
-            "sum": 78.23800000548363,
-            "scripting": 76.56400001049042,
-            "scriptParseCompile": 1.6739999949932098
+            "total": 101.21099999999998,
+            "scripting": 89.50799999999998,
+            "scriptParseCompile": 1.674
+          },
+          {
+            "url": "http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js",
+            "total": 82.741,
+            "scripting": 80.032,
+            "scriptParseCompile": 1.205
           }
         ],
         "summary": {
-          "wastedMs": 1302.3579999804497
+          "wastedMs": 1150.932
         }
       }
     },
@@ -2236,6 +2202,14 @@
       "rawValue": false,
       "displayValue": "Found \"clock.appcache\""
     },
+    "doctype": {
+      "id": "doctype",
+      "title": "Page has the HTML doctype",
+      "description": "Specifying a doctype prevents the browser from switching to quirks-mode.Read more on the [MDN Web Docs page](https://developer.mozilla.org/en-US/docs/Glossary/Doctype)",
+      "score": 1,
+      "scoreDisplayMode": "binary",
+      "rawValue": true
+    },
     "dom-size": {
       "id": "dom-size",
       "title": "Avoids an excessive DOM size",
@@ -3026,6 +3000,10 @@
           "weight": 1
         },
         {
+          "id": "manifest-short-name-length",
+          "weight": 0
+        },
+        {
           "id": "pwa-cross-browser",
           "weight": 0
         },
@@ -3301,6 +3279,10 @@
           "weight": 1
         },
         {
+          "id": "doctype",
+          "weight": 1
+        },
+        {
           "id": "no-vulnerable-libraries",
           "weight": 1
         },
@@ -3310,10 +3292,6 @@
         },
         {
           "id": "deprecations",
-          "weight": 1
-        },
-        {
-          "id": "manifest-short-name-length",
           "weight": 1
         },
         {
@@ -3330,7 +3308,7 @@
         }
       ],
       "id": "best-practices",
-      "score": 0
+      "score": 0.07
     },
     "seo": {
       "title": "SEO",

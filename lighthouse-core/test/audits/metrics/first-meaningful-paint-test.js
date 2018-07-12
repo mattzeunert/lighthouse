@@ -16,7 +16,7 @@ const devtoolsLogs = require('../../fixtures/traces/progressive-app-m60.devtools
 const Runner = require('../../../runner.js');
 const computedArtifacts = Runner.instantiateComputedArtifacts();
 
-/* eslint-env mocha */
+/* eslint-env jest */
 describe('Performance: first-meaningful-paint audit', () => {
   it('computes FMP correctly for valid trace', async () => {
     const artifacts = Object.assign({
@@ -39,8 +39,10 @@ describe('Performance: first-meaningful-paint audit', () => {
     const context = {options, settings: {throttlingMethod: 'simulate'}};
     const fmpResult = await FMPAudit.audit(artifacts, context);
 
-    assert.equal(fmpResult.score, 0.96);
-    assert.equal(Util.formatDisplayValue(fmpResult.displayValue), '1,950\xa0ms');
-    assert.equal(Math.round(fmpResult.rawValue), 1949);
+    expect({
+      score: fmpResult.score,
+      rawValue: fmpResult.rawValue,
+      displayValue: fmpResult.displayValue,
+    }).toMatchSnapshot();
   });
 });

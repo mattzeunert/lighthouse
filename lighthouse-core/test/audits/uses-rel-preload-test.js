@@ -6,7 +6,7 @@
 
 'use strict';
 
-/* eslint-env mocha */
+/* eslint-env jest */
 
 const UsesRelPreload = require('../../audits/uses-rel-preload.js');
 const NetworkNode = require('../../lib/dependency-graph/network-node');
@@ -108,27 +108,27 @@ describe('Performance: uses-rel-preload audit', () => {
     const networkRecords = [
       {
         requestId: '2',
-        _isLinkPreload: false,
+        isLinkPreload: false,
         url: 'http://www.example.com:3000',
       },
       {
         requestId: '3',
-        _isLinkPreload: false,
+        isLinkPreload: false,
         url: 'http://www.example.com/script.js',
       },
       {
         requestId: '4',
-        _isLinkPreload: false,
+        isLinkPreload: false,
         url: 'http://www.example.com/script-added.js',
       },
       {
         requestId: '5',
-        _isLinkPreload: false,
+        isLinkPreload: false,
         url: 'http://sub.example.com/script-sub.js',
       },
       {
         requestId: '6',
-        _isLinkPreload: false,
+        isLinkPreload: false,
         url: 'http://otherdomain.com/script-other.js',
       },
     ];
@@ -177,8 +177,8 @@ describe('Performance: uses-rel-preload audit', () => {
       {
         requestId: '3',
         _startTime: 10,
-        _isLinkPreload: true,
-        _url: 'http://www.example.com/script.js',
+        isLinkPreload: true,
+        url: 'http://www.example.com/script.js',
       },
     ];
     const chains = {
@@ -207,6 +207,36 @@ describe('Performance: uses-rel-preload audit', () => {
       {
         requestId: '3',
         protocol: 'data',
+        _startTime: 10,
+      },
+    ];
+
+    const chains = {
+      '1': {
+        children: {
+          '2': {
+            children: {
+              '3': {
+                request: networkRecords[0],
+                children: {},
+              },
+            },
+          },
+        },
+      },
+    };
+
+    return UsesRelPreload.audit(mockArtifacts(networkRecords, chains), {}).then(output => {
+      assert.equal(output.rawValue, 0);
+      assert.equal(output.details.items.length, 0);
+    });
+  });
+
+  it(`shouldn't suggest preload for protocol blob`, () => {
+    const networkRecords = [
+      {
+        requestId: '3',
+        protocol: 'blob',
         _startTime: 10,
       },
     ];

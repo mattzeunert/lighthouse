@@ -11,7 +11,7 @@ const assert = require('assert');
 const trace = require('../../../fixtures/traces/progressive-app-m60.json');
 const devtoolsLog = require('../../../fixtures/traces/progressive-app-m60.devtools.log.json');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 
 describe('Metrics: Speed Index', () => {
   it('should compute a simulated value', async () => {
@@ -19,9 +19,11 @@ describe('Metrics: Speed Index', () => {
     const settings = {throttlingMethod: 'simulate'};
     const result = await artifacts.requestSpeedIndex({trace, devtoolsLog, settings});
 
-    assert.equal(Math.round(result.timing), 1461);
-    assert.equal(Math.round(result.optimisticEstimate.timeInMs), 605);
-    assert.equal(Math.round(result.pessimisticEstimate.timeInMs), 1330);
+    expect({
+      timing: Math.round(result.timing),
+      optimistic: Math.round(result.optimisticEstimate.timeInMs),
+      pessimistic: Math.round(result.pessimisticEstimate.timeInMs),
+    }).toMatchSnapshot();
   });
 
   it('should compute an observed value', async () => {

@@ -7,7 +7,7 @@
 
 const assert = require('assert');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 const TracingProcessor = require('../../../lib/traces/tracing-processor');
 const pwaTrace = require('../../fixtures/traces/progressive-app.json');
 const defaultPercentiles = [0, 0.25, 0.5, 0.75, 0.9, 0.99, 1];
@@ -201,6 +201,9 @@ describe('TracingProcessor lib', () => {
 
       assert.equal(durations.filter(dur => isNaN(dur)).length, 0, 'NaN found');
       assert.equal(durations.length, 645);
+
+      const sum = durations.reduce((a, b) => a + b);
+      assert.equal(Math.round(sum), 386);
 
       assert.equal(getDurationFromIndex(50), 0.01);
       assert.equal(getDurationFromIndex(300), 0.04);

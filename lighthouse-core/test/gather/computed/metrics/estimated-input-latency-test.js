@@ -12,7 +12,7 @@ const assert = require('assert');
 const trace = require('../../../fixtures/traces/progressive-app-m60.json');
 const devtoolsLog = require('../../../fixtures/traces/progressive-app-m60.devtools.log.json');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 
 describe('Metrics: EIL', () => {
   it('should compute a simulated value', async () => {
@@ -20,9 +20,11 @@ describe('Metrics: EIL', () => {
     const settings = {throttlingMethod: 'simulate'};
     const result = await artifacts.requestEstimatedInputLatency({trace, devtoolsLog, settings});
 
-    assert.equal(Math.round(result.timing), 104);
-    assert.equal(Math.round(result.optimisticEstimate.timeInMs), 101);
-    assert.equal(Math.round(result.pessimisticEstimate.timeInMs), 158);
+    expect({
+      timing: Math.round(result.timing),
+      optimistic: Math.round(result.optimisticEstimate.timeInMs),
+      pessimistic: Math.round(result.pessimisticEstimate.timeInMs),
+    }).toMatchSnapshot();
   });
 
   it('should compute an observed value', async () => {

@@ -9,9 +9,9 @@ const KB = 1024;
 const UnminifiedCssAudit = require('../../../audits/byte-efficiency/unminified-css');
 const assert = require('assert');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 
-const _resourceType = 'Stylesheet';
+const resourceType = 'Stylesheet';
 describe('Page uses optimized css', () => {
   describe('#computeTokenLength', () => {
     it('should compute length of meaningful content', () => {
@@ -148,8 +148,8 @@ describe('Page uses optimized css', () => {
         ]},
       },
       [
-        {url: 'foo.css', transferSize: 20 * KB, _resourceType},
-        {url: 'other.css', transferSize: 50 * KB, _resourceType},
+        {url: 'foo.css', transferSize: 20 * KB, resourceType},
+        {url: 'other.css', transferSize: 50 * KB, resourceType},
       ]
     );
 
@@ -184,9 +184,9 @@ describe('Page uses optimized css', () => {
         ]},
       },
       [
-        {url: 'foo.css', transferSize: 20 * KB, _resourceType},
-        {url: 'other.css', transferSize: 512, _resourceType},
-        {url: 'invalid.css', transferSize: 20 * KB, _resourceType},
+        {url: 'foo.css', transferSize: 20 * KB, resourceType},
+        {url: 'other.css', transferSize: 512, resourceType},
+        {url: 'invalid.css', transferSize: 20 * KB, resourceType},
       ]
     );
 

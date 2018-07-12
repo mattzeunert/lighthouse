@@ -8,11 +8,11 @@
 const UnusedJavaScript = require('../../../audits/byte-efficiency/unused-javascript');
 const assert = require('assert');
 
-/* eslint-env mocha */
+/* eslint-env jest */
 
-function generateRecord(url, transferSize, _resourceType) {
+function generateRecord(url, transferSize, resourceType) {
   url = `https://google.com/${url}`;
-  return {url, transferSize, _resourceType};
+  return {url, transferSize, resourceType};
 }
 
 function generateScript(url, ranges, transferSize = 1000) {
