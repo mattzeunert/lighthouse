@@ -128,7 +128,13 @@ gulp.task('browserify-lighthouse', () => {
       .ignore('raven')
       .ignore('mkdirp')
       .ignore('rimraf')
-      .ignore('pako/lib/zlib/inflate.js');
+      .ignore('pako/lib/zlib/inflate.js')
+      .ignore('file')
+      .ignore('system');
+
+      // there is no way to add './doug-json-parse' to ignored packages via public API
+      // w/o browserify resolving the path into an absolute path
+      bundle._ignore.push('./doug-json-parse');
 
       // Prevent the DevTools background script from getting the stringified HTML.
       if (/lighthouse-background/.test(file.path)) {
