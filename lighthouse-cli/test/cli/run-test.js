@@ -41,6 +41,7 @@ describe('CLI run', function() {
           Object.keys(results.audits).length,
           Object.keys(lhr.audits).length);
       assert.deepStrictEqual(results.timing, lhr.timing);
+      assert.ok(results.timing.total !== 0);
 
       fs.unlinkSync(filename);
     });
@@ -68,10 +69,6 @@ describe('Parsing --chrome-flags', () => {
 
   it('returns boolean flags that are false with value', () => {
     assert.deepStrictEqual(parseChromeFlags('--debug=false'), ['--debug=false']);
-  });
-
-  it('returns empty when passed undefined', () => {
-    assert.deepStrictEqual(parseChromeFlags(), []);
   });
 
   it('keeps --no-flags untouched, #3003', () => {

@@ -9,7 +9,7 @@ const BaseNode = require('../base-node');
 const TcpConnection = require('./tcp-connection');
 const ConnectionPool = require('./connection-pool');
 const DNSCache = require('./dns-cache');
-const mobile3G = require('../../../config/constants').throttling.mobile3G;
+const mobileSlow4G = require('../../../config/constants').throttling.mobileSlow4G;
 
 /** @typedef {BaseNode.Node} Node */
 /** @typedef {import('../network-node')} NetworkNode */
@@ -40,10 +40,10 @@ class Simulator {
     /** @type {Required<LH.Gatherer.Simulation.Options>} */
     this._options = Object.assign(
       {
-        rtt: mobile3G.rttMs,
-        throughput: mobile3G.throughputKbps * 1024,
+        rtt: mobileSlow4G.rttMs,
+        throughput: mobileSlow4G.throughputKbps * 1024,
         maximumConcurrentRequests: DEFAULT_MAXIMUM_CONCURRENT_REQUESTS,
-        cpuSlowdownMultiplier: mobile3G.cpuSlowdownMultiplier,
+        cpuSlowdownMultiplier: mobileSlow4G.cpuSlowdownMultiplier,
         layoutTaskMultiplier: DEFAULT_LAYOUT_TASK_MULTIPLIER,
         additionalRttByOrigin: new Map(),
         serverResponseTimeByOrigin: new Map(),
@@ -66,6 +66,7 @@ class Simulator {
     this._nodeTimings = new Map();
     /** @type {Map<string, number>} */
     this._numberInProgressByType = new Map();
+    /** @type {Record<number, Set<Node>>} */
     this._nodes = {};
     this._dns = new DNSCache({rtt: this._rtt});
     // @ts-ignore
@@ -95,8 +96,8 @@ class Simulator {
     this._numberInProgressByType = new Map();
 
     this._nodes = {};
-    for (const key of Object.keys(NodeState)) {
-      this._nodes[NodeState[key]] = new Set();
+    for (const state of Object.values(NodeState)) {
+      this._nodes[state] = new Set();
     }
   }
 
@@ -177,6 +178,17 @@ class Simulator {
   _acquireConnection(record) {
     return this._connectionPool.acquire(record, {
       ignoreConnectionReused: this._flexibleOrdering,
+    });
+  }
+
+  /**
+   * @param {Set<Node>} nodes
+   * @return {Node[]}
+   */
+  _getNodesSortedByStartTime(nodes) {
+    return Array.from(nodes).sort((nodeA, nodeB) => {
+      // Sort nodes by startTime to match original execution order
+      return nodeA.startTime - nodeB.startTime;
     });
   }
 
@@ -353,18 +365,23 @@ class Simulator {
     }
   }
 
+  /**
+   * @return {Map<Node, LH.Gatherer.Simulation.NodeTiming>}
+   */
   _computeFinalNodeTimings() {
-    /** @type {Map<Node, LH.Gatherer.Simulation.NodeTiming>} */
-    const nodeTimings = new Map();
+    /** @type {Array<[Node, LH.Gatherer.Simulation.NodeTiming]>} */
+    const nodeTimingEntries = [];
     for (const [node, timing] of this._nodeTimings) {
-      nodeTimings.set(node, {
+      nodeTimingEntries.push([node, {
         startTime: timing.startTime,
         endTime: timing.endTime,
         duration: timing.endTime - timing.startTime,
-      });
+      }]);
     }
 
-    return nodeTimings;
+    // Most consumers will want the entries sorted by startTime, so insert them in that order
+    nodeTimingEntries.sort((a, b) => a[1].startTime - b[1].startTime);
+    return new Map(nodeTimingEntries);
   }
 
   /**
@@ -418,7 +435,7 @@ class Simulator {
     // loop as long as we have nodes in the queue or currently in progress
     while (nodesReadyToStart.size || nodesInProgress.size) {
       // move all possible queued nodes to in progress
-      for (const node of nodesReadyToStart) {
+      for (const node of this._getNodesSortedByStartTime(nodesReadyToStart)) {
         this._startNodeIfPossible(node, totalElapsedTime);
       }
 

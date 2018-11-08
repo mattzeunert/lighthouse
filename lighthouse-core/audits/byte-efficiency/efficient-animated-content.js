@@ -10,6 +10,18 @@
 
 const NetworkRequest = require('../../lib/network-request');
 const ByteEfficiencyAudit = require('./byte-efficiency-audit');
+const i18n = require('../../lib/i18n/i18n.js');
+
+const UIStrings = {
+  /** Imperative title of a Lighthouse audit that tells the user to use video formats rather than animated GIFs, which are wasteful. This is displayed in a list of audit titles that Lighthouse generates. */
+  title: 'Use video formats for animated content',
+  /** Description of a Lighthouse audit that tells the user *why* they should use video instead of GIF format for delivering animated content. This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Large GIFs are inefficient for delivering animated content. Consider using ' +
+    'MPEG4/WebM videos for animations and PNG/WebP for static images instead of GIF to save ' +
+    'network bytes. [Learn more](https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/replace-animated-gifs-with-video/)',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 // If GIFs are above this size, we'll flag them
 // See https://github.com/GoogleChrome/lighthouse/pull/4885#discussion_r178406623 and https://github.com/GoogleChrome/lighthouse/issues/4696#issuecomment-370979920
@@ -22,12 +34,10 @@ class EfficientAnimatedContent extends ByteEfficiencyAudit {
   static get meta() {
     return {
       id: 'efficient-animated-content',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: ByteEfficiencyAudit.SCORING_MODES.NUMERIC,
-      title: 'Use video formats for animated content',
-      description: 'Large GIFs are inefficient for delivering animated content. Consider using ' +
-        'MPEG4/WebM videos for animations and PNG/WebP for static images instead of GIF to save ' +
-        'network bytes. [Learn more](https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/replace-animated-gifs-with-video/)',
-      requiredArtifacts: ['devtoolsLogs'],
+      requiredArtifacts: ['devtoolsLogs', 'traces'],
     };
   }
 
@@ -66,9 +76,9 @@ class EfficientAnimatedContent extends ByteEfficiencyAudit {
 
     /** @type {LH.Result.Audit.OpportunityDetails['headings']} */
     const headings = [
-      {key: 'url', valueType: 'url', label: 'URL'},
-      {key: 'totalBytes', valueType: 'bytes', label: 'Transfer Size'},
-      {key: 'wastedBytes', valueType: 'bytes', label: 'Byte Savings'},
+      {key: 'url', valueType: 'url', label: str_(i18n.UIStrings.columnURL)},
+      {key: 'totalBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnSize)},
+      {key: 'wastedBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnWastedBytes)},
     ];
 
     return {
@@ -79,3 +89,4 @@ class EfficientAnimatedContent extends ByteEfficiencyAudit {
 }
 
 module.exports = EfficientAnimatedContent;
+module.exports.UIStrings = UIStrings;

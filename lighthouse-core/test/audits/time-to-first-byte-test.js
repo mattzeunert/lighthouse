@@ -7,63 +7,45 @@
 
 const TimeToFirstByte = require('../../audits/time-to-first-byte.js');
 const assert = require('assert');
+const networkRecordsToDevtoolsLog = require('../network-records-to-devtools-log.js');
 
 /* eslint-env jest */
 describe('Performance: time-to-first-byte audit', () => {
   it('fails when ttfb of root document is higher than 600ms', () => {
-    const networkRecords = [
-      {url: 'https://example.com/', requestId: '0', timing: {receiveHeadersEnd: 830, sendEnd: 200}},
-      {url: 'https://google.com/styles.css', requestId: '1', timing: {receiveHeadersEnd: 450, sendEnd: 200}},
-      {url: 'https://google.com/image.jpg', requestId: '2', timing: {receiveHeadersEnd: 600, sendEnd: 400}},
-    ];
+    const mainResource = {
+      url: 'https://example.com/',
+      requestId: '0',
+      timing: {receiveHeadersEnd: 830, sendEnd: 200},
+    };
+    const devtoolsLog = networkRecordsToDevtoolsLog([mainResource]);
+
     const artifacts = {
-      devtoolsLogs: {[TimeToFirstByte.DEFAULT_PASS]: []},
-      requestNetworkRecords: () => Promise.resolve(networkRecords),
+      devtoolsLogs: {[TimeToFirstByte.DEFAULT_PASS]: devtoolsLog},
       URL: {finalUrl: 'https://example.com/'},
     };
 
-    return TimeToFirstByte.audit(artifacts).then(result => {
+    return TimeToFirstByte.audit(artifacts, {computedCache: new Map()}).then(result => {
       assert.strictEqual(result.rawValue, 630);
       assert.strictEqual(result.score, 0);
     });
   });
 
   it('succeeds when ttfb of root document is lower than 600ms', () => {
-    const networkRecords = [
-      {url: 'https://example.com/', requestId: '0', timing: {receiveHeadersEnd: 400, sendEnd: 200}},
-      {url: 'https://google.com/styles.css', requestId: '1', timing: {receiveHeadersEnd: 850, sendEnd: 200}},
-      {url: 'https://google.com/image.jpg', requestId: '2', timing: {receiveHeadersEnd: 1000, sendEnd: 400}},
-    ];
+    const mainResource = {
+      url: 'https://example.com/',
+      requestId: '0',
+      timing: {receiveHeadersEnd: 400, sendEnd: 200},
+    };
+    const devtoolsLog = networkRecordsToDevtoolsLog([mainResource]);
+
     const artifacts = {
-      devtoolsLogs: {[TimeToFirstByte.DEFAULT_PASS]: []},
-      requestNetworkRecords: () => Promise.resolve(networkRecords),
+      devtoolsLogs: {[TimeToFirstByte.DEFAULT_PASS]: devtoolsLog},
       URL: {finalUrl: 'https://example.com/'},
     };
 
-    return TimeToFirstByte.audit(artifacts).then(result => {
+    return TimeToFirstByte.audit(artifacts, {computedCache: new Map()}).then(result => {
       assert.strictEqual(result.rawValue, 200);
       assert.strictEqual(result.score, 1);
     });
-  });
-
-  it('throws when somehow finalUrl is not in network records', async () => {
-    const networkRecords = [
-      {url: 'https://example.com/', requestId: '0', timing: {receiveHeadersEnd: 400, sendEnd: 200}},
-      {url: 'https://google.com/styles.css', requestId: '1', timing: {receiveHeadersEnd: 850, sendEnd: 200}},
-      {url: 'https://google.com/image.jpg', requestId: '2', timing: {receiveHeadersEnd: 1000, sendEnd: 400}},
-    ];
-    const badFinalUrl = 'https://badexample.com/';
-    const artifacts = {
-      devtoolsLogs: {[TimeToFirstByte.DEFAULT_PASS]: []},
-      requestNetworkRecords: () => Promise.resolve(networkRecords),
-      URL: {finalUrl: badFinalUrl},
-    };
-
-    try {
-      await TimeToFirstByte.audit(artifacts);
-      throw new Error('TimeToFirstByte did not throw');
-    } catch (e) {
-      assert.ok(e.message.includes(badFinalUrl));
-    }
   });
 });

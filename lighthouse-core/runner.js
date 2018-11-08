@@ -11,12 +11,14 @@ const GatherRunner = require('./gather/gather-runner');
 const ReportScoring = require('./scoring');
 const Audit = require('./audits/audit');
 const log = require('lighthouse-logger');
+const i18n = require('./lib/i18n/i18n.js');
 const assetSaver = require('./lib/asset-saver');
 const fs = require('fs');
 const path = require('path');
 const URL = require('./lib/url-shim');
 const Sentry = require('./lib/sentry');
 const generateReport = require('./report/report-generator').generateReport;
+const LHError = require('./lib/lh-error.js');
 
 /** @typedef {import('./gather/connections/connection.js')} Connection */
 /** @typedef {import('./config/config.js')} Config */
@@ -24,13 +26,14 @@ const generateReport = require('./report/report-generator').generateReport;
 class Runner {
   /**
    * @param {Connection} connection
-   * @param {{config: Config, url?: string, driverMock?: Driver}} opts
+   * @param {{config: Config, url?: string, driverMock?: Driver}} runOpts
    * @return {Promise<LH.RunnerResult|undefined>}
    */
-  static async run(connection, opts) {
+  static async run(connection, runOpts) {
     try {
-      const startTime = Date.now();
-      const settings = opts.config.settings;
+      const settings = runOpts.config.settings;
+      const runnerStatus = {msg: 'Runner setup', id: 'lh:runner:run'};
+      log.time(runnerStatus, 'verbose');
 
       /**
        * List of top-level warnings for this Lighthouse run.
@@ -39,11 +42,9 @@ class Runner {
       const lighthouseRunWarnings = [];
 
       const sentryContext = Sentry.getContext();
-      // @ts-ignore TODO(bckenny): Sentry type checking
       Sentry.captureBreadcrumb({
         message: 'Run started',
         category: 'lifecycle',
-        // @ts-ignore TODO(bckenny): Sentry type checking
         data: sentryContext && sentryContext.extra,
       });
 
@@ -64,22 +65,22 @@ class Runner {
         if (!requestedUrl) {
           throw new Error('Cannot run audit mode on empty URL');
         }
-        if (opts.url && opts.url !== requestedUrl) {
+        if (runOpts.url && !URL.equalWithExcludedFragments(runOpts.url, requestedUrl)) {
           throw new Error('Cannot run audit mode on different URL');
         }
       } else {
-        if (typeof opts.url !== 'string' || opts.url.length === 0) {
-          throw new Error(`You must provide a url to the runner. '${opts.url}' provided.`);
+        if (typeof runOpts.url !== 'string' || runOpts.url.length === 0) {
+          throw new Error(`You must provide a url to the runner. '${runOpts.url}' provided.`);
         }
 
         try {
           // Use canonicalized URL (with trailing slashes and such)
-          requestedUrl = new URL(opts.url).href;
+          requestedUrl = new URL(runOpts.url).href;
         } catch (e) {
           throw new Error('The url provided should have a proper protocol and hostname.');
         }
 
-        artifacts = await Runner._gatherArtifactsFromBrowser(requestedUrl, opts, connection);
+        artifacts = await Runner._gatherArtifactsFromBrowser(requestedUrl, runOpts, connection);
         // -G means save these to ./latest-run, etc.
         if (settings.gatherMode) {
           const path = Runner._getArtifactsPath(settings);
@@ -91,21 +92,22 @@ class Runner {
       if (settings.gatherMode && !settings.auditMode) return;
 
       // Audit phase
-      if (!opts.config.audits) {
+      if (!runOpts.config.audits) {
         throw new Error('No audits to evaluate.');
       }
-      const auditResults = await Runner._runAudits(settings, opts.config.audits, artifacts);
+      const auditResults = await Runner._runAudits(settings, runOpts.config.audits, artifacts,
+          lighthouseRunWarnings);
 
       // LHR construction phase
-      log.log('status', 'Generating results...');
+      const resultsStatus = {msg: 'Generating results...', id: 'lh:runner:generate'};
+      log.time(resultsStatus);
 
       if (artifacts.LighthouseRunWarnings) {
         lighthouseRunWarnings.push(...artifacts.LighthouseRunWarnings);
       }
 
       // Entering: conclusion of the lighthouse result object
-      // @ts-ignore - Needs json require() support
-      const lighthouseVersion = /** @type {string} */ (require('../package.json').version);
+      const lighthouseVersion = require('../package.json').version;
 
       /** @type {Object<string, LH.Audit.Result>} */
       const resultsById = {};
@@ -115,32 +117,69 @@ class Runner {
 
       /** @type {Object<string, LH.Result.Category>} */
       let categories = {};
-      if (opts.config.categories) {
-        categories = ReportScoring.scoreAllCategories(opts.config.categories, resultsById);
+      if (runOpts.config.categories) {
+        categories = ReportScoring.scoreAllCategories(runOpts.config.categories, resultsById);
       }
+
+      log.timeEnd(resultsStatus);
+      log.timeEnd(runnerStatus);
 
       /** @type {LH.Result} */
       const lhr = {
-        userAgent: artifacts.UserAgent,
+        userAgent: artifacts.HostUserAgent,
+        environment: {
+          networkUserAgent: artifacts.NetworkUserAgent,
+          hostUserAgent: artifacts.HostUserAgent,
+          benchmarkIndex: artifacts.BenchmarkIndex,
+        },
         lighthouseVersion,
         fetchTime: artifacts.fetchTime,
         requestedUrl: requestedUrl,
         finalUrl: artifacts.URL.finalUrl,
         runWarnings: lighthouseRunWarnings,
+        runtimeError: Runner.getArtifactRuntimeError(artifacts),
         audits: resultsById,
         configSettings: settings,
         categories,
-        categoryGroups: opts.config.groups || undefined,
-        timing: {total: Date.now() - startTime},
+        categoryGroups: runOpts.config.groups || undefined,
+        timing: this._getTiming(artifacts),
+        i18n: {
+          rendererFormattedStrings: i18n.getRendererFormattedStrings(settings.locale),
+          icuMessagePaths: {},
+        },
       };
 
+      // Replace ICU message references with localized strings; save replaced paths in lhr.
+      lhr.i18n.icuMessagePaths = i18n.replaceIcuMessageInstanceIds(lhr, settings.locale);
+
+      // Create the HTML, JSON, and/or CSV string
       const report = generateReport(lhr, settings.output);
+
       return {lhr, artifacts, report};
     } catch (err) {
-      // @ts-ignore TODO(bckenny): Sentry type checking
       await Sentry.captureException(err, {level: 'fatal'});
       throw err;
     }
+  }
+
+  /**
+   * This handles both the auditMode case where gatherer entries need to be merged in and
+   * the gather/audit case where timingEntriesFromRunner contains all entries from this run,
+   * including those also in timingEntriesFromArtifacts.
+   * @param {LH.Artifacts} artifacts
+   * @return {LH.Result.Timing}
+   */
+  static _getTiming(artifacts) {
+    const timingEntriesFromArtifacts = artifacts.Timing || [];
+    const timingEntriesFromRunner = log.takeTimeEntries();
+    const timingEntriesKeyValues = [
+      ...timingEntriesFromArtifacts,
+      ...timingEntriesFromRunner,
+      // As entries can share a name, dedupe based on the startTime timestamp
+    ].map(entry => /** @type {[number, PerformanceEntry]} */ ([entry.startTime, entry]));
+    const timingEntries = Array.from(new Map(timingEntriesKeyValues).values());
+    const runnerEntry = timingEntries.find(e => e.name === 'lh:runner:run');
+    return {entries: timingEntries, total: runnerEntry && runnerEntry.duration || 0};
   }
 
   /**
@@ -166,18 +205,24 @@ class Runner {
   }
 
   /**
-   * Save collected artifacts to disk
+   * Run all audits with specified settings and artifacts.
    * @param {LH.Config.Settings} settings
    * @param {Array<LH.Config.AuditDefn>} audits
    * @param {LH.Artifacts} artifacts
+   * @param {Array<string>} runWarnings
    * @return {Promise<Array<LH.Audit.Result>>}
    */
-  static async _runAudits(settings, audits, artifacts) {
-    log.log('status', 'Analyzing and running audits...');
-    artifacts = Object.assign({}, Runner.instantiateComputedArtifacts(), artifacts);
+  static async _runAudits(settings, audits, artifacts, runWarnings) {
+    const status = {msg: 'Analyzing and running audits...', id: 'lh:runner:auditing'};
+    log.time(status);
 
     if (artifacts.settings) {
-      const overrides = {gatherMode: undefined, auditMode: undefined, output: undefined};
+      const overrides = {
+        locale: undefined,
+        gatherMode: undefined,
+        auditMode: undefined,
+        output: undefined,
+      };
       const normalizedGatherSettings = Object.assign({}, artifacts.settings, overrides);
       const normalizedAuditSettings = Object.assign({}, settings, overrides);
 
@@ -187,13 +232,21 @@ class Runner {
       }
     }
 
+    // Members of LH.Audit.Context that are shared across all audits.
+    const sharedAuditContext = {
+      settings,
+      LighthouseRunWarnings: runWarnings,
+      computedCache: new Map(),
+    };
+
     // Run each audit sequentially
     const auditResults = [];
     for (const auditDefn of audits) {
-      const auditResult = await Runner._runAudit(auditDefn, artifacts, settings);
+      const auditResult = await Runner._runAudit(auditDefn, artifacts, sharedAuditContext);
       auditResults.push(auditResult);
     }
 
+    log.timeEnd(status);
     return auditResults;
   }
 
@@ -202,15 +255,18 @@ class Runner {
    * Otherwise returns error audit result.
    * @param {LH.Config.AuditDefn} auditDefn
    * @param {LH.Artifacts} artifacts
-   * @param {LH.Config.Settings} settings
+   * @param {Pick<LH.Audit.Context, 'settings'|'LighthouseRunWarnings'|'computedCache'>} sharedAuditContext
    * @return {Promise<LH.Audit.Result>}
    * @private
    */
-  static async _runAudit(auditDefn, artifacts, settings) {
+  static async _runAudit(auditDefn, artifacts, sharedAuditContext) {
     const audit = auditDefn.implementation;
-    const status = `Evaluating: ${audit.meta.title}`;
+    const status = {
+      msg: `Evaluating: ${i18n.getFormatted(audit.meta.title, 'en-US')}`,
+      id: `lh:audit:${audit.meta.id}`,
+    };
+    log.time(status);
 
-    log.log('status', status);
     let auditResult;
     try {
       // Return an early error if an artifact required for the audit is missing or an error.
@@ -227,14 +283,12 @@ class Runner {
           throw new Error(`Required ${artifactName} gatherer did not run.`);
         }
 
-        // If artifact was an error, it must be non-fatal (or gatherRunner would
-        // have thrown). Output error result on behalf of audit.
+        // If artifact was an error, output error result on behalf of audit.
         if (artifacts[artifactName] instanceof Error) {
           /** @type {Error} */
           // @ts-ignore An artifact *could* be an Error, but caught here, so ignore elsewhere.
           const artifactError = artifacts[artifactName];
 
-          // @ts-ignore TODO(bckenny): Sentry type checking
           Sentry.captureException(artifactError, {
             tags: {gatherer: artifactName},
             level: 'error',
@@ -254,25 +308,49 @@ class Runner {
 
       // all required artifacts are in good shape, so we proceed
       const auditOptions = Object.assign({}, audit.defaultOptions, auditDefn.options);
-      const product = await audit.audit(artifacts, {options: auditOptions, settings: settings});
+      const auditContext = {
+        options: auditOptions,
+        ...sharedAuditContext,
+      };
+
+      const product = await audit.audit(artifacts, auditContext);
       auditResult = Audit.generateAuditResult(audit, product);
     } catch (err) {
       log.warn(audit.meta.id, `Caught exception: ${err.message}`);
-      if (err.fatal) {
-        throw err;
-      }
 
-      // @ts-ignore TODO(bckenny): Sentry type checking
       Sentry.captureException(err, {tags: {audit: audit.meta.id}, level: 'error'});
-      // Non-fatal error become error audit result.
+      // Errors become error audit result.
       const errorMessage = err.friendlyMessage ?
         `${err.friendlyMessage} (${err.message})` :
         `Audit error: ${err.message}`;
       auditResult = Audit.generateErrorAuditResult(audit, errorMessage);
     }
 
-    log.verbose('statusEnd', status);
+    log.timeEnd(status);
     return auditResult;
+  }
+
+  /**
+   * Returns first runtimeError found in artifacts.
+   * @param {LH.Artifacts} artifacts
+   * @return {LH.Result['runtimeError']}
+   */
+  static getArtifactRuntimeError(artifacts) {
+    for (const possibleErrorArtifact of Object.values(artifacts)) {
+      if (possibleErrorArtifact instanceof LHError && possibleErrorArtifact.lhrRuntimeError) {
+        const errorMessage = possibleErrorArtifact.friendlyMessage || possibleErrorArtifact.message;
+
+        return {
+          code: possibleErrorArtifact.code,
+          message: errorMessage,
+        };
+      }
+    }
+
+    return {
+      code: LHError.NO_ERROR,
+      message: '',
+    };
   }
 
   /**
@@ -320,44 +398,6 @@ class Runner {
           .map(f => `dobetterweb/${f}`),
     ];
     return fileList.filter(f => /\.js$/.test(f) && f !== 'gatherer.js').sort();
-  }
-
-  /**
-   * Returns list of computed gatherer names for external querying.
-   * @return {Array<string>}
-   */
-  static getComputedGathererList() {
-    const filenamesToSkip = [
-      'computed-artifact.js', // the base class which other artifacts inherit
-      'metrics', // the sub folder that contains metric names
-      'metrics/lantern-metric.js', // lantern metric base class
-      'metrics/metric.js', // computed metric base class
-    ];
-
-    const fileList = [
-      ...fs.readdirSync(path.join(__dirname, './gather/computed')),
-      ...fs.readdirSync(path.join(__dirname, './gather/computed/metrics')).map(f => `metrics/${f}`),
-    ];
-
-    return fileList.filter(f => /\.js$/.test(f) && !filenamesToSkip.includes(f)).sort();
-  }
-
-  /**
-   * TODO(bckenny): refactor artifact types
-   * @return {LH.ComputedArtifacts}
-   */
-  static instantiateComputedArtifacts() {
-    const computedArtifacts = {};
-    Runner.getComputedGathererList().forEach(function(filename) {
-      // Drop `.js` suffix to keep browserify import happy.
-      filename = filename.replace(/\.js$/, '');
-      const ArtifactClass = require('./gather/computed/' + filename);
-      const artifact = new ArtifactClass(computedArtifacts);
-      // define the request* function that will be exposed on `artifacts`
-      computedArtifacts['request' + artifact.name] = artifact.request.bind(artifact);
-    });
-
-    return /** @type {LH.ComputedArtifacts} */ (computedArtifacts);
   }
 
   /**

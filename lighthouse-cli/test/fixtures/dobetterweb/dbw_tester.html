@@ -108,6 +108,26 @@
 </head>
 <body>
 
+<!-- Various sites like to assign HTMLElements a custom `matches` property. See issue #5934 -->
+
+<!-- EmbeddedContent will process these elements -->
+<object id="5934a"></object>
+<object id="5934b"></object>
+
+<script>
+  // Ensure gatherers still work when individual elements override '.matches'
+  document.getElementById("5934a").matches = "blahblah";
+  Object.defineProperty(document.getElementById("5934b"), 'matches', {
+    value: "blahblah"
+  });
+  // Ensure gatherers still work when the prototype is messed with
+  HTMLElement.prototype.matches = { value: "blahblah" };
+
+
+  // Ensure long-task collection still works when performance.now is redefined
+  window.performance.now = 'right now';
+</script>
+
 <div>
   <h2>Do better web tester page</h2>
   <span>Hi there!</span>
@@ -204,17 +224,13 @@ function documentWriteTest() {
   document.write('2.0!'); // FAIL
 }
 
-function websqlTest() {
-  const db = openDatabase('mydb', '1.0', 'my first database', 1024);
-}
-
 function passiveEventsListenerTest() {
-  // FAIL
+  // FAIL or PASS - field trial for document level defaulting to passive M71+
   window.addEventListener('wheel', function(e) {
     console.log('wheel');
   });
 
-  // FAIL
+  // PASS - document level defaults to passive M56+
   window.addEventListener('touchstart', function(e) {
     console.log('touchstart');
   });
@@ -224,12 +240,12 @@ function passiveEventsListenerTest() {
     console.log('mousewheel');
   }, {passive: false});
 
-  // FAIL
+  // PASS - document level defaults to passive M56+
   document.addEventListener('touchstart', function(e) {
     console.log('touchstart document');
   });
 
-  // FAIL
+  // PASS - document level defaults to passive M56+
   document.body.addEventListener('touchmove', function(e) {
     console.log('touchmove');
   });
@@ -308,7 +324,7 @@ function deprecationsTest() {
   xhr.open('GET', 'dbw_tester.html', false);
   xhr.send();
 
-  window.webkitStorageInfo.PERSISTENT // FAIL
+  // One more failure in dbw_tester.js
 }
 
 function isOnHttps() {
@@ -325,7 +341,6 @@ if (location.search === '') {
   documentWriteTest();
   dateNowTest();
   consoleTimeTest();
-  websqlTest();
   passiveEventsListenerTest();
   geolocationOnStartTest();
   notificationOnStartTest();
@@ -344,9 +359,6 @@ if (location.search === '') {
   }
   if (params.has('consoleTime')) {
     consoleTimeTest();
-  }
-  if (params.has('websql')) {
-    websqlTest();
   }
   if (params.has('passiveEvents')) {
     passiveEventsListenerTest();

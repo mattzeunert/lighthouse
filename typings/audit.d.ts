@@ -4,11 +4,22 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
+import ArbitraryEqualityMap = require('../lighthouse-core/lib/arbitrary-equality-map.js');
+
 declare global {
   module LH.Audit {
     export interface Context {
-      options: Record<string, any>; // audit options
+      /** audit options */
+      options: Record<string, any>;
       settings: Config.Settings;
+      /** Push to this array to add top-level warnings to the LHR. */
+      LighthouseRunWarnings: Array<string>;
+      /**
+       * Nested cache for already-computed computed artifacts. Keyed first on
+       * the computed artifact's `name` property, then on input artifact(s).
+       * Values are Promises resolving to the computedArtifact result.
+       */
+      computedCache: Map<string, ArbitraryEqualityMap>;
     }
 
     export interface ScoreOptions {
@@ -84,7 +95,7 @@ declare global {
 
     export type DetailsItem = string | number | DetailsRendererNodeDetailsJSON |
       DetailsRendererLinkDetailsJSON | DetailsRendererCodeDetailJSON | undefined |
-      boolean | DetailsRendererUrlDetailsJSON;
+      boolean | DetailsRendererUrlDetailsJSON | null;
 
     export interface DetailsRendererNodeDetailsJSON {
       type: 'node';
@@ -160,7 +171,7 @@ declare global {
           responseReceivedTime: number;
           transferSize: number;
         };
-        children: SimpleCriticalRequestNode;
+        children?: SimpleCriticalRequestNode;
       }
     }
 

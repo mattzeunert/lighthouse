@@ -13,14 +13,14 @@ const puppeteer = require('../../node_modules/puppeteer/index.js');
 
 const {server} = require('../../lighthouse-cli/test/fixtures/static-server.js');
 const portNumber = 10200;
-const viewerUrl = `http://localhost:${portNumber}/lighthouse-viewer/dist/index.html`;
+const viewerUrl = `http://localhost:${portNumber}/dist/viewer/index.html`;
 const sampleLhr = __dirname + '/../../lighthouse-core/test/results/sample_v2.json';
 
 const config = require(path.resolve(__dirname, '../../lighthouse-core/config/default-config.js'));
 const lighthouseCategories = Object.keys(config.categories);
 const getAuditsOfCategory = category => config.categories[category].auditRefs;
 
-// TODO: should be combined in some way with lighthouse-extension/test/extension-test.js
+// TODO: should be combined in some way with clients/test/extension/extension-test.js
 describe('Lighthouse Viewer', function() {
   // eslint-disable-next-line no-console
   console.log('\n✨ Be sure to have recently run this: yarn build-viewer');
@@ -119,23 +119,22 @@ describe('Lighthouse Viewer', function() {
   });
 
   it('should not have any unexpected audit errors', async () => {
-    // TODO(phulce): rework these to look at the tooltips
-    function getDebugStrings(elems, selectors) {
+    function getErrors(elems, selectors) {
       return elems.map(el => {
         const audit = el.closest(selectors.audits);
         const auditTitle = audit && audit.querySelector(selectors.titles);
         return {
-          debugString: el.textContent,
+          explanation: el.textContent,
           title: auditTitle ? auditTitle.textContent : 'Audit title unvailable',
         };
       });
     }
 
-    const errorSelectors = '.lh-audit-explanation, .tooltip-error';
-    const auditErrors = await viewerPage.$$eval(errorSelectors, getDebugStrings, selectors);
-    const errors = auditErrors.filter(item => item.debugString.includes('Audit error:'));
+    const errorSelectors = '.lh-audit-explanation, .tooltip--error';
+    const auditErrors = await viewerPage.$$eval(errorSelectors, getErrors, selectors);
+    const errors = auditErrors.filter(item => item.explanation.includes('Audit error:'));
     const unexpectedErrrors = errors.filter(item => {
-      return !item.debugString.includes('Required RobotsTxt gatherer did not run');
+      return !item.explanation.includes('Required RobotsTxt gatherer did not run');
     });
     assert.deepStrictEqual(unexpectedErrrors, [], 'Audit errors found within the report');
   });

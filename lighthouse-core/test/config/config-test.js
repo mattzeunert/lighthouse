@@ -12,6 +12,7 @@ const defaultConfig = require('../../config/default-config.js');
 const log = require('lighthouse-logger');
 const Gatherer = require('../../gather/gatherers/gatherer');
 const Audit = require('../../audits/audit');
+const i18n = require('../../lib/i18n/i18n.js');
 
 /* eslint-env jest */
 
@@ -597,6 +598,29 @@ describe('Config', () => {
     assert.ok(typeof config.settings.maxWaitForLoad === 'number', 'missing setting from default');
   });
 
+  describe('locale', () => {
+    it('falls back to default locale if none specified', () => {
+      const config = new Config({settings: undefined});
+      // Don't assert specific locale so it isn't tied to where tests are run, but
+      // check that it's valid and available.
+      assert.ok(config.settings.locale);
+      assert.strictEqual(config.settings.locale, i18n.lookupLocale(config.settings.locale));
+    });
+
+    it('uses config setting for locale if set', () => {
+      const locale = 'ar-XB';
+      const config = new Config({settings: {locale}});
+      assert.strictEqual(config.settings.locale, locale);
+    });
+
+    it('uses flag setting for locale if set', () => {
+      const settingsLocale = 'en-XA';
+      const flagsLocale = 'ar-XB';
+      const config = new Config({settings: {locale: settingsLocale}}, {locale: flagsLocale});
+      assert.strictEqual(config.settings.locale, flagsLocale);
+    });
+  });
+
   it('is idempotent when accepting a canonicalized Config as valid ConfigJson input', () => {
     const config = new Config(defaultConfig);
     const configAgain = new Config(config);
@@ -948,6 +972,78 @@ describe('Config', () => {
 
       assert.throws(_ => loadGatherer(`${root}/missing-after-pass`),
         /afterPass\(\) method/);
+    });
+  });
+
+  describe('#getDisplayString', () => {
+    it('doesn\'t include empty gatherer/audit options in output', () => {
+      const gOpt = 'gathererOption';
+      const aOpt = 'auditOption';
+      const configJson = {
+        extends: 'lighthouse:default',
+        passes: [{
+          passName: 'defaultPass',
+          gatherers: [
+            // `options` merged into default `viewport` gatherer.
+            {path: 'viewport', options: {gOpt}},
+          ],
+        }],
+        audits: [
+          // `options` merged into default `metrics` audit.
+          {path: 'metrics', options: {aOpt}},
+        ],
+      };
+
+      const printed = new Config(configJson).getPrintString();
+      const printedConfig = JSON.parse(printed);
+
+      // Check that options weren't completely eliminated.
+      const viewportGatherer = printedConfig.passes[0].gatherers.find(g => g.path === 'viewport');
+      assert.strictEqual(viewportGatherer.options.gOpt, gOpt);
+      const metricsAudit = printedConfig.audits.find(a => a.path === 'metrics');
+      assert.strictEqual(metricsAudit.options.aOpt, aOpt);
+
+      for (const pass of printedConfig.passes) {
+        for (const gatherer of pass.gatherers) {
+          if (gatherer.options) {
+            assert.ok(Object.keys(gatherer.options).length > 0);
+          }
+        }
+      }
+
+      for (const audit of printedConfig.audits) {
+        if (audit.options) {
+          assert.ok(Object.keys(audit.options).length > 0);
+        }
+      }
+    });
+
+    it('prints localized category titles', () => {
+      const printed = new Config(defaultConfig).getPrintString();
+      const printedConfig = JSON.parse(printed);
+      let localizableCount = 0;
+
+      Object.entries(printedConfig.categories).forEach(([printedCategoryId, printedCategory]) => {
+        const origTitle = origConfig.categories[printedCategoryId].title;
+        if (i18n.isIcuMessage(origTitle)) localizableCount++;
+        const i18nOrigTitle = i18n.getFormatted(origTitle, origConfig.settings.locale);
+
+        assert.strictEqual(printedCategory.title, i18nOrigTitle);
+      });
+
+      // Should have localized at least one string.
+      assert.ok(localizableCount > 0);
+    });
+
+    it('prints a valid ConfigJson that can make an identical Config', () => {
+      // depends on defaultConfig having a `path` for all gatherers and audits.
+      const firstConfig = new Config(defaultConfig);
+      const firstPrint = firstConfig.getPrintString();
+
+      const secondConfig = new Config(JSON.parse(firstPrint));
+      const secondPrint = secondConfig.getPrintString();
+
+      assert.strictEqual(firstPrint, secondPrint);
     });
   });
 });

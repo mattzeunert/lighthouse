@@ -6,8 +6,18 @@
 'use strict';
 
 const ByteEfficiencyAudit = require('./byte-efficiency-audit');
-// @ts-ignore - TODO: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/25410
-const esprima = require('esprima');
+const i18n = require('../../lib/i18n/i18n.js');
+const computeTokenLength = require('../../lib/minification-estimator').computeJSTokenLength;
+
+const UIStrings = {
+  /** Imperative title of a Lighthouse audit that tells the user to minify the page’s JS code to reduce file size. This is displayed in a list of audit titles that Lighthouse generates. */
+  title: 'Minify JavaScript',
+  /** Description of a Lighthouse audit that tells the user *why* they should minify the page’s JS code to reduce file size. This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Minifying JavaScript files can reduce payload sizes and script parse time. ' +
+    '[Learn more](https://developers.google.com/speed/docs/insights/MinifyResources).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 const IGNORE_THRESHOLD_IN_PERCENT = 10;
 const IGNORE_THRESHOLD_IN_BYTES = 2048;
@@ -29,12 +39,10 @@ class UnminifiedJavaScript extends ByteEfficiencyAudit {
   static get meta() {
     return {
       id: 'unminified-javascript',
-      title: 'Minify JavaScript',
-
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: ByteEfficiencyAudit.SCORING_MODES.NUMERIC,
-      description: 'Minifying JavaScript files can reduce payload sizes and script parse time. ' +
-        '[Learn more](https://developers.google.com/speed/docs/insights/MinifyResources).',
-      requiredArtifacts: ['Scripts', 'devtoolsLogs'],
+      requiredArtifacts: ['Scripts', 'devtoolsLogs', 'traces'],
     };
   }
 
@@ -45,16 +53,7 @@ class UnminifiedJavaScript extends ByteEfficiencyAudit {
    */
   static computeWaste(scriptContent, networkRecord) {
     const contentLength = scriptContent.length;
-    let totalTokenLength = 0;
-
-    const tokens = esprima.tokenize(scriptContent, {tolerant: true});
-    if (!tokens.length && tokens.errors && tokens.errors.length) {
-      throw tokens.errors[0];
-    }
-
-    for (const token of tokens) {
-      totalTokenLength += token.value.length;
-    }
+    const totalTokenLength = computeTokenLength(scriptContent);
 
     const totalBytes = ByteEfficiencyAudit.estimateTransferSize(networkRecord, contentLength,
       'Script');
@@ -96,16 +95,20 @@ class UnminifiedJavaScript extends ByteEfficiencyAudit {
       }
     }
 
+    /** @type {LH.Result.Audit.OpportunityDetails['headings']} */
+    const headings = [
+      {key: 'url', valueType: 'url', label: str_(i18n.UIStrings.columnURL)},
+      {key: 'totalBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnSize)},
+      {key: 'wastedBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnWastedBytes)},
+    ];
+
     return {
       items,
       warnings,
-      headings: [
-        {key: 'url', valueType: 'url', label: 'URL'},
-        {key: 'totalBytes', valueType: 'bytes', label: 'Original'},
-        {key: 'wastedBytes', valueType: 'bytes', label: 'Potential Savings'},
-      ],
+      headings,
     };
   }
 }
 
 module.exports = UnminifiedJavaScript;
+module.exports.UIStrings = UIStrings;

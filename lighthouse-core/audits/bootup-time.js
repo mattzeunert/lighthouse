@@ -6,8 +6,33 @@
 'use strict';
 
 const Audit = require('./audit');
-const Util = require('../report/html/renderer/util');
+const NetworkRequest = require('../lib/network-request');
 const {taskGroups} = require('../lib/task-groups');
+const i18n = require('../lib/i18n/i18n.js');
+const NetworkRecords = require('../gather/computed/network-records.js');
+const MainThreadTasks = require('../gather/computed/main-thread-tasks.js');
+
+const UIStrings = {
+  /** Title of a diagnostic audit that provides detail on the time spent executing javascript files during the load. This descriptive title is shown to users when the amount is acceptable and no user action is required. */
+  title: 'JavaScript execution time',
+  /** Title of a diagnostic audit that provides detail on the time spent executing javascript files during the load. This imperative title is shown to users when there is a significant amount of execution time that could be reduced. */
+  failureTitle: 'Reduce JavaScript execution time',
+  /** Description of a Lighthouse audit that tells the user that they should reduce the amount of time spent executing javascript and one method of doing so. This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Consider reducing the time spent parsing, compiling, and executing JS. ' +
+    'You may find delivering smaller JS payloads helps with this. [Learn ' +
+    'more](https://developers.google.com/web/tools/lighthouse/audits/bootup).',
+  /** Label for the total time column in a data table; entries will be the number of milliseconds spent executing per resource loaded by the page. */
+  columnTotal: 'Total',
+  /** Label for a time column in a data table; entries will be the number of milliseconds spent evaluating script for every script loaded by the page. */
+  columnScriptEval: 'Script Evaluation',
+  /** Label for a time column in a data table; entries will be the number of milliseconds spent parsing script files for every script loaded by the page. */
+  columnScriptParse: 'Script Parse',
+  /** A message displayed in a Lighthouse audit result warning that Chrome extensions on the user's system substantially affected Lighthouse's measurements and instructs the user on how to run again without those extensions. */
+  chromeExtensionsWarning: 'Chrome extensions negatively affected this page\'s load performance. ' +
+    'Try auditing the page in incognito mode or from a Chrome profile without extensions.',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 class BootupTime extends Audit {
   /**
@@ -16,12 +41,10 @@ class BootupTime extends Audit {
   static get meta() {
     return {
       id: 'bootup-time',
-      title: 'JavaScript boot-up time',
-      failureTitle: 'JavaScript boot-up time is too high',
+      title: str_(UIStrings.title),
+      failureTitle: str_(UIStrings.failureTitle),
+      description: str_(UIStrings.description),
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
-      description: 'Consider reducing the time spent parsing, compiling, and executing JS. ' +
-        'You may find delivering smaller JS payloads helps with this. [Learn ' +
-        'more](https://developers.google.com/web/tools/lighthouse/audits/bootup).',
       requiredArtifacts: ['traces'],
     };
   }
@@ -46,7 +69,7 @@ class BootupTime extends Audit {
     /** @type {Set<string>} */
     const urls = new Set();
     for (const record of records) {
-      if (record.resourceType && record.resourceType === 'Script') {
+      if (record.resourceType === NetworkRequest.TYPES.Script) {
         urls.add(record.url);
       }
     }
@@ -87,14 +110,15 @@ class BootupTime extends Audit {
     const settings = context.settings || {};
     const trace = artifacts.traces[BootupTime.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[BootupTime.DEFAULT_PASS];
-    const networkRecords = await artifacts.requestNetworkRecords(devtoolsLog);
-    const tasks = await artifacts.requestMainThreadTasks(trace);
+    const networkRecords = await NetworkRecords.request(devtoolsLog, context);
+    const tasks = await MainThreadTasks.request(trace, context);
     const multiplier = settings.throttlingMethod === 'simulate' ?
       settings.throttling.cpuSlowdownMultiplier : 1;
 
     const jsURLs = BootupTime.getJavaScriptURLs(networkRecords);
     const executionTimings = BootupTime.getExecutionTimingsByURL(tasks, jsURLs);
 
+    let hadExcessiveChromeExtension = false;
     let totalBootupTime = 0;
     const results = Array.from(executionTimings)
       .map(([url, timingByGroupId]) => {
@@ -113,6 +137,9 @@ class BootupTime extends Audit {
         const scriptingTotal = timingByGroupId[taskGroups.scriptEvaluation.id] || 0;
         const parseCompileTotal = timingByGroupId[taskGroups.scriptParseCompile.id] || 0;
 
+        hadExcessiveChromeExtension = hadExcessiveChromeExtension ||
+          (url.startsWith('chrome-extension:') && scriptingTotal > 100);
+
         return {
           url: url,
           total: bootupTimeForURL,
@@ -124,14 +151,20 @@ class BootupTime extends Audit {
       .filter(result => result.total >= context.options.thresholdInMs)
       .sort((a, b) => b.total - a.total);
 
+
+    // TODO: consider moving this to core gathering so you don't need to run the audit for warning
+    if (hadExcessiveChromeExtension) {
+      context.LighthouseRunWarnings.push(str_(UIStrings.chromeExtensionsWarning));
+    }
+
     const summary = {wastedMs: totalBootupTime};
 
     const headings = [
-      {key: 'url', itemType: 'url', text: 'URL'},
-      {key: 'total', granularity: 1, itemType: 'ms', text: 'Total'},
-      {key: 'scripting', granularity: 1, itemType: 'ms', text: taskGroups.scriptEvaluation.label},
+      {key: 'url', itemType: 'url', text: str_(i18n.UIStrings.columnURL)},
+      {key: 'total', granularity: 1, itemType: 'ms', text: str_(UIStrings.columnTotal)},
+      {key: 'scripting', granularity: 1, itemType: 'ms', text: str_(UIStrings.columnScriptEval)},
       {key: 'scriptParseCompile', granularity: 1, itemType: 'ms',
-        text: taskGroups.scriptParseCompile.label},
+        text: str_(UIStrings.columnScriptParse)},
     ];
 
     const details = BootupTime.makeTableDetails(headings, results, summary);
@@ -145,10 +178,12 @@ class BootupTime extends Audit {
     return {
       score,
       rawValue: totalBootupTime,
-      displayValue: [Util.MS_DISPLAY_VALUE, totalBootupTime],
+      displayValue: totalBootupTime > 0 ?
+        str_(i18n.UIStrings.seconds, {timeInMs: totalBootupTime}) : '',
       details,
     };
   }
 }
 
 module.exports = BootupTime;
+module.exports.UIStrings = UIStrings;

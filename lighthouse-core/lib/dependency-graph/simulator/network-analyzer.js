@@ -8,6 +8,20 @@
 const INITIAL_CWD = 14 * 1024;
 const NetworkRequest = require('../../network-request');
 
+// Assume that 40% of TTFB was server response time by default for static assets
+const DEFAULT_SERVER_RESPONSE_PERCENTAGE = 0.4;
+
+/**
+ * For certain resource types, server response time takes up a greater percentage of TTFB (dynamic
+ * assets like HTML documents, XHR/API calls, etc)
+ * @type {Partial<Record<LH.Crdp.Page.ResourceType, number>>}
+ */
+const SERVER_RESPONSE_PERCENTAGE_OF_TTFB = {
+  Document: 0.9,
+  XHR: 0.9,
+  Fetch: 0.9,
+};
+
 class NetworkAnalyzer {
   /**
    * @return {string}
@@ -62,9 +76,11 @@ class NetworkAnalyzer {
     return summaryByKey;
   }
 
+  /** @typedef {{record: LH.Artifacts.NetworkRequest, timing: LH.Crdp.Network.ResourceTiming, connectionReused?: boolean}} RequestInfo */
+
   /**
    * @param {LH.Artifacts.NetworkRequest[]} records
-   * @param {function(any):any} iteratee
+   * @param {(e: RequestInfo) => number | number[] | undefined} iteratee
    * @return {Map<string, number[]>}
    */
   static _estimateValueByOrigin(records, iteratee) {
@@ -149,7 +165,7 @@ class NetworkAnalyzer {
    * Estimates the observed RTT to each origin based on how long it took until Chrome could
    * start sending the actual request when a new connection was required.
    * NOTE: this will tend to overestimate the actual RTT as the request can be delayed for other
-   * reasons as well such as DNS lookup.
+   * reasons as well such as more SSL handshakes if TLS False Start is not enabled.
    *
    * @param {LH.Artifacts.NetworkRequest[]} records
    * @return {Map<string, number[]>}
@@ -159,11 +175,46 @@ class NetworkAnalyzer {
       if (connectionReused) return;
       if (!Number.isFinite(timing.sendStart) || timing.sendStart < 0) return;
 
-      // Assume everything before sendStart was just a TCP handshake
-      // 1 RT needed for http, 2 RTs for https
-      let roundTrips = 1;
+      // Assume everything before sendStart was just DNS + (SSL)? + TCP handshake
+      // 1 RT for DNS, 1 RT (maybe) for SSL, 1 RT for TCP
+      let roundTrips = 2;
       if (record.parsedURL.scheme === 'https') roundTrips += 1;
       return timing.sendStart / roundTrips;
+    });
+  }
+
+  /**
+   * Estimates the observed RTT to each origin based on how long it took until Chrome received the
+   * headers of the response (~TTFB).
+   * NOTE: this is the most inaccurate way to estimate the RTT, but in some environments it's all
+   * we have access to :(
+   *
+   * @param {LH.Artifacts.NetworkRequest[]} records
+   * @return {Map<string, number[]>}
+   */
+  static _estimateRTTByOriginViaHeadersEndTiming(records) {
+    return NetworkAnalyzer._estimateValueByOrigin(records, ({record, timing, connectionReused}) => {
+      if (!Number.isFinite(timing.receiveHeadersEnd) || timing.receiveHeadersEnd < 0) return;
+      if (!record.resourceType) return;
+
+      const serverResponseTimePercentage = SERVER_RESPONSE_PERCENTAGE_OF_TTFB[record.resourceType]
+        || DEFAULT_SERVER_RESPONSE_PERCENTAGE;
+      const estimatedServerResponseTime = timing.receiveHeadersEnd * serverResponseTimePercentage;
+
+      // When connection was reused...
+      // TTFB = 1 RT for request + server response time
+      let roundTrips = 1;
+
+      // When connection was fresh...
+      // TTFB = DNS + (SSL)? + TCP handshake + 1 RT for request + server response time
+      if (!connectionReused) {
+        roundTrips += 1; // DNS
+        if (record.parsedURL.scheme === 'https') roundTrips += 1; // SSL
+        roundTrips += 1; // TCP handshake
+      }
+
+      // subtract out our estimated server response time
+      return Math.max((timing.receiveHeadersEnd - estimatedServerResponseTime) / roundTrips, 3);
     });
   }
 
@@ -264,7 +315,11 @@ class NetworkAnalyzer {
         forceCoarseEstimates: false,
         // coarse estimates include lots of extra time and noise
         // multiply by some factor to deflate the estimates a bit
-        coarseEstimateMultiplier: 0.5,
+        coarseEstimateMultiplier: 0.3,
+        // useful for testing to isolate the different methods of estimation
+        useDownloadEstimates: true,
+        useSendStartEstimates: true,
+        useHeadersEndEstimates: true,
       },
       options
     );
@@ -274,12 +329,21 @@ class NetworkAnalyzer {
       estimatesByOrigin = new Map();
       const estimatesViaDownload = NetworkAnalyzer._estimateRTTByOriginViaDownloadTiming(records);
       const estimatesViaSendStart = NetworkAnalyzer._estimateRTTByOriginViaSendStartTiming(records);
+      const estimatesViaTTFB = NetworkAnalyzer._estimateRTTByOriginViaHeadersEndTiming(records);
 
       for (const [origin, estimates] of estimatesViaDownload.entries()) {
+        if (!options.useDownloadEstimates) continue;
         estimatesByOrigin.set(origin, estimates);
       }
 
       for (const [origin, estimates] of estimatesViaSendStart.entries()) {
+        if (!options.useSendStartEstimates) continue;
+        const existing = estimatesByOrigin.get(origin) || [];
+        estimatesByOrigin.set(origin, existing.concat(estimates));
+      }
+
+      for (const [origin, estimates] of estimatesViaTTFB.entries()) {
+        if (!options.useHeadersEndEstimates) continue;
         const existing = estimatesByOrigin.get(origin) || [];
         estimatesByOrigin.set(origin, existing.concat(estimates));
       }
@@ -319,6 +383,64 @@ class NetworkAnalyzer {
 
     const estimatesByOrigin = NetworkAnalyzer._estimateResponseTimeByOrigin(records, rttByOrigin);
     return NetworkAnalyzer.summarize(estimatesByOrigin);
+  }
+
+
+  /**
+   * Computes the average throughput for the given records in bits/second.
+   * Excludes data URI, failed or otherwise incomplete, and cached requests.
+   * Returns Infinity if there were no analyzable network records.
+   *
+   * @param {Array<LH.Artifacts.NetworkRequest>} networkRecords
+   * @return {number}
+   */
+  static estimateThroughput(networkRecords) {
+    let totalBytes = 0;
+
+    // We will measure throughput by summing the total bytes downloaded by the total time spent
+    // downloading those bytes. We slice up all the network records into start/end boundaries, so
+    // it's easier to deal with the gaps in downloading.
+    const timeBoundaries = networkRecords.reduce((boundaries, record) => {
+      const scheme = record.parsedURL && record.parsedURL.scheme;
+      // Requests whose bodies didn't come over the network or didn't completely finish will mess
+      // with the computation, just skip over them.
+      if (scheme === 'data' || record.failed || !record.finished ||
+          record.statusCode > 300 || !record.transferSize) {
+        return boundaries;
+      }
+
+      // If we've made it this far, all the times we need should be valid (i.e. not undefined/-1).
+      totalBytes += record.transferSize;
+      boundaries.push({time: record.responseReceivedTime, isStart: true});
+      boundaries.push({time: record.endTime, isStart: false});
+      return boundaries;
+    }, /** @type {Array<{time: number, isStart: boolean}>} */([])).sort((a, b) => a.time - b.time);
+
+    if (!timeBoundaries.length) {
+      return Infinity;
+    }
+
+    let inflight = 0;
+    let currentStart = 0;
+    let totalDuration = 0;
+
+    timeBoundaries.forEach(boundary => {
+      if (boundary.isStart) {
+        if (inflight === 0) {
+          // We just ended a quiet period, keep track of when the download period started
+          currentStart = boundary.time;
+        }
+        inflight++;
+      } else {
+        inflight--;
+        if (inflight === 0) {
+          // We just entered a quiet period, update our duration with the time we spent downloading
+          totalDuration += boundary.time - currentStart;
+        }
+      }
+    });
+
+    return totalBytes * 8 / totalDuration;
   }
 
   /**

@@ -7,6 +7,7 @@
 
 const MultiCheckAudit = require('./multi-check-audit');
 const SWAudit = require('./service-worker');
+const ManifestValues = require('../gather/computed/manifest-values');
 
 /**
  * @fileoverview
@@ -40,7 +41,7 @@ class WebappInstallBanner extends MultiCheckAudit {
       description: 'Browsers can proactively prompt users to add your app to their homescreen, ' +
           'which can lead to higher engagement. ' +
           '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/install-prompt).',
-      requiredArtifacts: ['URL', 'ServiceWorker', 'Manifest', 'StartUrl'],
+      requiredArtifacts: ['URL', 'ServiceWorker', 'Manifest'],
     };
   }
 
@@ -95,57 +96,21 @@ class WebappInstallBanner extends MultiCheckAudit {
 
   /**
    * @param {LH.Artifacts} artifacts
-   * @return {{failures: Array<string>, warnings: Array<string>}}
+   * @param {LH.Audit.Context} context
+   * @return {Promise<{failures: Array<string>, manifestValues: LH.Artifacts.ManifestValues}>}
    */
-  static assessOfflineStartUrl(artifacts) {
-    const failures = [];
-    const warnings = [];
-    const hasOfflineStartUrl = artifacts.StartUrl.statusCode === 200;
+  static async audit_(artifacts, context) {
+    const manifestValues = await ManifestValues.request(artifacts.Manifest, context);
+    const manifestFailures = WebappInstallBanner.assessManifest(manifestValues);
+    const swFailures = WebappInstallBanner.assessServiceWorker(artifacts);
 
-    if (!hasOfflineStartUrl) {
-      failures.push('Service worker does not successfully serve the manifest\'s start_url');
-      // TODO(phulce): align gatherer `debugString` with `explanation`
-      if (artifacts.StartUrl.debugString) {
-        failures.push(artifacts.StartUrl.debugString);
-      }
-    }
-
-    if (artifacts.StartUrl.debugString) {
-      warnings.push(artifacts.StartUrl.debugString);
-    }
-
-    return {failures, warnings};
-  }
-
-  /**
-   * @param {LH.Artifacts} artifacts
-   * @return {Promise<{failures: Array<string>, warnings: Array<string>, manifestValues: LH.Artifacts.ManifestValues}>}
-   */
-  static audit_(artifacts) {
-    /** @type {Array<string>} */
-    let offlineFailures = [];
-    /** @type {Array<string>} */
-    let offlineWarnings = [];
-
-    return artifacts.requestManifestValues(artifacts.Manifest).then(manifestValues => {
-      const manifestFailures = WebappInstallBanner.assessManifest(manifestValues);
-      const swFailures = WebappInstallBanner.assessServiceWorker(artifacts);
-      if (!swFailures.length) {
-        const {failures, warnings} = WebappInstallBanner.assessOfflineStartUrl(artifacts);
-        offlineFailures = failures;
-        offlineWarnings = warnings;
-      }
-
-      return {
-        warnings: offlineWarnings,
-        failures: [
-          ...manifestFailures,
-          ...swFailures,
-          ...offlineFailures,
-        ],
-        manifestValues,
-      };
-    });
+    return {
+      failures: [
+        ...manifestFailures,
+        ...swFailures,
+      ],
+      manifestValues,
+    };
   }
 }
 

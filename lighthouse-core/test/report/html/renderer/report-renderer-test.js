@@ -16,12 +16,10 @@ const DOM = require('../../../../report/html/renderer/dom.js');
 const DetailsRenderer = require('../../../../report/html/renderer/details-renderer.js');
 const ReportUIFeatures = require('../../../../report/html/renderer/report-ui-features.js');
 const CategoryRenderer = require('../../../../report/html/renderer/category-renderer.js');
-// lazy loaded because it depends on CategoryRenderer to be available globally
-let PerformanceCategoryRenderer = null;
 const CriticalRequestChainRenderer = require(
     '../../../../report/html/renderer/crc-details-renderer.js');
 const ReportRenderer = require('../../../../report/html/renderer/report-renderer.js');
-const sampleResults = require('../../../results/sample_v2.json');
+const sampleResultsOrig = require('../../../results/sample_v2.json');
 
 const TIMESTAMP_REGEX = /\d+, \d{4}.*\d+:\d+/;
 const TEMPLATE_FILE = fs.readFileSync(__dirname +
@@ -29,6 +27,7 @@ const TEMPLATE_FILE = fs.readFileSync(__dirname +
 
 describe('ReportRenderer', () => {
   let renderer;
+  let sampleResults;
 
   beforeAll(() => {
     global.URL = URL;
@@ -37,11 +36,12 @@ describe('ReportRenderer', () => {
     global.CriticalRequestChainRenderer = CriticalRequestChainRenderer;
     global.DetailsRenderer = DetailsRenderer;
     global.CategoryRenderer = CategoryRenderer;
-    if (!PerformanceCategoryRenderer) {
-      PerformanceCategoryRenderer =
+
+    // lazy loaded because they depend on CategoryRenderer to be available globally
+    global.PerformanceCategoryRenderer =
         require('../../../../report/html/renderer/performance-category-renderer.js');
-    }
-    global.PerformanceCategoryRenderer = PerformanceCategoryRenderer;
+    global.PwaCategoryRenderer =
+        require('../../../../report/html/renderer/pwa-category-renderer.js');
 
     // Stub out matchMedia for Node.
     global.matchMedia = function() {
@@ -50,14 +50,14 @@ describe('ReportRenderer', () => {
       };
     };
 
-    const document = jsdom.jsdom(TEMPLATE_FILE);
-    global.self = document.defaultView;
+    const {window} = new jsdom.JSDOM(TEMPLATE_FILE);
+    global.self = window;
 
-    const dom = new DOM(document);
+    const dom = new DOM(window.document);
     const detailsRenderer = new DetailsRenderer(dom);
     const categoryRenderer = new CategoryRenderer(dom, detailsRenderer);
     renderer = new ReportRenderer(dom, categoryRenderer);
-    sampleResults.reportCategories = Object.values(sampleResults.categories);
+    sampleResults = Util.prepareReportResult(sampleResultsOrig);
   });
 
   afterAll(() => {
@@ -70,6 +70,7 @@ describe('ReportRenderer', () => {
     global.DetailsRenderer = undefined;
     global.CategoryRenderer = undefined;
     global.PerformanceCategoryRenderer = undefined;
+    global.PwaCategoryRenderer = undefined;
   });
 
   describe('renderReport', () => {
@@ -148,7 +149,8 @@ describe('ReportRenderer', () => {
   it('can set a custom templateContext', () => {
     assert.equal(renderer._templateContext, renderer._dom.document());
 
-    const otherDocument = jsdom.jsdom(TEMPLATE_FILE);
+    const {window} = new jsdom.JSDOM(TEMPLATE_FILE);
+    const otherDocument = window.document;
     renderer.setTemplateContext(otherDocument);
     assert.equal(renderer._templateContext, otherDocument);
   });

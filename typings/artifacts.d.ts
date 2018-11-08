@@ -7,7 +7,7 @@
 import parseManifest = require('../lighthouse-core/lib/manifest-parser.js');
 import _LanternSimulator = require('../lighthouse-core/lib/dependency-graph/simulator/simulator.js');
 import _NetworkRequest = require('../lighthouse-core/lib/network-request.js');
-import speedline = require('speedline');
+import speedline = require('speedline-core');
 
 type _TaskNode = import('../lighthouse-core/gather/computed/main-thread-tasks').TaskNode;
 
@@ -15,7 +15,7 @@ type LanternSimulator = InstanceType<typeof _LanternSimulator>;
 
 declare global {
   module LH {
-    export interface Artifacts extends BaseArtifacts, GathererArtifacts, ComputedArtifacts {}
+    export interface Artifacts extends BaseArtifacts, GathererArtifacts {}
 
     /** Artifacts always created by GatherRunner. */
     export interface BaseArtifacts {
@@ -23,8 +23,12 @@ declare global {
       fetchTime: string;
       /** A set of warnings about unexpected things encountered while loading and testing the page. */
       LighthouseRunWarnings: string[];
-      /** The user agent string of the version of Chrome that was used by Lighthouse. */
-      UserAgent: string;
+      /** The user agent string of the version of Chrome used. */
+      HostUserAgent: string;
+      /** The user agent string that Lighthouse used to load the page. */
+      NetworkUserAgent: string;
+      /** The benchmark index that indicates rough device class. */
+      BenchmarkIndex: number;
       /** A set of page-load traces, keyed by passName. */
       traces: {[passName: string]: Trace};
       /** A set of DevTools debugger protocol records, keyed by passName. */
@@ -33,6 +37,8 @@ declare global {
       settings: Config.Settings;
       /** The URL initially requested and the post-redirects URL that was actually loaded. */
       URL: {requestedUrl: string, finalUrl: string};
+      /** The timing instrumentation of the gather portion of a run. */
+      Timing: Artifacts.MeasureEntry[];
     }
 
     /**
@@ -43,7 +49,7 @@ declare global {
       /** The results of running the aXe accessibility tests on the page. */
       Accessibility: Artifacts.Accessibility;
       /** Information on all anchors in the page that aren't nofollow or noreferrer. */
-      AnchorsWithNoRelNoopener: {href: string; rel: string; target: string}[];
+      AnchorsWithNoRelNoopener: {href: string; rel: string; target: string, outerHTML: string}[];
       /** The value of the page's <html> manifest attribute, or null if not defined */
       AppCacheManifest: string | null;
       /** Array of all URLs cached in CacheStorage. */
@@ -96,7 +102,7 @@ declare global {
       /** HTML snippets from any password inputs that prevent pasting. */
       PasswordInputsWithPreventedPaste: {snippet: string}[];
       /** Size info of all network records sent without compression and their size after gzipping. */
-      ResponseCompression: {requestId: string, url: string, mimeType: string, transferSize: number, resourceSize: number, gzipSize: number}[];
+      ResponseCompression: {requestId: string, url: string, mimeType: string, transferSize: number, resourceSize: number, gzipSize?: number}[];
       /** Information on fetching and the content of the /robots.txt file. */
       RobotsTxt: {status: number|null, content: string|null};
       /** Set of exceptions thrown during page load. */
@@ -105,8 +111,8 @@ declare global {
       Scripts: Record<string, string>;
       /** Version information for all ServiceWorkers active after the first page load. */
       ServiceWorker: {versions: Crdp.ServiceWorker.ServiceWorkerVersion[]};
-      /** The status of an offline fetch of the page's start_url. -1 and a debugString if missing or there was an error. */
-      StartUrl: {statusCode: number, debugString?: string};
+      /** The status of an offline fetch of the page's start_url. -1 and a explanation if missing or there was an error. */
+      StartUrl: {statusCode: number, explanation?: string};
       /** Information on <script> and <link> tags blocking first paint. */
       TagsBlockingFirstPaint: Artifacts.TagBlockingFirstPaint[];
       /** The value of the <meta name="theme=color">'s content attribute, or null. */
@@ -115,40 +121,6 @@ declare global {
       Viewport: string|null;
       /** The dimensions and devicePixelRatio of the loaded viewport. */
       ViewportDimensions: Artifacts.ViewportDimensions;
-      /** WebSQL database information for the page or null if none was found. */
-      WebSQL: Crdp.Database.Database | null;
-    }
-
-    export interface ComputedArtifacts {
-      requestCriticalRequestChains(data: {devtoolsLog: DevtoolsLog, URL: Artifacts['URL']}): Promise<Artifacts.CriticalRequestNode>;
-      requestLoadSimulator(data: {devtoolsLog: DevtoolsLog, settings: Config.Settings}): Promise<LanternSimulator>;
-      requestMainResource(data: {devtoolsLog: DevtoolsLog, URL: Artifacts['URL']}): Promise<Artifacts.NetworkRequest>;
-      requestManifestValues(manifest: LH.Artifacts['Manifest']): Promise<LH.Artifacts.ManifestValues>;
-      requestNetworkAnalysis(devtoolsLog: DevtoolsLog): Promise<LH.Artifacts.NetworkAnalysis>;
-      requestNetworkThroughput(devtoolsLog: DevtoolsLog): Promise<number>;
-      requestNetworkRecords(devtoolsLog: DevtoolsLog): Promise<Artifacts.NetworkRequest[]>;
-      requestPageDependencyGraph(data: {trace: Trace, devtoolsLog: DevtoolsLog}): Promise<Gatherer.Simulation.GraphNode>;
-      requestPushedRequests(devtoolsLogs: DevtoolsLog): Promise<Artifacts.NetworkRequest[]>;
-      requestMainThreadTasks(trace: Trace): Promise<Artifacts.TaskNode[]>;
-      requestTraceOfTab(trace: Trace): Promise<Artifacts.TraceOfTab>;
-      requestScreenshots(trace: Trace): Promise<{timestamp: number, datauri: string}[]>;
-      requestSpeedline(trace: Trace): Promise<LH.Artifacts.Speedline>;
-
-      // Metrics.
-      requestInteractive(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric|Artifacts.Metric>;
-      requestEstimatedInputLatency(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric|Artifacts.Metric>;
-      requestFirstContentfulPaint(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric|Artifacts.Metric>;
-      requestFirstCPUIdle(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric|Artifacts.Metric>;
-      requestFirstMeaningfulPaint(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric|Artifacts.Metric>;
-      requestSpeedIndex(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric|Artifacts.Metric>;
-
-      // Lantern metrics.
-      requestLanternInteractive(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric>;
-      requestLanternEstimatedInputLatency(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric>;
-      requestLanternFirstContentfulPaint(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric>;
-      requestLanternFirstCPUIdle(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric>;
-      requestLanternFirstMeaningfulPaint(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric>;
-      requestLanternSpeedIndex(data: LH.Artifacts.MetricComputationDataInput): Promise<Artifacts.LanternMetric>;
     }
 
     module Artifacts {
@@ -220,12 +192,12 @@ declare global {
           fontSize: number;
           textLength: number;
           node: FontSize.DomNodeWithParent;
-          cssRule: {
+          cssRule?: {
             type: 'Regular' | 'Inline' | 'Attributes';
-            range: {startLine: number, startColumn: number};
-            parentRule: {origin: Crdp.CSS.StyleSheetOrigin, selectors: {text: string}[]};
-            styleSheetId: string;
-            stylesheet: Crdp.CSS.CSSStyleSheetHeader;
+            range?: {startLine: number, startColumn: number};
+            parentRule?: {origin: Crdp.CSS.StyleSheetOrigin, selectors: {text: string}[]};
+            styleSheetId?: string;
+            stylesheet?: Crdp.CSS.CSSStyleSheetHeader;
           }
         }>
       }
@@ -234,6 +206,10 @@ declare global {
         export interface DomNodeWithParent extends Crdp.DOM.Node {
           parentId: number;
           parentNode: DomNodeWithParent;
+        }
+
+        export interface DomNodeMaybeWithParent extends Crdp.DOM.Node {
+          parentNode?: DomNodeMaybeWithParent;
         }
       }
 
@@ -332,6 +308,11 @@ declare global {
         }[];
       }
 
+      export interface MeasureEntry extends PerformanceEntry {
+        /** Whether timing entry was collected during artifact gathering. */
+        gather?: boolean;
+      }
+
       export interface MetricComputationDataInput {
         devtoolsLog: DevtoolsLog;
         trace: Trace;
@@ -350,6 +331,7 @@ declare global {
       }
 
       export interface NetworkAnalysis {
+        records: Array<NetworkRequest>;
         rtt: number;
         additionalRttByOrigin: Map<string, number>;
         serverResponseTimeByOrigin: Map<string, number>;
@@ -367,30 +349,43 @@ declare global {
 
       export type Speedline = speedline.Output<'speedIndex'>;
 
-      // TODO(bckenny): all but navigationStart could actually be undefined.
       export interface TraceTimes {
         navigationStart: number;
-        firstPaint: number;
+        firstPaint?: number;
         firstContentfulPaint: number;
-        firstMeaningfulPaint: number;
+        firstMeaningfulPaint?: number;
         traceEnd: number;
-        load: number;
-        domContentLoaded: number;
+        load?: number;
+        domContentLoaded?: number;
       }
 
-      // TODO(bckenny): events other than started and navStart could be undefined.
       export interface TraceOfTab {
-        timings: TraceTimes;
+        /** The raw timestamps of key metric events, in microseconds. */
         timestamps: TraceTimes;
+        /** The relative times from navigationStart to key metric events, in milliseconds. */
+        timings: TraceTimes;
+        /** The subset of trace events from the page's process, sorted by timestamp. */
         processEvents: Array<TraceEvent>;
+        /** The subset of trace events from the page's main thread, sorted by timestamp. */
         mainThreadEvents: Array<TraceEvent>;
-        startedInPageEvt: TraceEvent;
+        /** IDs for the trace's main frame, process, and thread. */
+        mainFrameIds: {pid: number, tid: number, frameId: string};
+        /** The trace event marking navigationStart. */
         navigationStartEvt: TraceEvent;
-        firstPaintEvt: TraceEvent;
+        /** The trace event marking firstPaint, if it was found. */
+        firstPaintEvt?: TraceEvent;
+        /** The trace event marking firstContentfulPaint, if it was found. */
         firstContentfulPaintEvt: TraceEvent;
-        firstMeaningfulPaintEvt: TraceEvent;
-        loadEvt: TraceEvent;
-        domContentLoadedEvt: TraceEvent;
+        /** The trace event marking firstMeaningfulPaint, if it was found. */
+        firstMeaningfulPaintEvt?: TraceEvent;
+        /** The trace event marking loadEventEnd, if it was found. */
+        loadEvt?: TraceEvent;
+        /** The trace event marking domContentLoadedEventEnd, if it was found. */
+        domContentLoadedEvt?: TraceEvent;
+        /**
+         * Whether the firstMeaningfulPaintEvt was the definitive event or a fallback to
+         * firstMeaningfulPaintCandidate events had to be attempted.
+         */
         fmpFellBack: boolean;
       }
     }

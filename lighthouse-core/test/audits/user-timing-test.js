@@ -5,32 +5,30 @@
  */
 'use strict';
 
-const Audit = require('../../audits/user-timings.js');
+const UserTimingsAudit = require('../../audits/user-timings.js');
 const assert = require('assert');
 const traceEvents = require('../fixtures/traces/trace-user-timings.json');
 
-const Runner = require('../../runner.js');
-const computedArtifacts = Runner.instantiateComputedArtifacts();
-
 function generateArtifactsWithTrace(trace) {
-  return Object.assign({
+  return {
     traces: {
-      [Audit.DEFAULT_PASS]: {traceEvents: Array.isArray(trace) ? trace : trace.traceEvents},
+      defaultPass: {traceEvents: Array.isArray(trace) ? trace : trace.traceEvents},
     },
-  }, computedArtifacts);
+  };
 }
 
 /* eslint-env jest */
 describe('Performance: user-timings audit', () => {
   it('evaluates valid input correctly', () => {
-    return Audit.audit(generateArtifactsWithTrace(traceEvents)).then(auditResult => {
+    const artifacts = generateArtifactsWithTrace(traceEvents);
+    return UserTimingsAudit.audit(artifacts, {computedCache: new Map()}).then(auditResult => {
       const blackListedUTs = auditResult.extendedInfo.value.filter(timing => {
-        return Audit.blacklistedPrefixes.some(prefix => timing.name.startsWith(prefix));
+        return UserTimingsAudit.blacklistedPrefixes.some(prefix => timing.name.startsWith(prefix));
       });
       assert.equal(blackListedUTs.length, 0, 'Blacklisted usertimings included in results');
 
       assert.equal(auditResult.rawValue, false);
-      assert.deepStrictEqual(auditResult.displayValue, ['%d user timings', 2]);
+      expect(auditResult.displayValue).toBeDisplayString('2 user timings');
 
       assert.equal(auditResult.details.items[0].name, 'measure_test');
       assert.equal(auditResult.details.items[0].timingType, 'Measure');
@@ -61,7 +59,8 @@ describe('Performance: user-timings audit', () => {
       },
     ]);
 
-    return Audit.audit(generateArtifactsWithTrace(extraTraceEvents)).then(result => {
+    const artifacts = generateArtifactsWithTrace(extraTraceEvents);
+    return UserTimingsAudit.audit(artifacts, {computedCache: new Map()}).then(result => {
       const fakeEvt = result.extendedInfo.value.find(item => item.name === 'Zone:ZonePromise');
       assert.ok(fakeEvt, 'failed to find user timing item with colon');
     });

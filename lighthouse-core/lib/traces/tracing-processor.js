@@ -8,11 +8,33 @@
 // The ideal input response latency, the time between the input task and the
 // first frame of the response.
 const BASE_RESPONSE_LATENCY = 16;
-const SCHEDULABLE_TASK_TITLE = 'TaskQueueManager::ProcessTaskFromWorkQueue';
-const SCHEDULABLE_TASK_TITLE_ALT = 'ThreadControllerImpl::DoWork';
-const LHError = require('../errors');
+// m71+ We added RunTask to `disabled-by-default-lighthouse`
+const SCHEDULABLE_TASK_TITLE_LH = 'RunTask';
+// m69-70 DoWork is different and we now need RunTask, see https://bugs.chromium.org/p/chromium/issues/detail?id=871204#c11
+const SCHEDULABLE_TASK_TITLE_ALT1 = 'ThreadControllerImpl::RunTask';
+// In m66-68 refactored to this task title, https://crrev.com/c/883346
+const SCHEDULABLE_TASK_TITLE_ALT2 = 'ThreadControllerImpl::DoWork';
+// m65 and earlier
+const SCHEDULABLE_TASK_TITLE_ALT3 = 'TaskQueueManager::ProcessTaskFromWorkQueue';
+
+
+const LHError = require('../lh-error');
 
 class TraceProcessor {
+  /**
+   * There should *always* be at least one top level event, having 0 typically means something is
+   * drastically wrong with the trace and we should just give up early and loudly.
+   *
+   * @param {LH.TraceEvent[]} events
+   */
+  static assertHasToplevelEvents(events) {
+    const hasToplevelTask = events.some(TraceProcessor.isScheduleableTask);
+    if (!hasToplevelTask) {
+      throw new Error('Could not find any top level events');
+    }
+  }
+
+
   /**
    * Calculate duration at specified percentiles for given population of
    * durations.
@@ -171,50 +193,51 @@ class TraceProcessor {
       });
     }
 
-    // There should *always* be at least one top level event, having 0 typically means something is
-    // drastically wrong with the trace and would should just give up early and loudly.
-    if (!topLevelEvents.length) {
-      throw new Error('Could not find any top level events');
-    }
-
     return topLevelEvents;
   }
 
   /**
    * @param {LH.TraceEvent[]} events
-   * @return {{startedInPageEvt: LH.TraceEvent, frameId: string}}
+   * @return {{pid: number, tid: number, frameId: string}}
    */
-  static findTracingStartedEvt(events) {
-    /** @type {LH.TraceEvent|undefined} */
-    let startedInPageEvt;
-
+  static findMainFrameIds(events) {
     // Prefer the newer TracingStartedInBrowser event first, if it exists
     const startedInBrowserEvt = events.find(e => e.name === 'TracingStartedInBrowser');
     if (startedInBrowserEvt && startedInBrowserEvt.args.data &&
         startedInBrowserEvt.args.data.frames) {
       const mainFrame = startedInBrowserEvt.args.data.frames.find(frame => !frame.parent);
+      const frameId = mainFrame && mainFrame.frame;
       const pid = mainFrame && mainFrame.processId;
+
       const threadNameEvt = events.find(e => e.pid === pid && e.ph === 'M' &&
         e.cat === '__metadata' && e.name === 'thread_name' && e.args.name === 'CrRendererMain');
-      startedInPageEvt = mainFrame && threadNameEvt ?
-        Object.assign({}, startedInBrowserEvt, {
-          pid, tid: threadNameEvt.tid, name: 'TracingStartedInPage',
-          args: {data: {page: mainFrame.frame}}}) :
-        undefined;
+      const tid = threadNameEvt && threadNameEvt.tid;
+
+      if (pid && tid && frameId) {
+        return {
+          pid,
+          tid,
+          frameId,
+        };
+      }
     }
 
     // Support legacy browser versions that do not emit TracingStartedInBrowser event.
-    if (!startedInPageEvt) {
-      // The first TracingStartedInPage in the trace is definitely our renderer thread of interest
-      // Beware: the tracingStartedInPage event can appear slightly after a navigationStart
-      startedInPageEvt = events.find(e => e.name === 'TracingStartedInPage');
+    // The first TracingStartedInPage in the trace is definitely our renderer thread of interest
+    // Beware: the tracingStartedInPage event can appear slightly after a navigationStart
+    const startedInPageEvt = events.find(e => e.name === 'TracingStartedInPage');
+    if (startedInPageEvt && startedInPageEvt.args && startedInPageEvt.args.data) {
+      const frameId = startedInPageEvt.args.data.page;
+      if (frameId) {
+        return {
+          pid: startedInPageEvt.pid,
+          tid: startedInPageEvt.tid,
+          frameId,
+        };
+      }
     }
 
-    if (!startedInPageEvt) throw new LHError(LHError.errors.NO_TRACING_STARTED);
-
-    // @ts-ignore - property chain exists for 'TracingStartedInPage' event.
-    const frameId = /** @type {string} */ (startedInPageEvt.args.data.page);
-    return {startedInPageEvt, frameId};
+    throw new LHError(LHError.errors.NO_TRACING_STARTED);
   }
 
   /**
@@ -222,7 +245,10 @@ class TraceProcessor {
    * @return {boolean}
    */
   static isScheduleableTask(evt) {
-    return evt.name === SCHEDULABLE_TASK_TITLE || evt.name === SCHEDULABLE_TASK_TITLE_ALT;
+    return evt.name === SCHEDULABLE_TASK_TITLE_LH ||
+    evt.name === SCHEDULABLE_TASK_TITLE_ALT1 ||
+    evt.name === SCHEDULABLE_TASK_TITLE_ALT2 ||
+    evt.name === SCHEDULABLE_TASK_TITLE_ALT3;
   }
 }
 

@@ -11,8 +11,25 @@
 'use strict';
 
 const Audit = require('./audit');
-const Util = require('../report/html/renderer/util');
 const {taskGroups} = require('../lib/task-groups');
+const i18n = require('../lib/i18n/i18n.js');
+const MainThreadTasks = require('../gather/computed/main-thread-tasks.js');
+
+const UIStrings = {
+  /** Title of a diagnostic audit that provides detail on the main thread work the browser did to load the page. This descriptive title is shown to users when the amount is acceptable and no user action is required. */
+  title: 'Minimizes main-thread work',
+  /** Title of a diagnostic audit that provides detail on the main thread work the browser did to load the page. This imperative title is shown to users when there is a significant amount of execution time that could be reduced. */
+  failureTitle: 'Minimize main-thread work',
+  /** Description of a Lighthouse audit that tells the user *why* they should reduce JS execution times. This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Consider reducing the time spent parsing, compiling and executing JS. ' +
+    'You may find delivering smaller JS payloads helps with this.',
+  /** Label for the Main Thread Category column in data tables, rows will have a main thread Category and main thread Task Name. */
+  columnCategory: 'Category',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
+
+/** @typedef {import('../lib/task-groups.js').TaskGroupIds} TaskGroupIds */
 
 class MainThreadWorkBreakdown extends Audit {
   /**
@@ -21,11 +38,10 @@ class MainThreadWorkBreakdown extends Audit {
   static get meta() {
     return {
       id: 'mainthread-work-breakdown',
-      title: 'Minimizes main thread work',
-      failureTitle: 'Has significant main thread work',
+      title: str_(UIStrings.title),
+      failureTitle: str_(UIStrings.failureTitle),
+      description: str_(UIStrings.description),
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
-      description: 'Consider reducing the time spent parsing, compiling and executing JS. ' +
-        'You may find delivering smaller JS payloads helps with this.',
       requiredArtifacts: ['traces'],
     };
   }
@@ -43,10 +59,10 @@ class MainThreadWorkBreakdown extends Audit {
 
   /**
    * @param {LH.Artifacts.TaskNode[]} tasks
-   * @return {Map<string, number>}
+   * @return {Map<TaskGroupIds, number>}
    */
   static getExecutionTimingsByGroup(tasks) {
-    /** @type {Map<string, number>} */
+    /** @type {Map<TaskGroupIds, number>} */
     const result = new Map();
 
     for (const task of tasks) {
@@ -66,13 +82,14 @@ class MainThreadWorkBreakdown extends Audit {
     const settings = context.settings || {};
     const trace = artifacts.traces[MainThreadWorkBreakdown.DEFAULT_PASS];
 
-    const tasks = await artifacts.requestMainThreadTasks(trace);
+    const tasks = await MainThreadTasks.request(trace, context);
     const multiplier = settings.throttlingMethod === 'simulate' ?
       settings.throttling.cpuSlowdownMultiplier : 1;
 
     const executionTimings = MainThreadWorkBreakdown.getExecutionTimingsByGroup(tasks);
 
     let totalExecutionTime = 0;
+    /** @type {Record<string, number>} */
     const categoryTotals = {};
     const results = Array.from(executionTimings).map(([groupId, rawDuration]) => {
       const duration = rawDuration * multiplier;
@@ -89,8 +106,8 @@ class MainThreadWorkBreakdown extends Audit {
     });
 
     const headings = [
-      {key: 'groupLabel', itemType: 'text', text: 'Category'},
-      {key: 'duration', itemType: 'ms', granularity: 1, text: 'Time Spent'},
+      {key: 'groupLabel', itemType: 'text', text: str_(UIStrings.columnCategory)},
+      {key: 'duration', itemType: 'ms', granularity: 1, text: str_(i18n.UIStrings.columnTimeSpent)},
     ];
 
     results.sort((a, b) => categoryTotals[b.group] - categoryTotals[a.group]);
@@ -105,10 +122,11 @@ class MainThreadWorkBreakdown extends Audit {
     return {
       score,
       rawValue: totalExecutionTime,
-      displayValue: [Util.MS_DISPLAY_VALUE, totalExecutionTime],
+      displayValue: str_(i18n.UIStrings.seconds, {timeInMs: totalExecutionTime}),
       details: tableDetails,
     };
   }
 }
 
 module.exports = MainThreadWorkBreakdown;
+module.exports.UIStrings = UIStrings;

@@ -5,8 +5,7 @@
  */
 'use strict';
 
-const Driver = require('../gather/driver'); // eslint-disable-line no-unused-vars
-const mobile3G = require('../config/constants').throttling.mobile3G;
+/** @typedef {import('../gather/driver.js')} Driver */
 
 /**
  * Nexus 5X metrics adapted from emulated_devices/module.json
@@ -28,9 +27,25 @@ const NEXUS5X_EMULATION_METRICS = {
   },
 };
 
+/**
+ * Desktop metrics adapted from emulated_devices/module.json
+ * @type {LH.Crdp.Emulation.SetDeviceMetricsOverrideRequest}
+ */
+const DESKTOP_EMULATION_METRICS = {
+  mobile: false,
+  width: 1350,
+  height: 940,
+  deviceScaleFactor: 1,
+};
+
 const NEXUS5X_USERAGENT = {
-  userAgent: 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5 Build/MRA58N) AppleWebKit/537.36' +
-    '(KHTML, like Gecko) Chrome/66.0.3359.30 Mobile Safari/537.36',
+  // eslint-disable-next-line max-len
+  userAgent: 'Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3559.0 Mobile Safari/537.36',
+};
+
+const DESKTOP_USERAGENT = {
+  // eslint-disable-next-line max-len
+  userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3559.0 Safari/537.36',
 };
 
 const OFFLINE_METRICS = {
@@ -51,32 +66,41 @@ const NO_THROTTLING_METRICS = {
 const NO_CPU_THROTTLE_METRICS = {
   rate: 1,
 };
-const CPU_THROTTLE_METRICS = {
-  rate: 4,
-};
 
 /**
  * @param {Driver} driver
+ * @return {Promise<void>}
  */
-function enableNexus5X(driver) {
-  return Promise.all([
+async function enableNexus5X(driver) {
+  await Promise.all([
     driver.sendCommand('Emulation.setDeviceMetricsOverride', NEXUS5X_EMULATION_METRICS),
     // Network.enable must be called for UA overriding to work
     driver.sendCommand('Network.enable'),
     driver.sendCommand('Network.setUserAgentOverride', NEXUS5X_USERAGENT),
-    driver.sendCommand('Emulation.setEmitTouchEventsForMouse', {
-      enabled: true,
-      configuration: 'mobile',
-    }),
+    driver.sendCommand('Emulation.setTouchEmulationEnabled', {enabled: true}),
   ]);
 }
 
 /**
  * @param {Driver} driver
- * @param {LH.ThrottlingSettings|undefined} throttlingSettings
  * @return {Promise<void>}
  */
-function enableNetworkThrottling(driver, throttlingSettings = mobile3G) {
+async function enableDesktop(driver) {
+  await Promise.all([
+    driver.sendCommand('Emulation.setDeviceMetricsOverride', DESKTOP_EMULATION_METRICS),
+    // Network.enable must be called for UA overriding to work
+    driver.sendCommand('Network.enable'),
+    driver.sendCommand('Network.setUserAgentOverride', DESKTOP_USERAGENT),
+    driver.sendCommand('Emulation.setTouchEmulationEnabled', {enabled: false}),
+  ]);
+}
+
+/**
+ * @param {Driver} driver
+ * @param {Required<LH.ThrottlingSettings>} throttlingSettings
+ * @return {Promise<void>}
+ */
+function enableNetworkThrottling(driver, throttlingSettings) {
   /** @type {LH.Crdp.Network.EmulateNetworkConditionsRequest} */
   const conditions = {
     offline: false,
@@ -109,14 +133,11 @@ function goOffline(driver) {
 
 /**
  * @param {Driver} driver
- * @param {LH.ThrottlingSettings|undefined} throttlingSettings
+ * @param {Required<LH.ThrottlingSettings>} throttlingSettings
  * @return {Promise<void>}
  */
 function enableCPUThrottling(driver, throttlingSettings) {
-  // TODO: cpuSlowdownMultiplier should be a required property by this point
-  const rate = throttlingSettings && throttlingSettings.cpuSlowdownMultiplier !== undefined
-    ? throttlingSettings.cpuSlowdownMultiplier
-    : CPU_THROTTLE_METRICS.rate;
+  const rate = throttlingSettings.cpuSlowdownMultiplier;
   return driver.sendCommand('Emulation.setCPUThrottlingRate', {rate});
 }
 
@@ -130,6 +151,7 @@ function disableCPUThrottling(driver) {
 
 module.exports = {
   enableNexus5X,
+  enableDesktop,
   enableNetworkThrottling,
   clearAllNetworkEmulation,
   enableCPUThrottling,

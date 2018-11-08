@@ -6,7 +6,26 @@
 'use strict';
 
 const Audit = require('./audit');
-const Util = require('../report/html/renderer/util');
+const i18n = require('../lib/i18n/i18n.js');
+const ComputedChains = require('../gather/computed/critical-request-chains.js');
+
+const UIStrings = {
+  /** Imperative title of a Lighthouse audit that tells the user to reduce the depth of critical network requests to enhance initial load of a page. Critical request chains are series of dependent network requests that are important for page rendering. For example, here's a 4-request-deep chain: The biglogo.jpg image is required, but is requested via the styles.css style code, which is requested by the initialize.js javascript, which is requested by the page's HTML. This is displayed in a list of audit titles that Lighthouse generates. */
+  title: 'Minimize Critical Requests Depth',
+  /** Description of a Lighthouse audit that tells the user *why* they should reduce the depth of critical network requests to enhance initial load of a page . This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'The Critical Request Chains below show you what resources are ' +
+      'loaded with a high priority. Consider reducing ' +
+      'the length of chains, reducing the download size of resources, or ' +
+      'deferring the download of unnecessary resources to improve page load. ' +
+      '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/critical-request-chains).',
+  /** [ICU Syntax] Label for an audit identifying the number of sequences of dependent network requests used to load the page. */
+  displayValue: `{itemCount, plural,
+    =1 {1 chain found}
+    other {# chains found}
+    }`,
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 class CriticalRequestChains extends Audit {
   /**
@@ -15,13 +34,9 @@ class CriticalRequestChains extends Audit {
   static get meta() {
     return {
       id: 'critical-request-chains',
-      title: 'Critical Request Chains',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: Audit.SCORING_MODES.INFORMATIVE,
-      description: 'The Critical Request Chains below show you what resources are ' +
-          'issued with a high priority. Consider reducing ' +
-          'the length of chains, reducing the download size of resources, or ' +
-          'deferring the download of unnecessary resources to improve page load. ' +
-          '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/critical-request-chains).',
       requiredArtifacts: ['devtoolsLogs', 'URL'],
     };
   }
@@ -60,7 +75,9 @@ class CriticalRequestChains extends Audit {
         });
 
         // Carry on walking.
-        walk(child.children, depth + 1, startTime);
+        if (child.children) {
+          walk(child.children, depth + 1, startTime);
+        }
       }, '');
     }
 
@@ -118,21 +135,23 @@ class CriticalRequestChains extends Audit {
       } else {
         chain = {
           request: simpleRequest,
-          children: {},
         };
         flattendChains[opts.id] = chain;
       }
 
-      for (const chainId of Object.keys(opts.node.children)) {
-        // Note: cast should be Partial<>, but filled in when child node is traversed.
-        const childChain = /** @type {LH.Audit.SimpleCriticalRequestNode[string]} */ ({
-          request: {},
-          children: {},
-        });
-        chainMap.set(chainId, childChain);
-        chain.children[chainId] = childChain;
+      if (opts.node.children) {
+        for (const chainId of Object.keys(opts.node.children)) {
+          // Note: cast should be Partial<>, but filled in when child node is traversed.
+          const childChain = /** @type {LH.Audit.SimpleCriticalRequestNode[string]} */ ({
+            request: {},
+          });
+          chainMap.set(chainId, childChain);
+          if (!chain.children) {
+            chain.children = {};
+          }
+          chain.children[chainId] = childChain;
+        }
       }
-
       chainMap.set(opts.id, chain);
     }
 
@@ -144,29 +163,29 @@ class CriticalRequestChains extends Audit {
   /**
    * Audits the page to give a score for First Meaningful Paint.
    * @param {LH.Artifacts} artifacts The artifacts from the gather phase.
+   * @param {LH.Audit.Context} context
    * @return {Promise<LH.Audit.Product>}
    */
-  static audit(artifacts) {
+  static audit(artifacts, context) {
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const URL = artifacts.URL;
-    return artifacts.requestCriticalRequestChains({devtoolsLog, URL}).then(chains => {
+    return ComputedChains.request({devtoolsLog, URL}, context).then(chains => {
       let chainCount = 0;
       /**
        * @param {LH.Audit.SimpleCriticalRequestNode} node
        * @param {number} depth
        */
       function walk(node, depth) {
-        const children = Object.keys(node);
+        const childIds = Object.keys(node);
 
-        // Since a leaf node indicates the end of a chain, we can inspect the number
-        // of child nodes, and, if the count is zero, increment the count.
-        if (children.length === 0) {
-          chainCount++;
-        }
-
-        children.forEach(id => {
+        childIds.forEach(id => {
           const child = node[id];
-          walk(child.children, depth + 1);
+          if (child.children) {
+            walk(child.children, depth + 1);
+          } else {
+            // if the node doesn't have a children field, then it is a leaf, so +1
+            chainCount++;
+          }
         }, '');
       }
       // Convert
@@ -184,7 +203,7 @@ class CriticalRequestChains extends Audit {
       return {
         rawValue: chainCount === 0,
         notApplicable: chainCount === 0,
-        displayValue: chainCount ? `${Util.formatNumber(chainCount)} chains found`: '',
+        displayValue: chainCount ? str_(UIStrings.displayValue, {itemCount: chainCount}) : '',
         extendedInfo: {
           value: {
             chains: flattenedChains,
@@ -193,7 +212,6 @@ class CriticalRequestChains extends Audit {
         },
         details: {
           type: 'criticalrequestchain',
-          header: {type: 'text', text: 'View critical network waterfall:'},
           chains: flattenedChains,
           longestChain,
         },
@@ -203,3 +221,4 @@ class CriticalRequestChains extends Audit {
 }
 
 module.exports = CriticalRequestChains;
+module.exports.UIStrings = UIStrings;

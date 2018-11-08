@@ -6,8 +6,6 @@
 'use strict';
 
 const Interactive = require('../../../audits/metrics/interactive.js');
-const Runner = require('../../../runner.js');
-const Util = require('../../../report/html/renderer/util');
 const assert = require('assert');
 const options = Interactive.defaultOptions;
 
@@ -22,38 +20,38 @@ const redirectDevToolsLog = require('../../fixtures/traces/site-with-redirect.de
 /* eslint-env jest */
 describe('Performance: interactive audit', () => {
   it('should compute interactive', () => {
-    const artifacts = Object.assign({
+    const artifacts = {
       traces: {
         [Interactive.DEFAULT_PASS]: acceptableTrace,
       },
       devtoolsLogs: {
         [Interactive.DEFAULT_PASS]: acceptableDevToolsLog,
       },
-    }, Runner.instantiateComputedArtifacts());
+    };
 
-    const settings = {throttlingMethod: 'provided'};
-    return Interactive.audit(artifacts, {options, settings}).then(output => {
+    const context = {options, settings: {throttlingMethod: 'provided'}, computedCache: new Map()};
+    return Interactive.audit(artifacts, context).then(output => {
       assert.equal(output.score, 1);
       assert.equal(Math.round(output.rawValue), 1582);
-      assert.equal(Util.formatDisplayValue(output.displayValue), '1,580\xa0ms');
+      expect(output.displayValue).toBeDisplayString('1.6\xa0s');
     });
   });
 
   it('should compute interactive on pages with redirect', () => {
-    const artifacts = Object.assign({
+    const artifacts = {
       traces: {
         [Interactive.DEFAULT_PASS]: redirectTrace,
       },
       devtoolsLogs: {
         [Interactive.DEFAULT_PASS]: redirectDevToolsLog,
       },
-    }, Runner.instantiateComputedArtifacts());
+    };
 
-    const settings = {throttlingMethod: 'provided'};
-    return Interactive.audit(artifacts, {options, settings}).then(output => {
+    const context = {options, settings: {throttlingMethod: 'provided'}, computedCache: new Map()};
+    return Interactive.audit(artifacts, context).then(output => {
       assert.equal(output.score, 0.97);
       assert.equal(Math.round(output.rawValue), 2712);
-      assert.equal(Util.formatDisplayValue(output.displayValue), '2,710\xa0ms');
+      expect(output.displayValue).toBeDisplayString('2.7\xa0s');
     });
   });
 });

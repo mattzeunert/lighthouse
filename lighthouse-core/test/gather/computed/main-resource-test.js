@@ -7,16 +7,11 @@
 
 /* eslint-env jest */
 
-const Runner = require('../../../runner.js');
+const MainResource = require('../../../gather/computed/main-resource.js');
 const assert = require('assert');
+const networkRecordsToDevtoolsLog = require('../../network-records-to-devtools-log.js');
 
 describe('MainResource computed artifact', () => {
-  let computedArtifacts;
-
-  beforeEach(() => {
-    computedArtifacts = Runner.instantiateComputedArtifacts();
-  });
-
   it('returns an artifact', () => {
     const record = {
       url: 'https://example.com',
@@ -25,11 +20,12 @@ describe('MainResource computed artifact', () => {
       {url: 'http://example.com'},
       record,
     ];
-    computedArtifacts.requestNetworkRecords = _ => Promise.resolve(networkRecords);
     const URL = {finalUrl: 'https://example.com'};
+    const devtoolsLog = networkRecordsToDevtoolsLog(networkRecords);
 
-    return computedArtifacts.requestMainResource({URL}).then(output => {
-      assert.equal(output, record);
+    const context = {computedCache: new Map()};
+    return MainResource.request({URL, devtoolsLog}, context).then(output => {
+      assert.equal(output.url, record.url);
     });
   });
 
@@ -37,10 +33,11 @@ describe('MainResource computed artifact', () => {
     const networkRecords = [
       {url: 'https://example.com'},
     ];
-    computedArtifacts.requestNetworkRecords = _ => Promise.resolve(networkRecords);
     const URL = {finalUrl: 'https://m.example.com'};
+    const devtoolsLog = networkRecordsToDevtoolsLog(networkRecords);
 
-    return computedArtifacts.requestMainResource({URL}).then(() => {
+    const context = {computedCache: new Map()};
+    return MainResource.request({URL, devtoolsLog}, context).then(() => {
       assert.ok(false, 'should have thrown');
     }).catch(err => {
       assert.equal(err.message, 'Unable to identify the main resource');
@@ -52,7 +49,8 @@ describe('MainResource computed artifact', () => {
     const URL = {finalUrl: 'https://en.m.wikipedia.org/wiki/Main_Page'};
     const artifacts = {devtoolsLog: wikiDevtoolsLog, URL};
 
-    return computedArtifacts.requestMainResource(artifacts).then(output => {
+    const context = {computedCache: new Map()};
+    return MainResource.request(artifacts, context).then(output => {
       assert.equal(output.url, 'https://en.m.wikipedia.org/wiki/Main_Page');
     });
   });
@@ -63,11 +61,12 @@ describe('MainResource computed artifact', () => {
       {url: 'https://beta.httparchive.org/reports/state-of-the-web'},
     ];
 
-    computedArtifacts.requestNetworkRecords = _ => Promise.resolve(networkRecords);
     const URL = {finalUrl: 'https://beta.httparchive.org/reports/state-of-the-web#pctHttps'};
-    const artifacts = {URL};
+    const devtoolsLog = networkRecordsToDevtoolsLog(networkRecords);
+    const artifacts = {URL, devtoolsLog};
 
-    return computedArtifacts.requestMainResource(artifacts).then(output => {
+    const context = {computedCache: new Map()};
+    return MainResource.request(artifacts, context).then(output => {
       assert.equal(output.url, 'https://beta.httparchive.org/reports/state-of-the-web');
     });
   });

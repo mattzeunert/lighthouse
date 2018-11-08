@@ -5,17 +5,14 @@
  */
 'use strict';
 
-const ComputedArtifact = require('./computed-artifact');
+const makeComputedArtifact = require('./new-computed-artifact.js');
 const NetworkAnalyzer = require('../../lib/dependency-graph/simulator/network-analyzer');
+const NetworkRecords = require('./network-records.js');
 
-class NetworkAnalysis extends ComputedArtifact {
-  get name() {
-    return 'NetworkAnalysis';
-  }
-
+class NetworkAnalysis {
   /**
    * @param {Array<LH.Artifacts.NetworkRequest>} records
-   * @return {LH.Artifacts.NetworkAnalysis}
+   * @return {Omit<LH.Artifacts.NetworkAnalysis, 'throughput'|'records'>}
    */
   static computeRTTAndServerResponseTime(records) {
     // First pass compute the estimated observed RTT to each origin's servers.
@@ -45,21 +42,24 @@ class NetworkAnalysis extends ComputedArtifact {
       serverResponseTimeByOrigin.set(origin, summary.median);
     }
 
-    return {rtt: minimumRtt, additionalRttByOrigin, serverResponseTimeByOrigin, throughput: 0};
+    return {
+      rtt: minimumRtt,
+      additionalRttByOrigin,
+      serverResponseTimeByOrigin,
+    };
   }
 
   /**
    * @param {LH.DevtoolsLog} devtoolsLog
-   * @param {LH.ComputedArtifacts} computedArtifacts
+   * @param {LH.Audit.Context} context
    * @return {Promise<LH.Artifacts.NetworkAnalysis>}
    */
-  async compute_(devtoolsLog, computedArtifacts) {
-    const records = await computedArtifacts.requestNetworkRecords(devtoolsLog);
-    const throughput = await computedArtifacts.requestNetworkThroughput(devtoolsLog);
+  static async compute_(devtoolsLog, context) {
+    const records = await NetworkRecords.request(devtoolsLog, context);
+    const throughput = NetworkAnalyzer.estimateThroughput(records);
     const rttAndServerResponseTime = NetworkAnalysis.computeRTTAndServerResponseTime(records);
-    rttAndServerResponseTime.throughput = throughput * 8; // convert from KBps to Kbps
-    return rttAndServerResponseTime;
+    return {records, throughput, ...rttAndServerResponseTime};
   }
 }
 
-module.exports = NetworkAnalysis;
+module.exports = makeComputedArtifact(NetworkAnalysis);

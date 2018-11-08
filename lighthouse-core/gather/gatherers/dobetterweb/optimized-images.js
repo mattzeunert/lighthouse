@@ -21,6 +21,8 @@ const WEBP_QUALITY = 0.85;
 
 const MINIMUM_IMAGE_SIZE = 4096; // savings of <4 KB will be ignored in the audit anyway
 
+const IMAGE_REGEX = /^image\/((x|ms|x-ms)-)?(png|bmp|jpeg)$/;
+
 /** @typedef {{isSameOrigin: boolean, isBase64DataUri: boolean, requestId: string, url: string, mimeType: string, resourceSize: number}} SimplifiedNetworkRecord */
 
 /* global document, Image, atob */
@@ -86,9 +88,8 @@ class OptimizedImages extends Gatherer {
       }
 
       seenUrls.add(record.url);
-      const isOptimizableImage = record.resourceType &&
-        record.resourceType === 'Image' &&
-        /image\/(png|bmp|jpeg)/.test(record.mimeType);
+      const isOptimizableImage = record.resourceType === NetworkRequest.TYPES.Image &&
+        IMAGE_REGEX.test(record.mimeType);
       const isSameOrigin = URL.originsMatch(pageUrl, record.url);
       const isBase64DataUri = /^data:.{2,40}base64\s*,/.test(record.url);
 
@@ -193,7 +194,6 @@ class OptimizedImages extends Gatherer {
       } catch (err) {
         // Track this with Sentry since these errors aren't surfaced anywhere else, but we don't
         // want to tank the entire run due to a single image.
-        // @ts-ignore TODO(bckenny): Sentry type checking
         Sentry.captureException(err, {
           tags: {gatherer: 'OptimizedImages'},
           extra: {imageUrl: URL.elideDataURI(record.url)},

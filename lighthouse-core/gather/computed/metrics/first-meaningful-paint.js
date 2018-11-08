@@ -5,29 +5,37 @@
  */
 'use strict';
 
-const MetricArtifact = require('./metric');
-const LHError = require('../../../lib/errors');
+const makeComputedArtifact = require('../new-computed-artifact.js');
+const ComputedMetric = require('./metric');
+const LHError = require('../../../lib/lh-error');
+const LanternFirstMeaningfulPaint = require('./lantern-first-meaningful-paint.js');
 
-class FirstMeaningfulPaint extends MetricArtifact {
-  get name() {
-    return 'FirstMeaningfulPaint';
+class FirstMeaningfulPaint extends ComputedMetric {
+  /**
+   * @param {LH.Artifacts.MetricComputationData} data
+   * @param {LH.Audit.Context} context
+   * @return {Promise<LH.Artifacts.LanternMetric>}
+   */
+  static computeSimulatedMetric(data, context) {
+    return LanternFirstMeaningfulPaint.request(data, context);
   }
 
   /**
    * @param {LH.Artifacts.MetricComputationData} data
    * @return {Promise<LH.Artifacts.Metric>}
    */
-  computeObservedMetric(data) {
+  static async computeObservedMetric(data) {
     const {traceOfTab} = data;
     if (!traceOfTab.timestamps.firstMeaningfulPaint) {
       throw new LHError(LHError.errors.NO_FMP);
     }
 
-    return Promise.resolve({
-      timing: traceOfTab.timings.firstMeaningfulPaint,
+    return {
+      // FMP established as existing, so cast
+      timing: /** @type {number} */ (traceOfTab.timings.firstMeaningfulPaint),
       timestamp: traceOfTab.timestamps.firstMeaningfulPaint,
-    });
+    };
   }
 }
 
-module.exports = FirstMeaningfulPaint;
+module.exports = makeComputedArtifact(FirstMeaningfulPaint);

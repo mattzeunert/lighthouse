@@ -6,7 +6,19 @@
 'use strict';
 
 const Audit = require('../audit');
-const Util = require('../../report/html/renderer/util.js');
+const i18n = require('../../lib/i18n/i18n.js');
+const ComputedFci = require('../../gather/computed/metrics/first-cpu-idle.js');
+
+const UIStrings = {
+  /** The name of the metric that marks when the page has displayed content and the CPU is not busy executing the page's scripts. Shown to users as the label for the numeric metric value. Ideally fits within a ~40 character limit. */
+  title: 'First CPU Idle',
+  /** Description of the First CPU Idle metric, which marks the time at which the page has displayed content and the CPU is not busy executing the page's scripts. This is displayed within a tooltip when the user hovers on the metric name to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'First CPU Idle marks the first time at which the page\'s main thread is ' +
+    'quiet enough to handle input. ' +
+    '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/first-interactive).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 class FirstCPUIdle extends Audit {
   /**
@@ -15,10 +27,8 @@ class FirstCPUIdle extends Audit {
   static get meta() {
     return {
       id: 'first-cpu-idle',
-      title: 'First CPU Idle',
-      description: 'First CPU Idle marks the first time at which the page\'s main thread is ' +
-          'quiet enough to handle input. ' +
-          '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/first-interactive).',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
       requiredArtifacts: ['traces'],
     };
@@ -49,7 +59,7 @@ class FirstCPUIdle extends Audit {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const metricComputationData = {trace, devtoolsLog, settings: context.settings};
-    const metricResult = await artifacts.requestFirstCPUIdle(metricComputationData);
+    const metricResult = await ComputedFci.request(metricComputationData, context);
 
     return {
       score: Audit.computeLogNormalScore(
@@ -58,9 +68,10 @@ class FirstCPUIdle extends Audit {
         context.options.scoreMedian
       ),
       rawValue: metricResult.timing,
-      displayValue: [Util.MS_DISPLAY_VALUE, metricResult.timing],
+      displayValue: str_(i18n.UIStrings.seconds, {timeInMs: metricResult.timing}),
     };
   }
 }
 
 module.exports = FirstCPUIdle;
+module.exports.UIStrings = UIStrings;

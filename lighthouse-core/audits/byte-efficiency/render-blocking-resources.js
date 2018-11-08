@@ -10,10 +10,14 @@
 'use strict';
 
 const Audit = require('../audit');
+const i18n = require('../../lib/i18n/i18n.js');
 const BaseNode = require('../../lib/dependency-graph/base-node');
 const ByteEfficiencyAudit = require('./byte-efficiency-audit');
 const UnusedCSS = require('./unused-css-rules');
 const NetworkRequest = require('../../lib/network-request');
+const TraceOfTab = require('../../gather/computed/trace-of-tab.js');
+const LoadSimulator = require('../../gather/computed/load-simulator.js');
+const FirstContentfulPaint = require('../../gather/computed/metrics/first-contentful-paint.js');
 
 /** @typedef {import('../../lib/dependency-graph/simulator/simulator')} Simulator */
 /** @typedef {import('../../lib/dependency-graph/base-node.js').Node} Node */
@@ -24,6 +28,17 @@ const NetworkRequest = require('../../lib/network-request');
 // can be falsely flagged as blocking. Therefore, ignore stylesheets that loaded fast enough
 // to possibly be non-blocking (and they have minimal impact anyway).
 const MINIMUM_WASTED_MS = 50;
+
+const UIStrings = {
+  /** Imperative title of a Lighthouse audit that tells the user to reduce or remove network resources that block the initial render of the page. This is displayed in a list of audit titles that Lighthouse generates. */
+  title: 'Eliminate render-blocking resources',
+  /** Description of a Lighthouse audit that tells the user *why* they should reduce or remove network resources that block the initial render of the page. This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Resources are blocking the first paint of your page. Consider ' +
+    'delivering critical JS/CSS inline and deferring all non-critical ' +
+    'JS/styles. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/blocking-resources).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 /**
  * Given a simulation's nodeTimings, return an object with the nodes/timing keyed by network URL
@@ -52,12 +67,9 @@ class RenderBlockingResources extends Audit {
   static get meta() {
     return {
       id: 'render-blocking-resources',
-      title: 'Eliminate render-blocking resources',
+      title: str_(UIStrings.title),
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
-      description:
-        'Resources are blocking the first paint of your page. Consider ' +
-        'delivering critical JS/CSS inline and deferring all non-critical ' +
-        'JS/styles. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/blocking-resources).',
+      description: str_(UIStrings.description),
       // This audit also looks at CSSUsage but has a graceful fallback if it failed, so do not mark
       // it as a "requiredArtifact".
       // TODO: look into adding an `optionalArtifacts` property that captures this
@@ -74,14 +86,14 @@ class RenderBlockingResources extends Audit {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const simulatorData = {devtoolsLog, settings: context.settings};
-    const traceOfTab = await artifacts.requestTraceOfTab(trace);
-    const simulator = await artifacts.requestLoadSimulator(simulatorData);
+    const traceOfTab = await TraceOfTab.request(trace, context);
+    const simulator = await LoadSimulator.request(simulatorData, context);
     const wastedCssBytes = await RenderBlockingResources.computeWastedCSSBytes(artifacts, context);
 
     const metricSettings = {throttlingMethod: 'simulate'};
     const metricComputationData = {trace, devtoolsLog, simulator, settings: metricSettings};
     // @ts-ignore - TODO(bckenny): allow optional `throttling` settings
-    const fcpSimulation = await artifacts.requestFirstContentfulPaint(metricComputationData);
+    const fcpSimulation = await FirstContentfulPaint.request(metricComputationData, context);
     const fcpTsInMs = traceOfTab.timestamps.firstContentfulPaint / 1000;
 
     const nodesByUrl = getNodesAndTimingByUrl(fcpSimulation.optimisticEstimate.nodeTimings);
@@ -198,17 +210,15 @@ class RenderBlockingResources extends Audit {
     const {results, wastedMs} = await RenderBlockingResources.computeResults(artifacts, context);
 
     let displayValue = '';
-    if (results.length > 1) {
-      displayValue = `${results.length} resources delayed first paint by ${wastedMs}ms`;
-    } else if (results.length === 1) {
-      displayValue = `${results.length} resource delayed first paint by ${wastedMs}ms`;
+    if (results.length > 0) {
+      displayValue = str_(i18n.UIStrings.displayValueMsSavings, {wastedMs});
     }
 
     /** @type {LH.Result.Audit.OpportunityDetails['headings']} */
     const headings = [
-      {key: 'url', valueType: 'url', label: 'URL'},
-      {key: 'totalBytes', valueType: 'bytes', label: 'Size (KB)'},
-      {key: 'wastedMs', valueType: 'timespanMs', label: 'Download Time (ms)'},
+      {key: 'url', valueType: 'url', label: str_(i18n.UIStrings.columnURL)},
+      {key: 'totalBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnSize)},
+      {key: 'wastedMs', valueType: 'timespanMs', label: str_(i18n.UIStrings.columnWastedMs)},
     ];
 
     const details = Audit.makeOpportunityDetails(headings, results, wastedMs);
@@ -223,3 +233,4 @@ class RenderBlockingResources extends Audit {
 }
 
 module.exports = RenderBlockingResources;
+module.exports.UIStrings = UIStrings;

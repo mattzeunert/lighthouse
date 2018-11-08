@@ -6,6 +6,18 @@
 'use strict';
 
 const ByteEfficiencyAudit = require('./byte-efficiency-audit');
+const i18n = require('../../lib/i18n/i18n.js');
+
+const UIStrings = {
+  /** Imperative title of a Lighthouse audit that tells the user to remove content from their CSS that isn’t needed immediately and instead load that content at a later time. This is displayed in a list of audit titles that Lighthouse generates. */
+  title: 'Defer unused CSS',
+  /** Description of a Lighthouse audit that tells the user *why* they should defer loading any content in CSS that isn’t needed at page load. This is displayed after a user expands the section to see more. No word length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Remove unused rules from stylesheets to reduce unnecessary ' +
+    'bytes consumed by network activity. ' +
+    '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/unused-css).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 const IGNORE_THRESHOLD_IN_BYTES = 2048;
 const PREVIEW_LENGTH = 100;
@@ -19,12 +31,10 @@ class UnusedCSSRules extends ByteEfficiencyAudit {
   static get meta() {
     return {
       id: 'unused-css-rules',
-      title: 'Defer unused CSS',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: ByteEfficiencyAudit.SCORING_MODES.NUMERIC,
-      description: 'Remove unused rules from stylesheets to reduce unnecessary ' +
-          'bytes consumed by network activity. ' +
-          '[Learn more](https://developers.google.com/speed/docs/insights/OptimizeCSSDelivery).',
-      requiredArtifacts: ['CSSUsage', 'URL', 'devtoolsLogs'],
+      requiredArtifacts: ['CSSUsage', 'URL', 'devtoolsLogs', 'traces'],
     };
   }
 
@@ -141,21 +151,21 @@ class UnusedCSSRules extends ByteEfficiencyAudit {
     }
 
     const usage = UnusedCSSRules.computeUsage(stylesheetInfo);
-    const result = {url}; // Assign to temporary to keep tsc happy about index signature.
-    return Object.assign(result, usage);
+    // @ts-ignore TODO(bckenny): fix index signature on ByteEfficiencyItem.
+    return Object.assign({url}, usage);
   }
 
   /**
    * @param {LH.Artifacts} artifacts
+   * @param {Array<LH.Artifacts.NetworkRequest>} networkRecords
    * @return {Promise<ByteEfficiencyAudit.ByteEfficiencyProduct>}
    */
-  static audit_(artifacts) {
+  static audit_(artifacts, networkRecords) {
     const styles = artifacts.CSSUsage.stylesheets;
     const usage = artifacts.CSSUsage.rules;
     const pageUrl = artifacts.URL.finalUrl;
 
-    const devtoolsLogs = artifacts.devtoolsLogs[ByteEfficiencyAudit.DEFAULT_PASS];
-    return artifacts.requestNetworkRecords(devtoolsLogs).then(networkRecords => {
+    return Promise.resolve(networkRecords).then(networkRecords => {
       const indexedSheets = UnusedCSSRules.indexStylesheetsById(styles, networkRecords);
       UnusedCSSRules.indexUsedRules(usage, indexedSheets);
 
@@ -165,9 +175,9 @@ class UnusedCSSRules extends ByteEfficiencyAudit {
 
       /** @type {LH.Result.Audit.OpportunityDetails['headings']} */
       const headings = [
-        {key: 'url', valueType: 'url', label: 'URL'},
-        {key: 'totalBytes', valueType: 'bytes', label: 'Original'},
-        {key: 'wastedBytes', valueType: 'bytes', label: 'Potential Savings'},
+        {key: 'url', valueType: 'url', label: str_(i18n.UIStrings.columnURL)},
+        {key: 'totalBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnSize)},
+        {key: 'wastedBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnWastedBytes)},
       ];
 
       return {
@@ -179,3 +189,4 @@ class UnusedCSSRules extends ByteEfficiencyAudit {
 }
 
 module.exports = UnusedCSSRules;
+module.exports.UIStrings = UIStrings;

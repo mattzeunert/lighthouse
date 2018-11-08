@@ -7,6 +7,7 @@
 
 const assert = require('assert');
 const Util = require('../../../../report/html/renderer/util.js');
+
 const NBSP = '\xa0';
 
 /* eslint-env jest */
@@ -58,20 +59,45 @@ describe('util helpers', () => {
     assert.equal(Util.formatDuration(28 * 60 * 60 * 1000 + 5000), `1${NBSP}d 4${NBSP}h 5${NBSP}s`);
   });
 
+  // TODO: need ICU support in node on Travis/Appveyor
+  it.skip('formats based on locale', () => {
+    const number = 12346.858558;
+
+    const originalLocale = Util.numberDateLocale;
+    Util.setNumberDateLocale('de');
+    assert.strictEqual(Util.formatNumber(number), '12.346,9');
+    Util.setNumberDateLocale(originalLocale); // reset
+    assert.strictEqual(Util.formatNumber(number), '12,346.9');
+  });
+
+  it.skip('uses decimal comma with en-XA test locale', () => {
+    const number = 12346.858558;
+
+    const originalLocale = Util.numberDateLocale;
+    Util.setNumberDateLocale('en-XA');
+    assert.strictEqual(Util.formatNumber(number), '12.346,9');
+    Util.setNumberDateLocale(originalLocale); // reset
+    assert.strictEqual(Util.formatNumber(number), '12,346.9');
+  });
+
   it('calculates a score ratings', () => {
     assert.equal(Util.calculateRating(0.0), 'fail');
     assert.equal(Util.calculateRating(0.10), 'fail');
-    assert.equal(Util.calculateRating(0.45), 'average');
-    assert.equal(Util.calculateRating(0.55), 'average');
-    assert.equal(Util.calculateRating(0.75), 'pass');
-    assert.equal(Util.calculateRating(0.80), 'pass');
+    assert.equal(Util.calculateRating(0.45), 'fail');
+    assert.equal(Util.calculateRating(0.5), 'average');
+    assert.equal(Util.calculateRating(0.75), 'average');
+    assert.equal(Util.calculateRating(0.80), 'average');
+    assert.equal(Util.calculateRating(0.90), 'pass');
     assert.equal(Util.calculateRating(1.00), 'pass');
   });
 
   it('builds device emulation string', () => {
     const get = opts => Util.getEmulationDescriptions(opts).deviceEmulation;
     assert.equal(get({disableDeviceEmulation: true}), 'No emulation');
-    assert.equal(get({disableDeviceEmulation: false}), 'Emulated Nexus 5X');
+    assert.equal(get({disableDeviceEmulation: false}), 'No emulation');
+    assert.equal(get({emulatedFormFactor: 'none'}), 'No emulation');
+    assert.equal(get({emulatedFormFactor: 'mobile'}), 'Emulated Nexus 5X');
+    assert.equal(get({emulatedFormFactor: 'desktop'}), 'Emulated Desktop');
   });
 
   it('builds throttling strings when provided', () => {

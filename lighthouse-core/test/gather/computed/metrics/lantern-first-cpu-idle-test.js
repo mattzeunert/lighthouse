@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const Runner = require('../../../../runner');
+const LanternFirstCPUIdle = require('../../../../gather/computed/metrics/lantern-first-cpu-idle.js'); // eslint-disable-line max-len
 const assert = require('assert');
 
 const trace = require('../../../fixtures/traces/progressive-app-m60.json');
@@ -14,8 +14,9 @@ const devtoolsLog = require('../../../fixtures/traces/progressive-app-m60.devtoo
 /* eslint-env jest */
 describe('Metrics: Lantern TTFCPUI', () => {
   it('should compute predicted value', async () => {
-    const artifacts = Runner.instantiateComputedArtifacts();
-    const result = await artifacts.requestLanternFirstCPUIdle({trace, devtoolsLog, settings: {}});
+    const settings = {};
+    const context = {settings, computedCache: new Map()};
+    const result = await LanternFirstCPUIdle.request({trace, devtoolsLog, settings}, context);
 
     expect({
       timing: Math.round(result.timing),
@@ -26,5 +27,21 @@ describe('Metrics: Lantern TTFCPUI', () => {
     assert.equal(result.pessimisticEstimate.nodeTimings.size, 79);
     assert.ok(result.optimisticGraph, 'should have created optimistic graph');
     assert.ok(result.pessimisticGraph, 'should have created pessimistic graph');
+  });
+
+  describe('#getFirstCPUIdleWindowStart', () => {
+    it('should sort tasks', () => {
+      const tasks = new Map([
+        [{type: 'cpu'}, {startTime: 600, endTime: 700, duration: 100}],
+        [{type: 'cpu'}, {startTime: 300, endTime: 400, duration: 100}],
+        [{type: 'cpu'}, {startTime: 0, endTime: 100, duration: 100}],
+        [{type: 'cpu'}, {startTime: 100, endTime: 200, duration: 100}],
+        [{type: 'cpu'}, {startTime: 500, endTime: 600, duration: 100}],
+        [{type: 'cpu'}, {startTime: 200, endTime: 300, duration: 100}],
+        [{type: 'cpu'}, {startTime: 400, endTime: 500, duration: 100}],
+      ]);
+
+      assert.equal(LanternFirstCPUIdle.getFirstCPUIdleWindowStart(tasks, 0), 700);
+    });
   });
 });

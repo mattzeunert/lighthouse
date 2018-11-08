@@ -8,6 +8,22 @@
 const URL = require('../lib/url-shim');
 const Audit = require('./audit');
 const UnusedBytes = require('./byte-efficiency/byte-efficiency-audit');
+const CriticalRequestChains = require('../gather/computed/critical-request-chains');
+const i18n = require('../lib/i18n/i18n.js');
+const MainResource = require('../gather/computed/main-resource.js');
+const PageDependencyGraph = require('../gather/computed/page-dependency-graph.js');
+const LoadSimulator = require('../gather/computed/load-simulator.js');
+
+const UIStrings = {
+  /** Imperative title of a Lighthouse audit that tells the user to use <link rel=preload> to initiate important network requests earlier during page load. This is displayed in a list of audit titles that Lighthouse generates. */
+  title: 'Preload key requests',
+  /** Description of a Lighthouse audit that tells the user *why* they should preload important network requests. The associated network requests are started halfway through pageload (or later) but should be started at the beginning. This is displayed after a user expands the section to see more. No character length limits. '<link rel=preload>' is the html code the user would include in their page and shouldn't be translated. 'Learn More' becomes link text to additional documentation. */
+  description: 'Consider using <link rel=preload> to prioritize fetching resources that are ' +
+    'currently requested later in page load. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/preload).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
+
 const THRESHOLD_IN_MS = 100;
 
 class UsesRelPreloadAudit extends Audit {
@@ -17,58 +33,57 @@ class UsesRelPreloadAudit extends Audit {
   static get meta() {
     return {
       id: 'uses-rel-preload',
-      title: 'Preload key requests',
-      description: 'Consider using <link rel=preload> to prioritize fetching late-discovered ' +
-        'resources sooner. [Learn more](https://developers.google.com/web/tools/lighthouse/audits/preload).',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       requiredArtifacts: ['devtoolsLogs', 'traces', 'URL'],
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
     };
   }
 
   /**
-   * @param {LH.Artifacts.CriticalRequestNode} chains
-   * @param {number} maxLevel
-   * @param {number=} minLevel
+   * @param {LH.Artifacts.NetworkRequest} mainResource
+   * @param {LH.Gatherer.Simulation.GraphNode} graph
+   * @return {Set<string>}
    */
-  static _flattenRequests(chains, maxLevel, minLevel = 0) {
-    /** @type {Array<LH.Artifacts.NetworkRequest>} */
-    const requests = [];
+  static getURLsToPreload(mainResource, graph) {
+    /** @type {Set<string>} */
+    const urls = new Set();
 
-    /**
-     * @param {LH.Artifacts.CriticalRequestNode} chains
-     * @param {number} level
-     */
-    const flatten = (chains, level) => {
-      Object.keys(chains).forEach(chain => {
-        if (chains[chain]) {
-          const currentChain = chains[chain];
-          if (level >= minLevel) {
-            requests.push(currentChain.request);
-          }
+    graph.traverse((node, traversalPath) => {
+      if (node.type !== 'network') return;
+      // Don't include the node itself or any CPU nodes in the initiatorPath
+      const path = traversalPath.slice(1).filter(initiator => initiator.type === 'network');
+      if (!UsesRelPreloadAudit.shouldPreloadRequest(node.record, mainResource, path)) return;
+      urls.add(node.record.url);
+    });
 
-          if (level < maxLevel) {
-            flatten(currentChain.children, level + 1);
-          }
-        }
-      });
-    };
-
-    flatten(chains, 0);
-
-    return requests;
+    return urls;
   }
 
   /**
+   * We want to preload all first party critical requests at depth 2.
+   * Third party requests can be tricky to know the URL ahead of time.
+   * Critical requests at depth 1 would already be identified by the browser for preloading.
+   * Critical requests deeper than depth 2 are more likely to be a case-by-case basis such that it
+   * would be a little risky to recommend blindly.
    *
    * @param {LH.Artifacts.NetworkRequest} request
    * @param {LH.Artifacts.NetworkRequest} mainResource
+   * @param {Array<LH.Gatherer.Simulation.GraphNode>} initiatorPath
    * @return {boolean}
    */
-  static shouldPreload(request, mainResource) {
-    if (request.isLinkPreload || URL.NON_NETWORK_PROTOCOLS.includes(request.protocol)) {
-      return false;
-    }
+  static shouldPreloadRequest(request, mainResource, initiatorPath) {
+    const mainResourceDepth = mainResource.redirects ? mainResource.redirects.length : 0;
 
+    // If it's already preloaded, no need to recommend it.
+    if (request.isLinkPreload) return false;
+    // It's not critical, don't recommend it.
+    if (!CriticalRequestChains.isCritical(request, mainResource)) return false;
+    // It's not a request loaded over the network, don't recommend it.
+    if (URL.NON_NETWORK_PROTOCOLS.includes(request.protocol)) return false;
+    // It's not at the right depth, don't recommend it.
+    if (initiatorPath.length !== mainResourceDepth + 2) return false;
+    // We survived everything else, just check that it's a first party request.
     return URL.rootDomainsMatch(request.url, mainResource.url);
   }
 
@@ -157,43 +172,30 @@ class UsesRelPreloadAudit extends Audit {
     const URL = artifacts.URL;
     const simulatorOptions = {trace, devtoolsLog, settings: context.settings};
 
-    const [critChains, mainResource, graph, simulator] = await Promise.all([
-      // TODO(phulce): eliminate dependency on CRC
-      artifacts.requestCriticalRequestChains({devtoolsLog, URL}),
-      artifacts.requestMainResource({devtoolsLog, URL}),
-      artifacts.requestPageDependencyGraph({trace, devtoolsLog}),
-      artifacts.requestLoadSimulator(simulatorOptions),
+    const [mainResource, graph, simulator] = await Promise.all([
+      MainResource.request({devtoolsLog, URL}, context),
+      PageDependencyGraph.request({trace, devtoolsLog}, context),
+      LoadSimulator.request(simulatorOptions, context),
     ]);
 
-    // get all critical requests 2 + mainResourceIndex levels deep
-    const mainResourceIndex = mainResource.redirects ? mainResource.redirects.length : 0;
-
-    const criticalRequests = UsesRelPreloadAudit._flattenRequests(critChains,
-      3 + mainResourceIndex, 2 + mainResourceIndex);
-
-    /** @type {Set<string>} */
-    const urls = new Set();
-    for (const networkRecord of criticalRequests) {
-      if (UsesRelPreloadAudit.shouldPreload(networkRecord, mainResource)) {
-        urls.add(networkRecord.url);
-      }
-    }
-
+    const urls = UsesRelPreloadAudit.getURLsToPreload(mainResource, graph);
     const {results, wastedMs} = UsesRelPreloadAudit.computeWasteWithGraph(urls, graph, simulator);
     // sort results by wastedTime DESC
     results.sort((a, b) => b.wastedMs - a.wastedMs);
 
     /** @type {LH.Result.Audit.OpportunityDetails['headings']} */
     const headings = [
-      {key: 'url', valueType: 'url', label: 'URL'},
-      {key: 'wastedMs', valueType: 'timespanMs', label: 'Potential Savings'},
+      {key: 'url', valueType: 'url', label: str_(i18n.UIStrings.columnURL)},
+      {key: 'wastedMs', valueType: 'timespanMs', label: str_(i18n.UIStrings.columnWastedMs)},
     ];
     const details = Audit.makeOpportunityDetails(headings, results, wastedMs);
 
     return {
       score: UnusedBytes.scoreForWastedMs(wastedMs),
       rawValue: wastedMs,
-      displayValue: ['Potential savings of %10d\xa0ms', wastedMs],
+      displayValue: wastedMs ?
+        str_(i18n.UIStrings.displayValueMsSavings, {wastedMs}) :
+        '',
       extendedInfo: {
         value: results,
       },
@@ -203,3 +205,4 @@ class UsesRelPreloadAudit extends Audit {
 }
 
 module.exports = UsesRelPreloadAudit;
+module.exports.UIStrings = UIStrings;

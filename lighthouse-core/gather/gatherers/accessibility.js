@@ -5,11 +5,12 @@
  */
 'use strict';
 
-/* global window, document, Node */
+/* global window, document, Node, getOuterHTMLSnippet */
 
 const Gatherer = require('./gatherer');
 const fs = require('fs');
 const axeLibSource = fs.readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
+const pageFunctions = require('../../lib/page-functions');
 
 /**
  * This is run in the page, not Lighthouse itself.
@@ -32,8 +33,9 @@ function runA11yChecks() {
     resultTypes: ['violations', 'inapplicable'],
     rules: {
       'tabindex': {enabled: true},
-      'table-fake-caption': {enabled: true},
-      'td-has-header': {enabled: true},
+      'table-fake-caption': {enabled: false},
+      'td-has-header': {enabled: false},
+      'marquee': {enabled: false},
       'area-alt': {enabled: false},
       'blink': {enabled: false},
       'server-side-image-map': {enabled: false},
@@ -44,6 +46,7 @@ function runA11yChecks() {
     // @ts-ignore
     axeResult.violations.forEach(v => v.nodes.forEach(node => {
       node.path = getNodePath(node.element);
+      // @ts-ignore - getOuterHTMLSnippet put into scope via stringification
       node.snippet = getOuterHTMLSnippet(node.element);
       // avoid circular JSON concerns
       node.element = node.any = node.all = node.none = undefined;
@@ -84,18 +87,6 @@ function runA11yChecks() {
     path.reverse();
     return path.join(',');
   }
-
-  /**
-   * Gets the opening tag text of the given node.
-   * @param {Element} el
-   * @return {string}
-   */
-  function getOuterHTMLSnippet(el) {
-    const reOpeningTag = /^.*?>/;
-    const match = el.outerHTML.match(reOpeningTag);
-    // Should always be a snippet, so just fall back to '' to keep a string.
-    return match && match[0] || '';
-  }
 }
 
 class Accessibility extends Gatherer {
@@ -106,6 +97,7 @@ class Accessibility extends Gatherer {
   afterPass(passContext) {
     const driver = passContext.driver;
     const expression = `(function () {
+      ${pageFunctions.getOuterHTMLSnippetString};
       ${axeLibSource};
       return (${runA11yChecks.toString()}());
     })()`;

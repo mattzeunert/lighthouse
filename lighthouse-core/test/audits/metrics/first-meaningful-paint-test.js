@@ -7,42 +7,37 @@
 
 const FMPAudit = require('../../../audits/metrics/first-meaningful-paint.js');
 const Audit = require('../../../audits/audit.js');
-const Util = require('../../../report/html/renderer/util');
 const assert = require('assert');
 const options = FMPAudit.defaultOptions;
 const trace = require('../../fixtures/traces/progressive-app-m60.json');
 const devtoolsLogs = require('../../fixtures/traces/progressive-app-m60.devtools.log.json');
 
-const Runner = require('../../../runner.js');
-const computedArtifacts = Runner.instantiateComputedArtifacts();
-
 /* eslint-env jest */
 describe('Performance: first-meaningful-paint audit', () => {
   it('computes FMP correctly for valid trace', async () => {
-    const artifacts = Object.assign({
+    const artifacts = {
       traces: {[Audit.DEFAULT_PASS]: trace},
       devtoolsLogs: {[Audit.DEFAULT_PASS]: devtoolsLogs},
-    }, computedArtifacts);
-    const context = {options, settings: {throttlingMethod: 'provided'}};
+    };
+    const context = {options, settings: {throttlingMethod: 'provided'}, computedCache: new Map()};
     const fmpResult = await FMPAudit.audit(artifacts, context);
 
     assert.equal(fmpResult.score, 1);
-    assert.equal(Util.formatDisplayValue(fmpResult.displayValue), '780\xa0ms');
     assert.equal(fmpResult.rawValue, 783.328);
+    expect(fmpResult.displayValue).toBeDisplayString('0.8\xa0s');
   });
 
   it('computes FMP correctly for simulated', async () => {
-    const artifacts = Object.assign({
+    const artifacts = {
       traces: {[Audit.DEFAULT_PASS]: trace},
       devtoolsLogs: {[Audit.DEFAULT_PASS]: devtoolsLogs},
-    }, computedArtifacts);
-    const context = {options, settings: {throttlingMethod: 'simulate'}};
+    };
+    const context = {options, settings: {throttlingMethod: 'simulate'}, computedCache: new Map()};
     const fmpResult = await FMPAudit.audit(artifacts, context);
 
     expect({
       score: fmpResult.score,
       rawValue: fmpResult.rawValue,
-      displayValue: fmpResult.displayValue,
     }).toMatchSnapshot();
   });
 });

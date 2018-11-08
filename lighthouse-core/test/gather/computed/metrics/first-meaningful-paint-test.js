@@ -5,7 +5,7 @@
  */
 'use strict';
 
-const Runner = require('../../../../runner');
+const FirstMeaningfulPaint = require('../../../../gather/computed/metrics/first-meaningful-paint.js'); // eslint-disable-line max-len
 const assert = require('assert');
 
 const TRACE_FIXTURES = '../../../fixtures/traces';
@@ -16,18 +16,24 @@ const badNavStartTrace = require(`${TRACE_FIXTURES}/bad-nav-start-ts.json`);
 const lateTracingStartedTrace = require(`${TRACE_FIXTURES}/tracingstarted-after-navstart.json`);
 const preactTrace = require(`${TRACE_FIXTURES}/preactjs.com_ts_of_undefined.json`);
 const noFMPtrace = require(`${TRACE_FIXTURES}/no_fmp_event.json`);
-const noFCPtrace = require(`${TRACE_FIXTURES}/airhorner_no_fcp.json`);
 
 /* eslint-env jest */
 
 describe('Metrics: FMP', () => {
-  let artifacts;
   let settings;
   let trace;
   let devtoolsLog;
 
+  function addEmptyTask() {
+    const mainThreadEvt = trace.traceEvents.find(e => e.name === 'TracingStartedInPage');
+    trace.traceEvents.push({
+      ...mainThreadEvt,
+      cat: 'toplevel',
+      name: 'TaskQueueManager::ProcessTaskFromWorkQueue',
+    });
+  }
+
   beforeEach(() => {
-    artifacts = Runner.instantiateComputedArtifacts();
     settings = {throttlingMethod: 'provided'};
     devtoolsLog = [];
   });
@@ -37,7 +43,8 @@ describe('Metrics: FMP', () => {
     trace = pwaTrace;
     devtoolsLog = pwaDevtoolsLog;
 
-    const result = await artifacts.requestFirstMeaningfulPaint({trace, devtoolsLog, settings});
+    const context = {computedCache: new Map()};
+    const result = await FirstMeaningfulPaint.request({trace, devtoolsLog, settings}, context);
 
     expect({
       timing: Math.round(result.timing),
@@ -52,7 +59,8 @@ describe('Metrics: FMP', () => {
 
   it('should compute an observed value', async () => {
     settings = {throttlingMethod: 'provided'};
-    const result = await artifacts.requestFirstMeaningfulPaint({trace, devtoolsLog, settings});
+    const context = {computedCache: new Map()};
+    const result = await FirstMeaningfulPaint.request({trace, devtoolsLog, settings}, context);
 
     assert.equal(Math.round(result.timing), 783);
     assert.equal(result.timestamp, 225414955343);
@@ -60,36 +68,37 @@ describe('Metrics: FMP', () => {
 
   it('handles cases when there was a tracingStartedInPage after navStart', async () => {
     trace = lateTracingStartedTrace;
-    const result = await artifacts.requestFirstMeaningfulPaint({trace, devtoolsLog, settings});
+    addEmptyTask();
+    const context = {computedCache: new Map()};
+    const result = await FirstMeaningfulPaint.request({trace, devtoolsLog, settings}, context);
     assert.equal(Math.round(result.timing), 530);
     assert.equal(result.timestamp, 29344070867);
   });
 
   it('handles cases when there was a tracingStartedInPage after navStart #2', async () => {
     trace = badNavStartTrace;
-    const result = await artifacts.requestFirstMeaningfulPaint({trace, devtoolsLog, settings});
+    addEmptyTask();
+    const context = {computedCache: new Map()};
+    const result = await FirstMeaningfulPaint.request({trace, devtoolsLog, settings}, context);
     assert.equal(Math.round(result.timing), 632);
     assert.equal(result.timestamp, 8886056891);
   });
 
   it('handles cases when it appears before FCP', async () => {
     trace = preactTrace;
-    const result = await artifacts.requestFirstMeaningfulPaint({trace, devtoolsLog, settings});
+    addEmptyTask();
+    const context = {computedCache: new Map()};
+    const result = await FirstMeaningfulPaint.request({trace, devtoolsLog, settings}, context);
     assert.equal(Math.round(result.timing), 878);
     assert.equal(result.timestamp, 1805797262960);
   });
 
   it('handles cases when no FMP exists', async () => {
     trace = noFMPtrace;
-    const result = await artifacts.requestFirstMeaningfulPaint({trace, devtoolsLog, settings});
+    addEmptyTask();
+    const context = {computedCache: new Map()};
+    const result = await FirstMeaningfulPaint.request({trace, devtoolsLog, settings}, context);
     assert.equal(Math.round(result.timing), 4461);
     assert.equal(result.timestamp, 2146740268666);
-  });
-
-  it('handles cases when no FCP exists', async () => {
-    trace = noFCPtrace;
-    const result = await artifacts.requestFirstMeaningfulPaint({trace, devtoolsLog, settings});
-    assert.equal(Math.round(result.timing), 482);
-    assert.equal(result.timestamp, 2149509604903);
   });
 });

@@ -8,13 +8,26 @@
 const fs = require('fs');
 const path = require('path');
 
+/*
+ * The relationship between these CLI modules:
+ *
+ *   index.js     : only calls bin.js's begin()
+ *   cli-flags.js : leverages yargs to read argv, outputs LH.CliFlags
+ *   bin.js       : CLI args processing. cwd, list/print commands
+ *   run.js       : chrome-launcher bits, calling lighthouse-core, output to Printer
+ *
+ *   index ---->    bin    ---->      run      ----> printer
+ *                  ⭏  ⭎               ⭏  ⭎
+ *               cli-flags        lh-core/index
+ */
+
 const commands = require('./commands/commands.js');
 const printer = require('./printer.js');
 const getFlags = require('./cli-flags.js').getFlags;
 const runLighthouse = require('./run').runLighthouse;
+const generateConfig = require('../lighthouse-core/index.js').generateConfig;
 
 const log = require('lighthouse-logger');
-// @ts-ignore
 const pkg = require('../package.json');
 const Sentry = require('../lighthouse-core/lib/sentry');
 
@@ -31,7 +44,7 @@ function isDev() {
 // Tell user if there's a newer version of LH.
 updateNotifier({pkg}).notify();
 
-const /** @type {LH.Flags} */ cliFlags = getFlags();
+const cliFlags = getFlags();
 
 // Process terminating command
 if (cliFlags.listAllAudits) {
@@ -43,22 +56,21 @@ if (cliFlags.listTraceCategories) {
   commands.listTraceCategories();
 }
 
-/** @type {string} */
 const url = cliFlags._[0];
 
 /** @type {LH.Config.Json|undefined} */
-let config;
+let configJson;
 if (cliFlags.configPath) {
   // Resolve the config file path relative to where cli was called.
   cliFlags.configPath = path.resolve(process.cwd(), cliFlags.configPath);
-  config = /** @type {LH.Config.Json} */ (require(cliFlags.configPath));
+  configJson = /** @type {LH.Config.Json} */ (require(cliFlags.configPath));
 } else if (cliFlags.preset) {
   if (cliFlags.preset === 'mixed-content') {
     // The mixed-content audits require headless Chrome (https://crbug.com/764505).
     cliFlags.chromeFlags = `${cliFlags.chromeFlags} --headless`;
   }
 
-  config = require(`../lighthouse-core/config/${cliFlags.preset}-config.js`);
+  configJson = require(`../lighthouse-core/config/${cliFlags.preset}-config.js`);
 }
 
 // set logging preferences
@@ -79,43 +91,54 @@ if (
 }
 
 if (cliFlags.extraHeaders) {
-  if (cliFlags.extraHeaders.substr(0, 1) !== '{') {
-    cliFlags.extraHeaders = fs.readFileSync(cliFlags.extraHeaders, 'utf-8');
+  // TODO: LH.Flags.extraHeaders is actually a string at this point, but needs to be
+  // copied over to LH.Settings.extraHeaders, which is LH.Crdp.Network.Headers. Force
+  // the conversion here, but long term either the CLI flag or the setting should have
+  // a different name.
+  // @ts-ignore
+  let extraHeadersStr = /** @type {string} */ (cliFlags.extraHeaders);
+  // If not a JSON object, assume it's a path to a JSON file.
+  if (extraHeadersStr.substr(0, 1) !== '{') {
+    extraHeadersStr = fs.readFileSync(extraHeadersStr, 'utf-8');
   }
 
-  cliFlags.extraHeaders = JSON.parse(cliFlags.extraHeaders);
+  cliFlags.extraHeaders = JSON.parse(extraHeadersStr);
 }
 
 /**
  * @return {Promise<LH.RunnerResult|void>}
  */
-function run() {
-  return Promise.resolve()
-    .then(_ => {
-      if (typeof cliFlags.enableErrorReporting === 'undefined') {
-        return askPermission().then(answer => {
-          cliFlags.enableErrorReporting = answer;
-        });
-      }
-    })
-    .then(_ => {
-      Sentry.init({
-        url,
-        flags: cliFlags,
-        environmentData: {
-          name: 'redacted', // prevent sentry from using hostname
-          environment: isDev() ? 'development' : 'production',
-          release: pkg.version,
-          tags: {
-            channel: 'cli',
-          },
-        },
-      });
+async function begin() {
+  if (cliFlags.printConfig) {
+    const config = generateConfig(configJson, cliFlags);
+    process.stdout.write(config.getPrintString());
+    return;
+  }
 
-      return runLighthouse(url, cliFlags, config);
+  // By default, cliFlags.enableErrorReporting is undefined so the user is
+  // prompted. This can be overriden with an explicit flag or by the cached
+  // answer returned by askPermission().
+  if (typeof cliFlags.enableErrorReporting === 'undefined') {
+    cliFlags.enableErrorReporting = await askPermission();
+  }
+  if (cliFlags.enableErrorReporting) {
+    Sentry.init({
+      url,
+      flags: cliFlags,
+      environmentData: {
+        name: 'redacted', // prevent sentry from using hostname
+        environment: isDev() ? 'development' : 'production',
+        release: pkg.version,
+        tags: {
+          channel: 'cli',
+        },
+      },
     });
+  }
+
+  return runLighthouse(url, cliFlags, configJson);
 }
 
 module.exports = {
-  run,
+  begin,
 };

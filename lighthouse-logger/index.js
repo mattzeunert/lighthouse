@@ -6,6 +6,8 @@
 'use strict';
 
 const debug = require('debug');
+const marky = require('marky');
+
 const EventEmitter = require('events').EventEmitter;
 const isWindows = process.platform === 'win32';
 
@@ -50,6 +52,7 @@ class Emitter extends EventEmitter {
 
 const loggersByTitle = {};
 const loggingBufferColumns = 25;
+let level_;
 
 class Log {
   static _logToStdErr(title, argsArray) {
@@ -72,7 +75,11 @@ class Log {
     return log;
   }
 
+  /**
+   * @param {string} level
+   */
   static setLevel(level) {
+    level_ = level;
     switch (level) {
       case 'silent':
         debug.enable('-*');
@@ -102,6 +109,23 @@ class Log {
     const snippet = (data.params && method !== 'IO.read') ?
       JSON.stringify(data.params).substr(0, maxLength) : '';
     Log._logToStdErr(`${prefix}:${level || ''}`, [method, snippet]);
+  }
+
+  /**
+   * @return {boolean}
+   */
+  static isVerbose() {
+    return level_ === 'verbose';
+  }
+
+  static time({msg, id, args = []}, level = 'log') {
+    marky.mark(id);
+    Log[level]('status', msg, ...args);
+  }
+
+  static timeEnd({msg, id, args = []}, level = 'verbose') {
+    Log[level]('statusEnd', msg, ...args);
+    marky.stop(id);
   }
 
   static log(title, ...args) {
@@ -207,5 +231,11 @@ class Log {
 }
 
 Log.events = new Emitter();
+Log.takeTimeEntries = () => {
+  const entries = marky.getEntries();
+  marky.clear();
+  return entries;
+};
+Log.getTimeEntries = () => marky.getEntries();
 
 module.exports = Log;

@@ -81,8 +81,8 @@ module.exports = [
     },
   },
   {
-    requestedUrl: BASE_URL + 'seo-failure-cases.html?status_code=403&' + failureHeaders,
-    finalUrl: BASE_URL + 'seo-failure-cases.html?status_code=403&' + failureHeaders,
+    requestedUrl: BASE_URL + 'seo-failure-cases.html?' + failureHeaders,
+    finalUrl: BASE_URL + 'seo-failure-cases.html?' + failureHeaders,
     audits: {
       'viewport': {
         score: 0,
@@ -94,8 +94,7 @@ module.exports = [
         score: 0,
       },
       'http-status-code': {
-        score: 0,
-        displayValue: '403',
+        score: 1,
       },
       'font-size': {
         rawValue: false,
@@ -103,10 +102,10 @@ module.exports = [
       },
       'link-text': {
         score: 0,
-        displayValue: '3 links found',
+        displayValue: '4 links found',
         details: {
           items: {
-            length: 3,
+            length: 4,
           },
         },
       },
@@ -145,6 +144,44 @@ module.exports = [
             length: 3,
           },
         },
+      },
+    },
+  },
+  {
+    // Note: most scores are null (audit error) because the page 403ed.
+    requestedUrl: BASE_URL + 'seo-failure-cases.html?status_code=403',
+    finalUrl: BASE_URL + 'seo-failure-cases.html?status_code=403',
+    audits: {
+      'http-status-code': {
+        score: 0,
+        displayValue: '403',
+      },
+      'viewport': {
+        score: null,
+      },
+      'document-title': {
+        score: null,
+      },
+      'meta-description': {
+        score: null,
+      },
+      'font-size': {
+        score: null,
+      },
+      'link-text': {
+        score: null,
+      },
+      'is-crawlable': {
+        score: null,
+      },
+      'hreflang': {
+        score: null,
+      },
+      'plugins': {
+        score: null,
+      },
+      'canonical': {
+        score: null,
       },
     },
   },

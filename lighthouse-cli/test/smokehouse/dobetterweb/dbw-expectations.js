@@ -39,7 +39,7 @@ module.exports = [
       },
       'external-anchors-use-rel-noopener': {
         score: 0,
-        warnings: [/Unable to determine/],
+        warnings: [/Unable to determine.*<a target="_blank">/],
         details: {
           items: {
             length: 3,
@@ -69,10 +69,6 @@ module.exports = [
           },
         },
       },
-      'no-websql': {
-        score: 0,
-        displayValue: 'Found "mydb" (v1.0)',
-      },
       'notification-on-start': {
         score: 0,
       },
@@ -91,9 +87,9 @@ module.exports = [
           items: {
             // Note: Originally this was 7 but M56 defaults document-level
             // listeners to passive. See https://www.chromestatus.com/features/5093566007214080
-            // Note: It was 4, but {passive:false} doesn't get a warning as of M63: crbug.com/770208
-            // COMPAT: This can be set to 3 when m63 is stable.
-            length: '>=3',
+            // Note: It was 4, but {passive:false} doesn't get a warning as of M63: https://crbug.com/770208
+            // Note: It was 3, but wheel events are now also passive as of field trial in M71 https://crbug.com/626196
+            length: '>=1',
           },
         },
       },
@@ -101,7 +97,8 @@ module.exports = [
         score: 0,
         details: {
           items: {
-            length: 3,
+            // Note: HTML Imports added to deprecations in m70, so 3 before, 4 after.
+            length: '>=3',
           },
         },
       },
@@ -135,6 +132,14 @@ module.exports = [
               wastedBytes: 682028,
             },
           ],
+        },
+      },
+      'js-libraries': {
+        score: 1,
+        details: {
+          items: [{
+            name: 'jQuery',
+          }],
         },
       },
     },

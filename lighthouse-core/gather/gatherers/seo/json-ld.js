@@ -6,7 +6,7 @@
 'use strict';
 
 const Gatherer = require('../gatherer');
-const DOMHelpers = require('../../../lib/dom-helpers.js');
+const {getElementsInDocumentString} = require('../../../lib/page-functions');
 
 class JsonLD extends Gatherer {
   /**
@@ -15,7 +15,7 @@ class JsonLD extends Gatherer {
    */
   afterPass(passContext) {
     const expression = `(function() {
-      ${DOMHelpers.getElementsInDocumentFnString}; // define function on page
+      ${getElementsInDocumentString}; // define function on page
       const selector = 'script[type="application/ld+json" i]';
       const elements = getElementsInDocument(selector);
       return elements.map(node => node.innerText);

@@ -7,7 +7,8 @@
 
 const Gatherer = require('./gatherer');
 const manifestParser = require('../../lib/manifest-parser');
-const Driver = require('../driver.js'); // eslint-disable-line no-unused-vars
+
+/** @typedef {import('../driver.js')} Driver */
 
 class StartUrl extends Gatherer {
   /**
@@ -24,38 +25,32 @@ class StartUrl extends Gatherer {
       .then(manifest => {
         const startUrlInfo = this._readManifestStartUrl(manifest);
         if (startUrlInfo.isReadFailure) {
-          return {statusCode: -1, debugString: startUrlInfo.reason};
+          return {statusCode: -1, explanation: startUrlInfo.reason};
         }
 
         return this._attemptManifestFetch(passContext.driver, startUrlInfo.startUrl);
       }).catch(() => {
-        return {statusCode: -1, debugString: 'Unable to fetch start URL via service worker'};
+        return {statusCode: -1, explanation: 'Unable to fetch start URL via service worker.'};
       });
   }
 
   /**
    * Read the parsed manifest and return failure reasons or the startUrl
-   * @param {?{value?: {start_url: {value?: string, debugString?: string}}, debugString?: string}} manifest
+   * @param {?{value?: {start_url: {value: string, warning?: string}}, warning?: string}} manifest
    * @return {{isReadFailure: true, reason: string}|{isReadFailure: false, startUrl: string}}
    */
   _readManifestStartUrl(manifest) {
     if (!manifest || !manifest.value) {
-      const detailedMsg = manifest && manifest.debugString;
+      const detailedMsg = manifest && manifest.warning;
 
       if (detailedMsg) {
-        return {isReadFailure: true, reason: `Error fetching web app manifest: ${detailedMsg}`};
+        return {isReadFailure: true, reason: `Error fetching web app manifest: ${detailedMsg}.`};
       } else {
-        return {isReadFailure: true, reason: `No usable web app manifest found on page`};
+        return {isReadFailure: true, reason: `No usable web app manifest found on page.`};
       }
     }
 
-    // Even if the start URL had an error, the browser will still supply a fallback URL.
-    // Therefore, we only set the debugString here and continue with the fetch.
-    if (manifest.value.start_url.debugString) {
-      return {isReadFailure: true, reason: manifest.value.start_url.debugString};
-    }
-
-    // @ts-ignore - TODO(bckenny): should actually be testing value above, not debugString
+    // Even if the start URL had a parser warning, the browser will still supply a fallback URL.
     return {isReadFailure: false, startUrl: manifest.value.start_url.value};
   }
 
@@ -64,13 +59,13 @@ class StartUrl extends Gatherer {
    * Resolves when we have a matched network request
    * @param {Driver} driver
    * @param {string} startUrl
-   * @return {Promise<{statusCode: number, debugString: string}>}
+   * @return {Promise<{statusCode: number, explanation: string}>}
    */
   _attemptManifestFetch(driver, startUrl) {
     // Wait up to 3s to get a matched network request from the fetch() to work
     const timeoutPromise = new Promise(resolve =>
       setTimeout(
-        () => resolve({statusCode: -1, debugString: 'Timed out waiting for fetched start_url'}),
+        () => resolve({statusCode: -1, explanation: 'Timed out waiting for fetched start_url.'}),
         3000
       )
     );
@@ -88,7 +83,7 @@ class StartUrl extends Gatherer {
         if (!response.fromServiceWorker) {
           return resolve({
             statusCode: -1,
-            debugString: 'Unable to fetch start URL via service worker',
+            explanation: 'Unable to fetch start URL via service worker.',
           });
         }
         // Successful SW-served fetch of the start_URL

@@ -6,6 +6,20 @@
 'use strict';
 
 const Audit = require('../audit');
+const i18n = require('../../lib/i18n/i18n.js');
+const ComputedEil = require('../../gather/computed/metrics/estimated-input-latency.js');
+
+const UIStrings = {
+  /** The name of the metric that marks the estimated time between the page receiving input (a user clicking, tapping, or typing) and the page responding. Shown to users as the label for the numeric metric value. Ideally fits within a ~40 character limit. */
+  title: 'Estimated Input Latency',
+  /** Description of the Estimated Input Latency metric that estimates the amount of time, in milliseconds, that the app takes to respond to user input. This description is displayed within a tooltip when the user hovers on the metric name to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'The score above is an estimate of how long your app takes to respond to user ' +
+      'input, in milliseconds, during the busiest 5s window of page load. If your ' +
+      'latency is higher than 50 ms, users may perceive your app as laggy. ' +
+      '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/estimated-input-latency).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 class EstimatedInputLatency extends Audit {
   /**
@@ -14,11 +28,8 @@ class EstimatedInputLatency extends Audit {
   static get meta() {
     return {
       id: 'estimated-input-latency',
-      title: 'Estimated Input Latency',
-      description: 'The score above is an estimate of how long your app takes to respond to user ' +
-          'input, in milliseconds, during the busiest 5s window of page load. If your ' +
-          'latency is higher than 50 ms, users may perceive your app as laggy. ' +
-          '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/estimated-input-latency).',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
       requiredArtifacts: ['traces'],
     };
@@ -47,7 +58,7 @@ class EstimatedInputLatency extends Audit {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const metricComputationData = {trace, devtoolsLog, settings: context.settings};
-    const metricResult = await artifacts.requestEstimatedInputLatency(metricComputationData);
+    const metricResult = await ComputedEil.request(metricComputationData, context);
 
     return {
       score: Audit.computeLogNormalScore(
@@ -56,9 +67,10 @@ class EstimatedInputLatency extends Audit {
         context.options.scoreMedian
       ),
       rawValue: metricResult.timing,
-      displayValue: ['%d\xa0ms', metricResult.timing],
+      displayValue: str_(i18n.UIStrings.ms, {timeInMs: metricResult.timing}),
     };
   }
 }
 
 module.exports = EstimatedInputLatency;
+module.exports.UIStrings = UIStrings;

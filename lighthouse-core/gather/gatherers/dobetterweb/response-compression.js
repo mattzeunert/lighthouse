@@ -11,6 +11,8 @@
 'use strict';
 
 const Gatherer = require('../gatherer');
+const URL = require('../../../lib/url-shim');
+const Sentry = require('../../../lib/sentry');
 const NetworkRequest = require('../../../lib/network-request');
 const gzip = require('zlib').gzip;
 
@@ -18,6 +20,7 @@ const CHROME_EXTENSION_PROTOCOL = 'chrome-extension:';
 const compressionHeaders = ['content-encoding', 'x-original-content-encoding'];
 const compressionTypes = ['gzip', 'br', 'deflate'];
 const binaryMimeTypes = ['image', 'audio', 'video'];
+/** @type {Array<LH.Crdp.Page.ResourceType>} */
 const textResourceTypes = [
   NetworkRequest.TYPES.Document,
   NetworkRequest.TYPES.Script,
@@ -99,6 +102,15 @@ class ResponseCompression extends Gatherer {
             resolve(record);
           });
         });
+      }).catch(err => {
+        Sentry.captureException(err, {
+          tags: {gatherer: 'ResponseCompression'},
+          extra: {url: URL.elideDataURI(record.url)},
+          level: 'warning',
+        });
+
+        record.gzipSize = undefined;
+        return record;
       });
     }));
   }

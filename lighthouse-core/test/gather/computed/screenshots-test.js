@@ -6,27 +6,19 @@
 'use strict';
 
 /* eslint-env jest */
-const ScreenshotsGather = require('../../../gather/computed/screenshots');
-const Runner = require('../../../runner.js');
+const Screenshots = require('../../../gather/computed/screenshots');
 const assert = require('assert');
 const pwaTrace = require('../../fixtures/traces/progressive-app.json');
 
-const screenshotsGather = new ScreenshotsGather({});
-
-describe('Screenshot gatherer', () => {
+describe('Screenshot computed artifact', () => {
   it('returns an artifact for a real trace', () => {
-    const artifacts = Object.assign({
-      traces: {
-        [screenshotsGather.DEFAULT_PASS]: pwaTrace,
-      },
-    }, Runner.instantiateComputedArtifacts());
-
-    return artifacts.requestScreenshots({traceEvents: pwaTrace}).then(screenshots => {
+    const context = {computedCache: new Map()};
+    return Screenshots.request({traceEvents: pwaTrace}, context).then(screenshots => {
       assert.ok(Array.isArray(screenshots));
       assert.equal(screenshots.length, 7);
 
       const firstScreenshot = screenshots[0];
-      assert.ok(firstScreenshot.datauri.startsWith('data:image/jpg;base64,'));
+      assert.ok(firstScreenshot.datauri.startsWith('data:image/jpeg;base64,'));
       assert.ok(firstScreenshot.datauri.length > 42);
     });
   });

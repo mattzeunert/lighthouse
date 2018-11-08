@@ -77,12 +77,12 @@ describe('Start-url gatherer', () => {
       startUrlGathererWithResponseNotFromSW.afterPass(optionsWithResponseNotFromSW),
     ]).then(([artifact, artifactWithQueryString, artifactWithResponseNotFromSW]) => {
       assert.equal(artifact.statusCode, -1);
-      assert.ok(artifact.debugString, 'did not set debug string');
+      assert.ok(artifact.explanation, 'did not set debug string');
       assert.equal(artifactWithQueryString.statusCode, -1);
-      assert.ok(artifactWithQueryString.debugString, 'did not set debug string');
+      assert.ok(artifactWithQueryString.explanation, 'did not set debug string');
       assert.equal(artifactWithResponseNotFromSW.statusCode, -1);
-      assert.equal(artifactWithResponseNotFromSW.debugString,
-          'Unable to fetch start URL via service worker');
+      assert.equal(artifactWithResponseNotFromSW.explanation,
+          'Unable to fetch start URL via service worker.');
     });
   });
 
@@ -107,7 +107,7 @@ describe('Start-url gatherer', () => {
     });
   });
 
-  it('returns a debugString when manifest cannot be found', () => {
+  it('returns a explanation when manifest cannot be found', () => {
     const driver = Object.assign({}, mockDriver);
     const startUrlGatherer = new StartUrlGatherer();
     const options = {
@@ -119,12 +119,12 @@ describe('Start-url gatherer', () => {
 
     return startUrlGatherer.afterPass(options, tracingData)
       .then(artifact => {
-        assert.equal(artifact.debugString,
-          `No usable web app manifest found on page`);
+        assert.equal(artifact.explanation,
+          `No usable web app manifest found on page.`);
       });
   });
 
-  it('returns a debugString when manifest cannot be parsed', () => {
+  it('returns a explanation when manifest cannot be parsed', () => {
     const driver = Object.assign({}, mockDriver);
     const startUrlGatherer = new StartUrlGatherer();
     const options = {
@@ -139,13 +139,13 @@ describe('Start-url gatherer', () => {
 
     return startUrlGatherer.afterPass(options, tracingData)
       .then(artifact => {
-        assert.equal(artifact.debugString,
+        assert.equal(artifact.explanation,
           `Error fetching web app manifest: ERROR: file isn't valid JSON: ` +
-          `SyntaxError: Unexpected token h in JSON at position 1`);
+          `SyntaxError: Unexpected token h in JSON at position 1.`);
       });
   });
 
-  it('returns a debugString when start_url cannot be found', () => {
+  it('times out when a start_url is too slow to respond', () => {
     const startUrlGatherer = new StartUrlGatherer();
     const options = {
       url: 'https://ifixit-pwa.appspot.com/',
@@ -154,20 +154,7 @@ describe('Start-url gatherer', () => {
 
     return startUrlGatherer.afterPass(options, tracingData)
       .then(artifact => {
-        assert.equal(artifact.debugString, 'ERROR: start_url string empty');
-      });
-  });
-
-  it('returns an error when origin is not the same', () => {
-    const startUrlGatherer = new StartUrlGatherer();
-    const options = {
-      url: 'https://ifixit-pwa.appspot.com/',
-      driver: wrapSendCommand(mockDriver, 'https://not-same-origin.com/'),
-    };
-
-    return startUrlGatherer.afterPass(options, tracingData)
-      .then(artifact => {
-        assert.equal(artifact.debugString, 'ERROR: start_url must be same-origin as document');
+        assert.equal(artifact.explanation, 'Timed out waiting for fetched start_url.');
       });
   });
 });

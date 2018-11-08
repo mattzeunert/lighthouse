@@ -7,7 +7,6 @@
 
 const PageDependencyGraph = require('../../../gather/computed/page-dependency-graph');
 const BaseNode = require('../../../lib/dependency-graph/base-node');
-const Runner = require('../../../runner.js');
 const NetworkRequest = require('../../../lib/network-request');
 
 const sampleTrace = require('../../fixtures/traces/progressive-app-m60.json');
@@ -27,14 +26,15 @@ function createRequest(
   return {requestId, url, startTime, endTime, initiator, resourceType};
 }
 
+const TOPLEVEL_TASK_NAME = 'TaskQueueManager::ProcessTaskFromWorkQueue';
+
 /* eslint-env jest */
 describe('PageDependencyGraph computed artifact:', () => {
-  let computedArtifacts;
   let traceOfTab;
 
   function addTaskEvents(startTs, duration, evts) {
     const mainEvent = {
-      name: 'TaskQueueManager::ProcessTaskFromWorkQueue',
+      name: TOPLEVEL_TASK_NAME,
       tid: 1,
       ts: startTs * 1000,
       dur: duration * 1000,
@@ -55,16 +55,16 @@ describe('PageDependencyGraph computed artifact:', () => {
   }
 
   beforeEach(() => {
-    computedArtifacts = Runner.instantiateComputedArtifacts();
     traceOfTab = {mainThreadEvents: []};
   });
 
   describe('#compute_', () => {
     it('should compute the dependency graph', () => {
-      return computedArtifacts.requestPageDependencyGraph({
+      const context = {computedCache: new Map()};
+      return PageDependencyGraph.request({
         trace: sampleTrace,
         devtoolsLog: sampleDevtoolsLog,
-      }).then(output => {
+      }, context).then(output => {
         assert.ok(output instanceof BaseNode, 'did not return a graph');
 
         const dependents = output.getDependents();
@@ -149,6 +149,8 @@ describe('PageDependencyGraph computed artifact:', () => {
       const request4 = createRequest(4, '4', 10, {url: '2'});
       const networkRecords = [request1, request2, request3, request4];
 
+      addTaskEvents(0, 0, []);
+
       const graph = PageDependencyGraph.createGraph(traceOfTab, networkRecords);
       const nodes = [];
       graph.traverse(node => nodes.push(node));
@@ -201,6 +203,8 @@ describe('PageDependencyGraph computed artifact:', () => {
       const request3 = createRequest(3, '2', 5); // duplicate URL
       const request4 = createRequest(4, '4', 10, {url: '2'});
       const networkRecords = [request1, request2, request3, request4];
+
+      addTaskEvents(0, 0, []);
 
       const graph = PageDependencyGraph.createGraph(traceOfTab, networkRecords);
       const nodes = [];
@@ -260,6 +264,8 @@ describe('PageDependencyGraph computed artifact:', () => {
       const request1 = createRequest(1, '1', 0, null, NetworkRequest.TYPES.Image);
       const request2 = createRequest(2, '2', 5);
       const networkRecords = [request1, request2];
+
+      addTaskEvents(0, 0, []);
 
       const graph = PageDependencyGraph.createGraph(traceOfTab, networkRecords);
       const nodes = [];

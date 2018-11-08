@@ -5,29 +5,25 @@
  */
 'use strict';
 
-const ComputedArtifact = require('./computed-artifact');
+const makeComputedArtifact = require('./new-computed-artifact');
 
 const SCREENSHOT_TRACE_NAME = 'Screenshot';
 
-class ScreenshotFilmstrip extends ComputedArtifact {
-  get name() {
-    return 'Screenshots';
-  }
-
+class Screenshots {
   /**
    * @param {LH.Trace} trace
    * @return {Promise<Array<{timestamp: number, datauri: string}>>}
   */
-  async compute_(trace) {
+  static async compute_(trace) {
     return trace.traceEvents
       .filter(evt => evt.name === SCREENSHOT_TRACE_NAME)
       .map(evt => {
         return {
           timestamp: evt.ts / 1000,
-          datauri: `data:image/jpg;base64,${evt.args.snapshot}`,
+          datauri: `data:image/jpeg;base64,${evt.args.snapshot}`,
         };
       });
   }
 }
 
-module.exports = ScreenshotFilmstrip;
+module.exports = makeComputedArtifact(Screenshots);

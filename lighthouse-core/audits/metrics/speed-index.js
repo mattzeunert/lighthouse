@@ -6,7 +6,18 @@
 'use strict';
 
 const Audit = require('../audit');
-const Util = require('../../report/html/renderer/util');
+const i18n = require('../../lib/i18n/i18n.js');
+const ComputedSi = require('../../gather/computed/metrics/speed-index.js');
+
+const UIStrings = {
+  /** The name of the metric that summarizes how quickly the page looked visually complete. The name of this metric is largely abstract and can be loosely translated. Shown to users as the label for the numeric metric value. Ideally fits within a ~40 character limit. */
+  title: 'Speed Index',
+  /** Description of the Speed Index metric, which summarizes how quickly the page looked visually complete. This is displayed within a tooltip when the user hovers on the metric name to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Speed Index shows how quickly the contents of a page are visibly populated. ' +
+      '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/speed-index).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 class SpeedIndex extends Audit {
   /**
@@ -15,9 +26,8 @@ class SpeedIndex extends Audit {
   static get meta() {
     return {
       id: 'speed-index',
-      title: 'Speed Index',
-      description: 'Speed Index shows how quickly the contents of a page are visibly populated. ' +
-          '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/speed-index).',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: Audit.SCORING_MODES.NUMERIC,
       requiredArtifacts: ['traces', 'devtoolsLogs'],
     };
@@ -47,7 +57,7 @@ class SpeedIndex extends Audit {
     const trace = artifacts.traces[Audit.DEFAULT_PASS];
     const devtoolsLog = artifacts.devtoolsLogs[Audit.DEFAULT_PASS];
     const metricComputationData = {trace, devtoolsLog, settings: context.settings};
-    const metricResult = await artifacts.requestSpeedIndex(metricComputationData);
+    const metricResult = await ComputedSi.request(metricComputationData, context);
 
     return {
       score: Audit.computeLogNormalScore(
@@ -56,9 +66,10 @@ class SpeedIndex extends Audit {
         context.options.scoreMedian
       ),
       rawValue: metricResult.timing,
-      displayValue: [Util.MS_DISPLAY_VALUE, metricResult.timing],
+      displayValue: str_(i18n.UIStrings.seconds, {timeInMs: metricResult.timing}),
     };
   }
 }
 
 module.exports = SpeedIndex;
+module.exports.UIStrings = UIStrings;

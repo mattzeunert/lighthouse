@@ -10,6 +10,18 @@
 
 const ByteEfficiencyAudit = require('./byte-efficiency-audit');
 const URL = require('../../lib/url-shim');
+const i18n = require('../../lib/i18n/i18n.js');
+
+const UIStrings = {
+  /** Imperative title of a Lighthouse audit that tells the user to serve images in newer and more efficient image formats in order to enhance the performance of a page. A non-modern image format was designed 20+ years ago. This is displayed in a list of audit titles that Lighthouse generates. */
+  title: 'Serve images in next-gen formats',
+  /** Description of a Lighthouse audit that tells the user *why* they should use newer and more efficient image formats. This is displayed after a user expands the section to see more. No character length limits. 'Learn More' becomes link text to additional documentation. */
+  description: 'Image formats like JPEG 2000, JPEG XR, and WebP often provide better ' +
+    'compression than PNG or JPEG, which means faster downloads and less data consumption. ' +
+    '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/webp).',
+};
+
+const str_ = i18n.createMessageInstanceIdFn(__filename, UIStrings);
 
 const IGNORE_THRESHOLD_IN_BYTES = 8192;
 
@@ -20,12 +32,10 @@ class UsesWebPImages extends ByteEfficiencyAudit {
   static get meta() {
     return {
       id: 'uses-webp-images',
-      title: 'Serve images in next-gen formats',
+      title: str_(UIStrings.title),
+      description: str_(UIStrings.description),
       scoreDisplayMode: ByteEfficiencyAudit.SCORING_MODES.NUMERIC,
-      description: 'Image formats like JPEG 2000, JPEG XR, and WebP often provide better ' +
-        'compression than PNG or JPEG, which means faster downloads and less data consumption. ' +
-        '[Learn more](https://developers.google.com/web/tools/lighthouse/audits/webp).',
-      requiredArtifacts: ['OptimizedImages', 'devtoolsLogs'],
+      requiredArtifacts: ['OptimizedImages', 'devtoolsLogs', 'traces'],
     };
   }
 
@@ -72,9 +82,9 @@ class UsesWebPImages extends ByteEfficiencyAudit {
     /** @type {LH.Result.Audit.OpportunityDetails['headings']} */
     const headings = [
       {key: 'url', valueType: 'thumbnail', label: ''},
-      {key: 'url', valueType: 'url', label: 'URL'},
-      {key: 'totalBytes', valueType: 'bytes', label: 'Original'},
-      {key: 'wastedBytes', valueType: 'bytes', label: 'Potential Savings'},
+      {key: 'url', valueType: 'url', label: str_(i18n.UIStrings.columnURL)},
+      {key: 'totalBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnSize)},
+      {key: 'wastedBytes', valueType: 'bytes', label: str_(i18n.UIStrings.columnWastedBytes)},
     ];
 
     return {
@@ -86,3 +96,4 @@ class UsesWebPImages extends ByteEfficiencyAudit {
 }
 
 module.exports = UsesWebPImages;
+module.exports.UIStrings = UIStrings;

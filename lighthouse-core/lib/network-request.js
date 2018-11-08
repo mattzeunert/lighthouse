@@ -28,7 +28,7 @@ const SECURE_SCHEMES = ['data', 'https', 'wss', 'blob', 'chrome', 'chrome-extens
  * @property {string} securityOrigin
  */
 
-/** @type {Record<LH.Crdp.Page.ResourceType, LH.Crdp.Page.ResourceType>} */
+/** @type {SelfMap<LH.Crdp.Page.ResourceType>} */
 const RESOURCE_TYPES = {
   XHR: 'XHR',
   Fetch: 'Fetch',
@@ -43,6 +43,9 @@ const RESOURCE_TYPES = {
   WebSocket: 'WebSocket',
   Other: 'Other',
   Manifest: 'Manifest',
+  SignedExchange: 'SignedExchange',
+  Ping: 'Ping',
+  CSPViolationReport: 'CSPViolationReport',
 };
 
 module.exports = class NetworkRequest {
@@ -55,6 +58,7 @@ module.exports = class NetworkRequest {
     this.url = '';
     this.protocol = '';
     this.isSecure = false;
+    this.isValid = false;
     this.parsedURL = /** @type {ParsedURL} */ ({scheme: ''});
     this.documentURL = '';
 
@@ -93,11 +97,20 @@ module.exports = class NetworkRequest {
     this.initiatorRequest = undefined;
     /** @type {HeaderEntry[]} */
     this.responseHeaders = [];
+    /** @type {string} */
+    this.responseHeadersText = '';
 
     this.fetchedViaServiceWorker = false;
     /** @type {string|undefined} */
     this.frameId = '';
     this.isLinkPreload = false;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  hasErrorStatusCode() {
+    return this.statusCode >= 400;
   }
 
   /**
@@ -112,8 +125,14 @@ module.exports = class NetworkRequest {
    */
   onRequestWillBeSent(data) {
     this.requestId = data.requestId;
-
-    const url = new URL(data.request.url);
+    let url;
+    try {
+      // try to construct the url and fill in request
+      url = new URL(data.request.url);
+    } catch (e) {
+      // isValid left false, all other data is blank
+      return;
+    }
     this.url = data.request.url;
     this.documentURL = data.documentURL;
     this.parsedURL = {
@@ -134,6 +153,7 @@ module.exports = class NetworkRequest {
 
     this.frameId = data.frameId;
     this.isLinkPreload = data.initiator.type === 'preload' || !!data.request.isLinkPreload;
+    this.isValid = true;
   }
 
   onRequestServedFromCache() {
@@ -172,6 +192,7 @@ module.exports = class NetworkRequest {
     }
 
     this._updateResponseReceivedTimeIfNecessary();
+    this._updateTransferSizeForLightRiderIfNecessary();
   }
 
   /**
@@ -234,12 +255,15 @@ module.exports = class NetworkRequest {
     this.timing = response.timing;
     if (resourceType) this.resourceType = RESOURCE_TYPES[resourceType];
     this.mimeType = response.mimeType;
+    this.responseHeadersText = response.headersText || '';
     this.responseHeaders = NetworkRequest._headersDictToHeadersArray(response.headers);
 
     this.fetchedViaServiceWorker = !!response.fromServiceWorker;
 
     if (this.fromMemoryCache) this.timing = undefined;
     if (this.timing) this._recomputeTimesWithResourceTiming(this.timing);
+
+    this._updateTransferSizeForLightRiderIfNecessary();
   }
 
   /**
@@ -267,6 +291,21 @@ module.exports = class NetworkRequest {
    */
   _updateResponseReceivedTimeIfNecessary() {
     this.responseReceivedTime = Math.min(this.endTime, this.responseReceivedTime);
+  }
+
+  /**
+   * LR loses transfer size information, but passes it in the 'X-TotalFetchedSize' header.
+   */
+  _updateTransferSizeForLightRiderIfNecessary() {
+    // Bail if we're not in LightRider, this only applies there.
+    if (!global.isLightRider) return;
+    // Bail if we somehow already have transfer size data.
+    if (this.transferSize) return;
+
+    const totalFetchedSize = this.responseHeaders.find(item => item.name === 'X-TotalFetchedSize');
+    // Bail if the header was missing.
+    if (!totalFetchedSize) return;
+    this.transferSize = parseFloat(totalFetchedSize.value);
   }
 
   /**

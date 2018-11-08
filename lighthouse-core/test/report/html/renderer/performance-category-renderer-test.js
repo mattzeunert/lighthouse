@@ -17,8 +17,7 @@ const DetailsRenderer = require('../../../../report/html/renderer/details-render
 const CriticalRequestChainRenderer = require(
     '../../../../report/html/renderer/crc-details-renderer.js');
 const CategoryRenderer = require('../../../../report/html/renderer/category-renderer.js');
-const ReportRenderer = require('../../../../report/html/renderer/report-renderer.js');
-const sampleResults = require('../../../results/sample_v2.json');
+const sampleResultsOrig = require('../../../results/sample_v2.json');
 
 const TEMPLATE_FILE = fs.readFileSync(__dirname +
     '/../../../../report/html/templates.html', 'utf8');
@@ -26,6 +25,7 @@ const TEMPLATE_FILE = fs.readFileSync(__dirname +
 describe('PerfCategoryRenderer', () => {
   let category;
   let renderer;
+  let sampleResults;
 
   beforeAll(() => {
     global.URL = URL;
@@ -36,14 +36,13 @@ describe('PerfCategoryRenderer', () => {
     const PerformanceCategoryRenderer =
         require('../../../../report/html/renderer/performance-category-renderer.js');
 
-    const document = jsdom.jsdom(TEMPLATE_FILE);
+    const {document} = new jsdom.JSDOM(TEMPLATE_FILE).window;
     const dom = new DOM(document);
     const detailsRenderer = new DetailsRenderer(dom);
     renderer = new PerformanceCategoryRenderer(dom, detailsRenderer);
-    sampleResults.reportCategories = Object.values(sampleResults.categories);
+
+    sampleResults = Util.prepareReportResult(sampleResultsOrig);
     category = sampleResults.reportCategories.find(cat => cat.id === 'performance');
-    ReportRenderer.smooshAuditResultsIntoCategories(sampleResults.audits,
-      sampleResults.reportCategories);
   });
 
   afterAll(() => {
@@ -141,20 +140,23 @@ describe('PerfCategoryRenderer', () => {
     const diagnosticSection = categoryDOM.querySelectorAll('.lh-category > .lh-audit-group')[2];
 
     const diagnosticAudits = category.auditRefs.filter(audit => audit.group === 'diagnostics' &&
-        audit.result.score !== 1 && audit.result.scoreDisplayMode !== 'not-applicable');
+        !Util.showAsPassed(audit.result));
     const diagnosticElements = diagnosticSection.querySelectorAll('.lh-audit');
     assert.equal(diagnosticElements.length, diagnosticAudits.length);
   });
 
   it('renders the passed audits', () => {
     const categoryDOM = renderer.render(category, sampleResults.categoryGroups);
-    const passedSection = categoryDOM.querySelector('.lh-category > .lh-passed-audits');
+    const passedSection = categoryDOM.querySelector('.lh-category > .lh-clump--passed');
 
     const passedAudits = category.auditRefs.filter(audit =>
-        audit.group && audit.group !== 'metrics' &&
-        (audit.result.score === 1 || audit.result.scoreDisplayMode === 'not-applicable'));
+        audit.group && audit.group !== 'metrics' && Util.showAsPassed(audit.result));
     const passedElements = passedSection.querySelectorAll('.lh-audit');
     assert.equal(passedElements.length, passedAudits.length);
+  });
+
+  // Unsupported by perf cat renderer right now.
+  it.skip('renders any manual audits', () => {
   });
 
   describe('getWastedMs', () => {
@@ -164,7 +166,7 @@ describe('PerfCategoryRenderer', () => {
         group: 'load-opportunities',
         result: {
           error: true, score: 0,
-          rawValue: 100, debugString: 'Yikes!!', title: 'Bug #2',
+          rawValue: 100, explanation: 'Yikes!!', title: 'Bug #2',
         },
       };
       const wastedMs = renderer._getWastedMs(auditWithDebug);
