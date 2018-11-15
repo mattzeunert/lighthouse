@@ -185,6 +185,39 @@ function getNodePath(node) {
   return path.join(',');
 }
 
+/**
+ * @param {Element} node
+ * @returns {string}
+ */
+/* istanbul ignore next */
+function getNodeSelector(node) {
+  /**
+   * @param {Element} node
+   */
+  function getSelectorPart(node) {
+    let part = node.tagName.toLowerCase();
+    if (node.id) {
+      part += '#' + node.id;
+    } else if (node.classList.length > 0) {
+      part += '.' + node.classList[0];
+    }
+    return part;
+  }
+
+  const parts = [];
+  while (parts.length < 4) {
+    parts.unshift(getSelectorPart(node));
+    if (!node.parentElement) {
+      break;
+    }
+    node = node.parentElement;
+    if (node.tagName === 'HTML') {
+      break;
+    }
+  }
+  return parts.join(' > ');
+}
+
 module.exports = {
   wrapRuntimeEvalErrorInBrowserString: wrapRuntimeEvalErrorInBrowser.toString(),
   registerPerformanceObserverInPageString: registerPerformanceObserverInPage.toString(),
@@ -195,4 +228,5 @@ module.exports = {
   ultradumbBenchmark: ultradumbBenchmark,
   ultradumbBenchmarkString: ultradumbBenchmark.toString(),
   getNodePathString: getNodePath.toString(),
+  getNodeSelectorString: getNodeSelector.toString(),
 };
