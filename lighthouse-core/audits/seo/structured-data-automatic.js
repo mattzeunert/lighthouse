@@ -17,7 +17,8 @@ class StructuredDataAutomatic extends Audit {
       id: 'structured-data-automatic',
       title: 'Structured data is valid',
       failureTitle: 'Invalid structured data',
-      description: 'Structured data contains rich metadata about a web page. ' +
+      description:
+        'Structured data contains rich metadata about a web page. ' +
         'The data is used in search results and social sharing. ' +
         'Invalid metadata will affect how the page appears in these contexts. ' +
         'This audit is currently doing basic JSON-LD validation.',
@@ -40,18 +41,28 @@ class StructuredDataAutomatic extends Audit {
     /** @type {Array<Object<string, LH.Audit.DetailsItem>>} */
     const tableData = [];
 
+
     await Promise.all(
       artifacts.JsonLD.map(async (jsonLD, idx) => {
         const code = jsonLD.trim();
         const snippet = code.length > 100 ? code.substr(0, 100) + '…' : code;
-        const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
-          type: 'node',
-          selector: `script[type="application/ld+json" i]:nth-of-type(${idx + 1})`,
-          snippet,
-        });
         const errors = await validateJsonLD(jsonLD);
+        console.log(JSON.stringify(errors));
 
-        errors.forEach(({message, path}) => {
+
+        errors.forEach(({message, path, line}) => {
+          const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
+            type: 'code-lines',
+            // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
+            //   1})`,
+            // snippet,
+            code,
+            // todo: support mutlile failures!!
+            highlightLine: line || 5,
+            highlightMessage: message + ' path: ' + path + ' line: ' + line,
+          });
+
+
           tableData.push({
             node,
             message,
@@ -62,9 +73,9 @@ class StructuredDataAutomatic extends Audit {
     );
 
     const headings = [
-      {key: 'node', itemType: 'node', text: 'Failing Element'},
-      {key: 'path', itemType: 'text', text: 'Line/Path'},
-      {key: 'message', itemType: 'text', text: 'Error'},
+      {key: 'node', itemType: 'code-lines', text: 'sdfasdf Failing Element'},
+      // {key: 'path', itemType: 'text', text: 'Line/Path'},
+      // {key: 'message', itemType: 'text', text: 'Error'},
     ];
 
     const details = Audit.makeTableDetails(headings, tableData);

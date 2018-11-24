@@ -116,6 +116,8 @@ module.exports = function validateSchemaOrg(expandedObj) {
   /** @type {Array<{path: string, message: string}>} */
   const errors = [];
 
+  eval('debugger');
+
   if (expandedObj === null) {
     return errors;
   }

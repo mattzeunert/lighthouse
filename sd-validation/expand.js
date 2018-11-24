@@ -54,6 +54,8 @@ module.exports = function expand(inputObject) {
     resolve = res; reject = rej;
   });
 
+  console.log('BEFORE', JSON.stringify(inputObject, null, 4));
+
   jsonld.expand(inputObject, {
     documentLoader: (
         /** @type {string} **/ schemaUrl,
@@ -69,6 +71,7 @@ module.exports = function expand(inputObject) {
     if (e) {
       reject('Expansion error: ' + e.toString());
     } else {
+      console.log('AFTER', JSON.stringify(expanded, null, 4));
       resolve(expanded);
     }
   });

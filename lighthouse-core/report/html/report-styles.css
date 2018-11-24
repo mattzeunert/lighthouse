@@ -748,6 +748,44 @@ details, summary {
   word-break: break-word;
 }
 
+.lh-code-lines {
+  overflow: auto;
+  white-space: pre;
+}
+
+.lh-code-lines__line {
+
+}
+
+.lh-code-lines:not(.lh-code-lines--show-all) .lh-code-lines__line--hide-by-default {
+  display: none;
+}
+.lh-code-lines--show-all .lh-code-lines__show-all {
+  display: none;
+}
+.lh-code-lines__show-all {
+  color: #0c50c7;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 4px;
+  width: 100%;
+}
+
+.lh-code-lines__line-number {
+  display: inline-block;
+  width: 40px;
+  border-right: 1px solid #999;
+  text-align: right;
+  font-family: monospace;
+  padding-right: 5px;
+  margin-right: 5px;
+  background: #eee;
+  color: #777;
+  user-select: none;
+}
+
 .lh-warnings {
   --item-margin: calc(var(--body-line-height) / 6);
   border: 1px solid var(--average-color);

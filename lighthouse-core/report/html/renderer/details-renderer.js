@@ -71,6 +71,8 @@ class DetailsRenderer {
         return this._renderTable(/** @type {TableDetailsJSON} */ (details));
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
+      case 'code-lines':
+        return this._renderCodeLines(details);
       case 'node':
         return this.renderNode(/** @type {NodeDetailsJSON} */(details));
       case 'criticalrequestchain':
@@ -213,6 +215,8 @@ class DetailsRenderer {
     if (!details.items.length) return this._dom.createElement('span');
 
     const tableElem = this._dom.createElement('table', 'lh-table');
+    // todo: either make condtional, or find another way to sort the table
+    tableElem.style.tableLayout = 'fixed';
     const theadElem = this._dom.createChildOf(tableElem, 'thead');
     const theadTrElem = this._dom.createChildOf(theadElem, 'tr');
 
@@ -384,6 +388,95 @@ class DetailsRenderer {
     const pre = this._dom.createElement('pre', 'lh-code');
     pre.textContent = /** @type {string} */ (details.value);
     return pre;
+  }
+
+  _renderCodeLines({code, highlightLine, highlightMessage}) {
+    // const pre = this._dom.createElement('pre', 'lh-code-lines');
+
+    const lines = code.split('\n');
+
+
+    // todo: probably write a test for this
+
+    // todo: move to class
+
+    const codeLines = this._dom.createElement('div', 'lh-code-lines');
+    // const lineNumbers = this._dom.createElement('div');
+
+    const showAll = lines.length <= 4;
+
+    // todo: instead create line list first and then map to elements and then filter
+    lines.forEach((line, lineIndex) => {
+      // const lineNumber = this._dom.createElement('div');
+      // lineNumber.textContent = lineIndex + 1;
+      // lineNumbers.appendChild(lineNumber);
+
+
+      // UI: can we make the show more button prettier? just click anywhere to show all?
+      // UI: no titles for code snippet looks a bit weird
+
+      const dom = this._dom;
+      const lineNumber = lineIndex + 1;
+      const codeLine = renderLine({number: lineNumber, content: line});
+
+
+      const showByDefault = showAll || (lineNumber >= highlightLine - 2 && lineNumber <= highlightLine + 2);
+
+      if (!showByDefault) {
+        codeLine.classList.add('lh-code-lines__line--hide-by-default');
+      }
+      // todo: review existing css and make new stuff more in lines with it
+      codeLines.append(codeLine);
+
+      if (lineNumber === highlightLine) {
+        codeLine.style.background = '#ffe5e5';
+
+        const messageLine = renderLine({
+          number: ' ',
+          content: highlightMessage,
+        });
+        messageLine.style.background = '#ffe5e5';
+        codeLines.append(messageLine );
+      }
+
+      // todo: check out what _dom is... does it support classname/style?
+
+
+      function renderLine({number, content}) {
+        const codeLine = dom.createElement('div');
+        // todo: move to class
+        const lineNumber = dom.createElement('div', 'lh-code-lines__line-number');
+
+        lineNumber.textContent = number;
+
+        const code = dom.createElement('code');
+        code.textContent = content;
+
+        codeLine.appendChild(lineNumber);
+        codeLine.appendChild(code);
+
+        return codeLine;
+      }
+    });
+
+    if (!showAll) {
+      const showAllButton = this._dom.createElement('button', 'lh-code-lines__show-all');
+      showAllButton.textContent = 'Show All';
+      showAllButton.addEventListener('click', () => {
+        // todo: don't do "*" use classes
+
+        codeLines.classList.add('lh-code-lines--show-all');
+      });
+      codeLines.append(showAllButton);
+    }
+
+    // container.appendChild(lineNumbers);
+
+    return codeLines;
+
+
+    // pre.textContent = /** @type {string} */ (details.code);
+    // return pre;
   }
 }
 

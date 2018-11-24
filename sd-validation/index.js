@@ -22,11 +22,11 @@ module.exports = async function validate(textInput) {
 
   // STEP 1: VALIDATE JSON
   const parseOutput = parseJSON(textInput);
-
+  eval('debugger');
   if (parseOutput.error) {
     errors.push({
       validator: 'json',
-      path: parseOutput.error.line,
+      line: parseFloat(parseOutput.error.line),
       message: parseOutput.error.message,
     });
 
@@ -34,6 +34,10 @@ module.exports = async function validate(textInput) {
   }
 
   const inputObject = parseOutput.result;
+
+  // todo: make sure all three steps provide a line or are otherwise handled
+
+  // todo: test show result for multiple errors in one snippet
 
   // STEP 2: VALIDATE JSONLD
   const jsonLdErrors = validateJsonLD(inputObject);
@@ -43,6 +47,7 @@ module.exports = async function validate(textInput) {
       errors.push({
         validator: 'json-ld',
         path: error.path,
+        line: getLineFromJsonPath(inputObject, error.path),
         message: error.message.toString(),
       });
     });
@@ -66,12 +71,15 @@ module.exports = async function validate(textInput) {
 
   // STEP 4: VALIDATE SCHEMA
   const schemaOrgErrors = validateSchemaOrg(expandedObj);
+  // console.log(expandedObj);
 
   if (schemaOrgErrors && schemaOrgErrors.length) {
     schemaOrgErrors.forEach(error => {
       errors.push({
         validator: 'schema-org',
         path: error.path,
+        // todo: figure out if we can do this operation with inputobj instead of exp obj
+        // line: getLineFromJsonPath(inputObject, error.path),
         message: error.message,
       });
     });
@@ -81,3 +89,25 @@ module.exports = async function validate(textInput) {
 
   return errors;
 };
+
+// todo: move this function maybe
+function getLineFromJsonPath(obj, path) {
+  console.log(obj);
+  console.log({path});
+  obj = JSON.parse(JSON.stringify(obj));
+  const searchKey = Math.random().toString();
+  path.split('/').forEach((pathComponent, i) => {
+    if (!pathComponent.length) {
+      return;
+    }
+    const isLast = path.length - i === i;
+    if (isLast) {
+      obj[pathComponent] = searchKey;
+    } else {
+      obj = obj[pathComponent];
+    }
+  });
+
+  console.log(JSON.stringify(obj, null, 4));
+  return 1;
+}
