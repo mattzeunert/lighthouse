@@ -50,16 +50,16 @@ class StructuredDataAutomatic extends Audit {
         console.log(JSON.stringify(errors));
 
 
-        errors.forEach(({message, path, line}) => {
+        errors.forEach(({message, path, line, validator, code2}) => {
           const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
             type: 'code-lines',
             // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
             //   1})`,
             // snippet,
-            code,
+            code: code2 || code,
             // todo: support mutlile failures!!
-            highlightLine: line || 5,
-            highlightMessage: message + ' path: ' + path + ' line: ' + line,
+            highlightLine: line || 1,
+            highlightMessage: message + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
           });
 
 

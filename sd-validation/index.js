@@ -22,7 +22,7 @@ module.exports = async function validate(textInput) {
 
   // STEP 1: VALIDATE JSON
   const parseOutput = parseJSON(textInput);
-  eval('debugger');
+  // eval('debugger');
   if (parseOutput.error) {
     errors.push({
       validator: 'json',
@@ -73,13 +73,23 @@ module.exports = async function validate(textInput) {
   const schemaOrgErrors = validateSchemaOrg(expandedObj);
   // console.log(expandedObj);
 
+
+  const compactedObj = await require('jsonld').compact(expandedObj, 'http://schema.org');
+
+  console.log('input');
+  console.log(JSON.stringify(inputObject, null, 4));
+  console.log('compact');
+  console.log(JSON.stringify(compactedObj, null, 4));
   if (schemaOrgErrors && schemaOrgErrors.length) {
+    eval('debugger');
     schemaOrgErrors.forEach(error => {
       errors.push({
         validator: 'schema-org',
         path: error.path,
+        // stringify again here because stringified has different property order from input
+        code2: JSON.stringify(inputObject, null, 4) + '2222',
         // todo: figure out if we can do this operation with inputobj instead of exp obj
-        // line: getLineFromJsonPath(inputObject, error.path),
+        line: getLineFromJsonPath(inputObject, error.path),
         message: error.message,
       });
     });
@@ -92,22 +102,41 @@ module.exports = async function validate(textInput) {
 
 // todo: move this function maybe
 function getLineFromJsonPath(obj, path) {
-  console.log(obj);
-  console.log({path});
-  obj = JSON.parse(JSON.stringify(obj));
-  const searchKey = Math.random().toString();
-  path.split('/').forEach((pathComponent, i) => {
-    if (!pathComponent.length) {
-      return;
-    }
-    const isLast = path.length - i === i;
-    if (isLast) {
-      obj[pathComponent] = searchKey;
-    } else {
-      obj = obj[pathComponent];
-    }
-  });
+  try {
+    console.log(obj);
+    console.log({path});
+    obj = JSON.parse(JSON.stringify(obj));
+    const searchKey = Math.random().toString();
+    // eval('debugger');
+    const pathParts = path.split('/');
+    let currentObj = obj;
+    pathParts.forEach((pathComponent, i) => {
+      if (!pathComponent.length) {
+        return;
+      }
+      const isLast = pathParts.length - 1 === i;
+      if (pathComponent === '0' && ! Array.isArray(currentObj)) {
+      // jsonld expansion makes every value an array
+        if (isLast) {
+          currentObj.whatever = searchKey; // todo: should not be last, we should have the final path part
+        }
+        return;
+      }
 
-  console.log(JSON.stringify(obj, null, 4));
-  return 1;
+
+      if (isLast) {
+        currentObj[pathComponent] = searchKey;
+      } else {
+        currentObj = currentObj[pathComponent];
+      }
+    });
+
+    const jsonLines = JSON.stringify(obj, null, 4).split('\n');
+    const lineIndex = jsonLines.findIndex(line => line.includes(searchKey));
+
+
+    return lineIndex > -1 ? lineIndex + 1 : 1;
+  } catch (err) {
+    return 1;
+  }
 }

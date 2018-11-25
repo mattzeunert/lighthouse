@@ -81,7 +81,7 @@ function validateObjectKeys(typeOrTypes, keys) {
   unknownTypes
     .forEach(type => {
       if (typeof type !== 'string' || SCHEMA_ORG_URL_REGEX.test(type)) {
-        errors.push(`Unrecognized schema.org type ${type}`);
+        errors.push({message: `Unrecognized schema.org type ${type}`});
       }
     });
 
@@ -104,7 +104,7 @@ function validateObjectKeys(typeOrTypes, keys) {
     // remove Schema.org input/output constraints http://schema.org/docs/actions.html#part-4
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
-    .forEach(key => errors.push(`Unexpected property "${key}"`));
+    .forEach(key => errors.push({message: `Unexpected property "${key}"`, key}));
 
   return errors;
 }
@@ -116,7 +116,7 @@ module.exports = function validateSchemaOrg(expandedObj) {
   /** @type {Array<{path: string, message: string}>} */
   const errors = [];
 
-  eval('debugger');
+  // eval('debugger');
 
   if (expandedObj === null) {
     return errors;
@@ -130,12 +130,13 @@ module.exports = function validateSchemaOrg(expandedObj) {
     if (name === TYPE_KEYWORD) {
       const keyErrors = validateObjectKeys(value, Object.keys(obj));
 
-      keyErrors.forEach(e =>
+      keyErrors.forEach(({message, key}) => {
         errors.push({
           // get rid of the first chunk (/@type) as it's the same for all errors
-          path: '/' + path.slice(0, -1).map(cleanName).join('/'),
-          message: e,
-        })
+          path: '/' + [...path.slice(0, -1), ...(key ? [key] : [])].map(cleanName).join('/'),
+          message,
+        });
+      }
       );
     }
   });

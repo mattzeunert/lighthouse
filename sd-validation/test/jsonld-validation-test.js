@@ -51,6 +51,7 @@ describe('JSON-LD validation', () => {
       }
     }`);
 
+    console.log(errors);
     assert.equal(errors.length, 1);
     assert.ok(errors[0].message.indexOf('@id value must be an absolute IRI') !== -1);
   });
