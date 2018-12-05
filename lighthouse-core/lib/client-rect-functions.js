@@ -9,6 +9,8 @@
  * @param {LH.Artifacts.ClientRect} cr
  * @param {{x:number, y:number}} point
  */
+// We sometimes run this as a part of a gatherer script injected into the page, prevent
+// renaming the function for code coverage.
 /* istanbul ignore next */
 function rectContainsPoint(cr, {x, y}) {
   return cr.left <= x && cr.right >= x && cr.top <= y && cr.bottom >= y;
@@ -18,6 +20,8 @@ function rectContainsPoint(cr, {x, y}) {
  * @param {LH.Artifacts.ClientRect} cr1
  * @param {LH.Artifacts.ClientRect} cr2
  */
+// We sometimes run this as a part of a gatherer script injected into the page, prevent
+// renaming the function for code coverage.
 /* istanbul ignore next */
 function rectContains(cr1, cr2) {
   const topLeft = {
@@ -45,7 +49,8 @@ function rectContains(cr1, cr2) {
 }
 
 /**
- * Merge client rects together. This may result in a larger overall size than that of the individual client rects.
+ * Merge client rects together and remove small ones. This may result in a larger overall
+ * size than that of the individual client rects.
  * @param {LH.Artifacts.ClientRect[]} clientRects
  */
 function simplifyClientRects(clientRects) {
@@ -65,10 +70,12 @@ function filterOutTinyClientRects(clientRects) {
   const nonTinyClientRects = clientRects.filter(
     rect => rect.width > 1 && rect.height > 1
   );
-  if (nonTinyClientRects.length > 0) {
-    return nonTinyClientRects;
+  if (nonTinyClientRects.length === 0) {
+    // If all client rects are tiny don't remove them, so later in the code we don't
+    // need to deal with elements that don't have client rects.
+    return clientRects;
   }
-  return clientRects;
+  return nonTinyClientRects;
 }
 
 const rectContainsString = `
@@ -125,7 +132,7 @@ function getRectCenterPoint(rect) {
  * @param {LH.Artifacts.ClientRect} crB
  * @returns {boolean}
  */
-function clientRectsTouch(crA, crB) {
+function clientRectsTouchOrOverlap(crA, crB) {
   // https://stackoverflow.com/questions/2752349/fast-rectangle-to-rectangle-intersection
   return (
     crA.left <= crB.right &&
@@ -159,7 +166,7 @@ function mergeTouchingClientRects(clientRects) {
       const rectsLineUpVertically =
         almostEqual(crA.left, crB.left) || almostEqual(crA.right, crB.right);
       const canMerge =
-        clientRectsTouch(crA, crB) &&
+        clientRectsTouchOrOverlap(crA, crB) &&
         (rectsLineUpHorizontally || rectsLineUpVertically);
 
 
@@ -220,7 +227,7 @@ function addRectWidthAndHeight({left, top, right, bottom}) {
  * @param {LH.Artifacts.ClientRect} rect2
  */
 function getRectXOverlap(rect1, rect2) {
-  // https:// stackoverflow.com/a/9325084/1290545
+  // https://stackoverflow.com/a/9325084/1290545
   return Math.max(
     0,
     Math.min(rect1.right, rect2.right) - Math.max(rect1.left, rect2.left)
@@ -232,7 +239,7 @@ function getRectXOverlap(rect1, rect2) {
  * @param {LH.Artifacts.ClientRect} rect2
  */
 function getRectYOverlap(rect1, rect2) {
-  // https:// stackoverflow.com/a/9325084/1290545
+  // https://stackoverflow.com/a/9325084/1290545
   return Math.max(
     0,
     Math.min(rect1.bottom, rect2.bottom) - Math.max(rect1.top, rect2.top)
@@ -252,7 +259,7 @@ function getRectOverlapArea(rect1, rect2) {
  * @param {LH.Artifacts.ClientRect} clientRect
  * @param {number} fingerSize
  */
-function getFingerAtCenter(clientRect, fingerSize) {
+function getRectAtCenter(clientRect, fingerSize) {
   return addRectWidthAndHeight({
     left: clientRect.left + clientRect.width / 2 - fingerSize / 2,
     top: clientRect.top + clientRect.height / 2 - fingerSize / 2,
@@ -305,7 +312,7 @@ module.exports = {
   getRectXOverlap,
   getRectYOverlap,
   getRectOverlapArea,
-  getFingerAtCenter,
+  getRectAtCenter,
   getLargestClientRect,
   allClientRectsContainedWithinEachOther,
 };
