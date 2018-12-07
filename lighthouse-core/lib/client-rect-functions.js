@@ -140,6 +140,23 @@ function clientRectsTouchOrOverlap(crA, crB) {
 }
 
 /**
+ * @param {LH.Artifacts.ClientRect} crA
+ * @param {LH.Artifacts.ClientRect} crB
+ */
+function getBoundingRect(crA, crB) {
+  const left = Math.min(crA.left, crB.left);
+  const right = Math.max(crA.right, crB.right);
+  const top = Math.min(crA.top, crB.top);
+  const bottom = Math.max(crA.bottom, crB.bottom);
+  return addRectWidthAndHeight({
+    left,
+    right,
+    top,
+    bottom,
+  });
+}
+
+/**
  * @param {LH.Artifacts.ClientRect[]} clientRects
  * @returns {LH.Artifacts.ClientRect[]}
  */
@@ -168,19 +185,9 @@ function mergeTouchingClientRects(clientRects) {
 
 
       if (canMerge) {
-        // create rect that contains both crA and crB
-        const left = Math.min(crA.left, crB.left);
-        const right = Math.max(crA.right, crB.right);
-        const top = Math.min(crA.top, crB.top);
-        const bottom = Math.max(crA.bottom, crB.bottom);
-        const replacementClientRect = addRectWidthAndHeight({
-          left,
-          right,
-          top,
-          bottom,
-        });
-
+        const replacementClientRect = getBoundingRect(crA, crB);
         const mergedRectCenter = getRectCenterPoint(replacementClientRect);
+
         if (
           !(
             rectContainsPoint(crA, mergedRectCenter) ||
