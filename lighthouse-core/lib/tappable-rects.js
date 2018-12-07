@@ -17,6 +17,7 @@ const {
 /**
  * Merge client rects together and remove small ones. This may result in a larger overall
  * size than that of the individual client rects.
+ * We use this to simulate a finger tap on those targets later on.
  * @param {LH.Artifacts.Rect[]} clientRects
  */
 function getTappableRectsFromClientRects(clientRects) {
@@ -39,6 +40,7 @@ function almostEqual(a, b) {
 }
 
 /**
+ * Merge touching rects based on what appears as one tappable area to the user.
  * @param {LH.Artifacts.Rect[]} clientRects
  * @returns {LH.Artifacts.Rect[]}
  */
@@ -49,6 +51,8 @@ function mergeTouchingClientRects(clientRects) {
       const crB = clientRects[j];
 
       /**
+       * We try to determine whether the rects appear as a single tappable
+       * area to the user, so that they'd tap in the middle of the merged rect.
        * Examples of what we want to merge:
        *
        * AAABBB
