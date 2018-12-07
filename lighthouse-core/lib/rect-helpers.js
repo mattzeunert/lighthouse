@@ -48,6 +48,12 @@ function rectContains(rect1, rect2) {
   );
 }
 
+
+const rectContainsString = `
+  ${rectContainsPoint.toString()}
+  ${rectContains.toString()};
+`;
+
 /**
  * @param {LH.Artifacts.Rect[]} rects
  * @returns {LH.Artifacts.Rect[]}
@@ -57,11 +63,6 @@ function filterOutTinyRects(rects) {
     rect => rect.width > 1 && rect.height > 1
   );
 }
-
-const rectContainsString = `
-  ${rectContainsPoint.toString()}
-  ${rectContains.toString()};
-`;
 
 /**
  * @param {LH.Artifacts.Rect[]} rects
