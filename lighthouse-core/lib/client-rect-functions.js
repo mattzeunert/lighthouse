@@ -193,9 +193,12 @@ function mergeTouchingClientRects(clientRects) {
           continue;
         }
 
+        // Replace client rects with merged version
         clientRects = clientRects.filter(cr => cr !== crA && cr !== crB);
         clientRects.push(replacementClientRect);
 
+        // Start over so we don't have to handle complexity introduced by array mutation.
+        // Client rect ararys rarely contain more than 5 rects, so starting again doesn't cause perf issues.
         return mergeTouchingClientRects(clientRects);
       }
     }
