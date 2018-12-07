@@ -88,23 +88,20 @@ const rectContainsString = `
  * @returns {LH.Artifacts.ClientRect[]}
  */
 function filterOutClientRectsContainedByOthers(clientRects) {
-  const filteredOutRects = new Set();
-  return clientRects.filter(cr => {
+  const rectsToKeep = new Set(clientRects);
+
+  for (const cr of clientRects) {
     for (const possiblyContainingRect of clientRects) {
-      if (possiblyContainingRect === cr) {
-        continue;
-      }
-      if (filteredOutRects.has(possiblyContainingRect)) {
-        // Can't contain anything because we removed it from the list
-        continue;
-      }
+      if (cr === possiblyContainingRect) continue;
+      if (!rectsToKeep.has(possiblyContainingRect)) continue;
       if (rectContains(possiblyContainingRect, cr)) {
-        filteredOutRects.add(cr);
-        return false;
+        rectsToKeep.delete(cr);
+        break;
       }
     }
-    return true;
-  });
+  }
+
+  return Array.from(rectsToKeep);
 }
 
 /**

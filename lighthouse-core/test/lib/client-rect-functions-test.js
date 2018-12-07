@@ -23,19 +23,43 @@ function makeClientRect({x, y, width, height}) {
 
 describe('simplifyClientRects', () => {
   it('Merges rects if a smaller rect is inside a larger one', () => {
+    const containingRect = makeClientRect({
+      x: 10,
+      y: 10,
+      width: 100,
+      height: 10,
+    });
+    const containedRect = makeClientRect({
+      x: 10,
+      y: 10,
+      width: 50,
+      height: 10,
+    });
+
+    assert.deepEqual(simplifyClientRects([
+      containingRect,
+      containedRect,
+    ]), [containingRect]);
+    assert.deepEqual(simplifyClientRects([
+      containedRect,
+      containingRect,
+    ]), [containingRect]);
+  });
+  it('Merges rects if a smaller rect is inside a larger one', () => {
     const res = simplifyClientRects([
-      makeClientRect({
-        x: 10,
-        y: 10,
-        width: 100,
-        height: 10,
-      }),
       makeClientRect({
         x: 10,
         y: 10,
         width: 50,
         height: 10,
       }),
+      makeClientRect({
+        x: 10,
+        y: 10,
+        width: 100,
+        height: 10,
+      }),
+
     ]);
     assert.deepEqual(res, [
       makeClientRect({
