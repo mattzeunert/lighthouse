@@ -9,7 +9,7 @@
  * @param {LH.Artifacts.ClientRect} cr
  * @param {{x:number, y:number}} point
  */
-// We sometimes run this as a part of a gatherer script injected into the page, prevent
+// We sometimes run this as a part of a gatherer script injected into the page, so prevent
 // renaming the function for code coverage.
 /* istanbul ignore next */
 function rectContainsPoint(cr, {x, y}) {
@@ -20,31 +20,31 @@ function rectContainsPoint(cr, {x, y}) {
  * @param {LH.Artifacts.ClientRect} cr1
  * @param {LH.Artifacts.ClientRect} cr2
  */
-// We sometimes run this as a part of a gatherer script injected into the page, prevent
+// We sometimes run this as a part of a gatherer script injected into the page, so prevent
 // renaming the function for code coverage.
 /* istanbul ignore next */
 function rectContains(cr1, cr2) {
-  const topLeft = {
-    x: cr2.left,
-    y: cr2.top,
-  };
-  const topRight = {
-    x: cr2.right,
-    y: cr2.top,
-  };
-  const bottomLeft = {
-    x: cr2.left,
-    y: cr2.bottom,
-  };
-  const bottomRight = {
-    x: cr2.right,
-    y: cr2.bottom,
-  };
   return (
-    rectContainsPoint(cr1, topLeft) &&
-    rectContainsPoint(cr1, topRight) &&
-    rectContainsPoint(cr1, bottomLeft) &&
-    rectContainsPoint(cr1, bottomRight)
+    // top left corner
+    rectContainsPoint(cr1, {
+      x: cr2.left,
+      y: cr2.top,
+    }) &&
+    // top right corner
+    rectContainsPoint(cr1, {
+      x: cr2.right,
+      y: cr2.top,
+    }) &&
+    // bottom left corner
+    rectContainsPoint(cr1, {
+      x: cr2.left,
+      y: cr2.bottom,
+    }) &&
+    // bottom right corner
+    rectContainsPoint(cr1, {
+      x: cr2.right,
+      y: cr2.bottom,
+    })
   );
 }
 
