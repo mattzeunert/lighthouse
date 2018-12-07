@@ -7,53 +7,43 @@
 
 /* eslint-env jest */
 
-const {simplifyClientRects, getRectOverlapArea} = require('../../lib/client-rect-functions');
+const {addRectTopAndBottom} = require('../../lib/rect-helpers');
+const {getTappableRectsFromClientRects} = require('../../lib/tappable-rects');
 const assert = require('assert');
 
-function makeClientRect({x, y, width, height}) {
-  return {
-    left: x,
-    top: y,
-    right: x + width,
-    bottom: y + height,
-    width,
-    height,
-  };
-}
-
-describe('simplifyClientRects', () => {
+describe('getTappableRectsFromClientRects', () => {
   it('Merges rects if a smaller rect is inside a larger one', () => {
-    const containingRect = makeClientRect({
+    const containingRect = addRectTopAndBottom({
       x: 10,
       y: 10,
       width: 100,
       height: 10,
     });
-    const containedRect = makeClientRect({
+    const containedRect = addRectTopAndBottom({
       x: 10,
       y: 10,
       width: 50,
       height: 10,
     });
 
-    assert.deepEqual(simplifyClientRects([
+    assert.deepEqual(getTappableRectsFromClientRects([
       containingRect,
       containedRect,
     ]), [containingRect]);
-    assert.deepEqual(simplifyClientRects([
+    assert.deepEqual(getTappableRectsFromClientRects([
       containedRect,
       containingRect,
     ]), [containingRect]);
   });
   it('Merges two horizontally adjacent client rects', () => {
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 100,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 110,
         y: 10,
         width: 100,
@@ -61,7 +51,7 @@ describe('simplifyClientRects', () => {
       }),
     ]);
     assert.deepEqual(res, [
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 200,
@@ -71,20 +61,20 @@ describe('simplifyClientRects', () => {
   });
 
   it('Merges three horizontally adjacent client rects', () => {
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 100,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 110,
         y: 10,
         width: 100,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 210,
         y: 10,
         width: 100,
@@ -92,7 +82,7 @@ describe('simplifyClientRects', () => {
       }),
     ]);
     assert.deepEqual(res, [
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 300,
@@ -102,20 +92,20 @@ describe('simplifyClientRects', () => {
   });
 
   it('Merges client rects correctly if one is duplicated', () => {
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 90,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 90,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 100,
         y: 10,
         width: 10,
@@ -123,7 +113,7 @@ describe('simplifyClientRects', () => {
       }),
     ]);
     assert.deepEqual(res, [
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 100,
@@ -136,14 +126,14 @@ describe('simplifyClientRects', () => {
     // We do this because to fix issues with children (e.g. images) inside links.
     // The link itself might be small, so if we put a finger on it directly then it's
     // likely to overlap with something.
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 100,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 15,
         width: 200,
@@ -151,7 +141,7 @@ describe('simplifyClientRects', () => {
       }),
     ]);
     assert.deepEqual(res, [
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 200,
@@ -161,14 +151,14 @@ describe('simplifyClientRects', () => {
   });
 
   it('Does not merge if the center of the merged rect wouldn\'t be in the original rects', () => {
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 10,
         height: 100,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 200,
@@ -180,14 +170,14 @@ describe('simplifyClientRects', () => {
 
   it('Merges two horizontally adjacent client rects that don\'t line up exactly', () => {
     // 2px difference is ok, often there are cases where an image is a 1px or 2px out of the main link client rect
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 100,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 110,
         y: 12,
         width: 100,
@@ -195,7 +185,7 @@ describe('simplifyClientRects', () => {
       }),
     ]);
     assert.deepEqual(res, [
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 200,
@@ -205,14 +195,14 @@ describe('simplifyClientRects', () => {
   });
 
   it('Merges two identical client rects into one', () => {
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 10,
         height: 10,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 10,
@@ -220,7 +210,7 @@ describe('simplifyClientRects', () => {
       }),
     ]);
     assert.deepEqual(res, [
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 10,
@@ -230,14 +220,14 @@ describe('simplifyClientRects', () => {
   });
 
   it('Removes tiny 1x1px client rects', () => {
-    const res = simplifyClientRects([
-      makeClientRect({
+    const res = getTappableRectsFromClientRects([
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 100,
         height: 100,
       }),
-      makeClientRect({
+      addRectTopAndBottom({
         x: 5,
         y: 5,
         width: 1,
@@ -245,31 +235,12 @@ describe('simplifyClientRects', () => {
       }),
     ]);
     assert.deepEqual(res, [
-      makeClientRect({
+      addRectTopAndBottom({
         x: 10,
         y: 10,
         width: 100,
         height: 100,
       }),
     ]);
-  });
-});
-
-describe('getRectOverlapArea', () => {
-  it('Works in a basic example', () => {
-    const overlapArea = getRectOverlapArea(
-      makeClientRect({
-        x: 0,
-        y: 0,
-        width: 10,
-        height: 10,
-      }), makeClientRect({
-        x: 8,
-        y: 6,
-        width: 10,
-        height: 10,
-      })
-    );
-    expect(overlapArea).toBe(8);
   });
 });
