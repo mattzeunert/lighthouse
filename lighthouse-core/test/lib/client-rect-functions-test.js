@@ -45,31 +45,6 @@ describe('simplifyClientRects', () => {
       containingRect,
     ]), [containingRect]);
   });
-  it('Merges rects if a smaller rect is inside a larger one', () => {
-    const res = simplifyClientRects([
-      makeClientRect({
-        x: 10,
-        y: 10,
-        width: 50,
-        height: 10,
-      }),
-      makeClientRect({
-        x: 10,
-        y: 10,
-        width: 100,
-        height: 10,
-      }),
-
-    ]);
-    assert.deepEqual(res, [
-      makeClientRect({
-        x: 10,
-        y: 10,
-        width: 100,
-        height: 10,
-      }),
-    ]);
-  });
   it('Merges two horizontally adjacent client rects', () => {
     const res = simplifyClientRects([
       makeClientRect({
@@ -121,6 +96,37 @@ describe('simplifyClientRects', () => {
         x: 10,
         y: 10,
         width: 300,
+        height: 10,
+      }),
+    ]);
+  });
+
+  it('Merges client rects correctly if one is duplicated', () => {
+    const res = simplifyClientRects([
+      makeClientRect({
+        x: 10,
+        y: 10,
+        width: 90,
+        height: 10,
+      }),
+      makeClientRect({
+        x: 10,
+        y: 10,
+        width: 90,
+        height: 10,
+      }),
+      makeClientRect({
+        x: 100,
+        y: 10,
+        width: 10,
+        height: 10,
+      }),
+    ]);
+    assert.deepEqual(res, [
+      makeClientRect({
+        x: 10,
+        y: 10,
+        width: 100,
         height: 10,
       }),
     ]);
