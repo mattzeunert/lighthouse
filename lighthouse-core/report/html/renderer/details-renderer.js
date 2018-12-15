@@ -390,7 +390,7 @@ class DetailsRenderer {
     return pre;
   }
 
-  _renderCodeLines({code, highlightLine, highlightMessage}) {
+  _renderCodeLines({code, highlights}) {
     // const pre = this._dom.createElement('pre', 'lh-code-lines');
 
     const lines = code.split('\n');
@@ -404,6 +404,18 @@ class DetailsRenderer {
     // const lineNumbers = this._dom.createElement('div');
 
     const showAll = lines.length <= 4;
+
+    function getLineHighlights(lineNumber) {
+      return highlights.filter(h => h.line === lineNumber);
+    }
+    function hasNearbyHighlight(lineNumber) {
+      for (let i = lineNumber - 2; i < lineNumber + 2; i++) {
+        if (getLineHighlights(i).length > 0) {
+          return true;
+        }
+      }
+      return false;
+    }
 
     // todo: instead create line list first and then map to elements and then filter
     lines.forEach((line, lineIndex) => {
@@ -420,30 +432,36 @@ class DetailsRenderer {
       const codeLine = renderLine({number: lineNumber, content: line});
 
 
-      const showByDefault = showAll || (lineNumber >= highlightLine - 2 && lineNumber <= highlightLine + 2);
+      const showByDefault = showAll || hasNearbyHighlight(lineNumber);
 
+      codeLine.classList.add('lh-code-lines__line');
       if (!showByDefault) {
         codeLine.classList.add('lh-code-lines__line--hide-by-default');
       }
       // todo: review existing css and make new stuff more in lines with it
       codeLines.append(codeLine);
 
-      if (lineNumber === highlightLine) {
-        codeLine.style.background = '#ffe5e5';
+      const lineHighlights = getLineHighlights(lineNumber);
 
-        const messageLine = renderLine({
-          number: ' ',
-          content: highlightMessage,
+      if (lineHighlights.length > 0) {
+        codeLine.classList.add('lh-code-lines__line--highlighted');
+
+        lineHighlights.forEach(lineHighlight => {
+          const messageLine = renderLine({
+            number: ' ',
+            content: lineHighlight.message,
+            extraClasses: 'lh-code-lines__line--highlight-message',
+          });
+          messageLine.classList.add('lh-code-lines__line--highlighted');
+          codeLines.append(messageLine );
         });
-        messageLine.style.background = '#ffe5e5';
-        codeLines.append(messageLine );
       }
 
       // todo: check out what _dom is... does it support classname/style?
 
 
-      function renderLine({number, content}) {
-        const codeLine = dom.createElement('div');
+      function renderLine({number, content, extraClasses = ''}) {
+        const codeLine = dom.createElement('div', 'lh-code-lines__line ' + extraClasses );
         // todo: move to class
         const lineNumber = dom.createElement('div', 'lh-code-lines__line-number');
 

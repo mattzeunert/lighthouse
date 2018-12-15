@@ -754,9 +754,24 @@ details, summary {
 }
 
 .lh-code-lines__line {
-
+  background: white;
 }
-
+.lh-code-lines__line--highlighted {
+  background: #fff5f5;
+}
+.lh-code-lines__line--highlighted .lh-code-lines__line-number {
+  color: var(--fail-color);
+  
+}
+.lh-code-lines__line--highlight-message .lh-code-lines__line-number {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.lh-code-lines__line--highlight-message code {
+  padding: 10px;
+  font-family: var(--text-font-family);
+}
+/* todo: review this and see how the rest of the css looks */
 .lh-code-lines:not(.lh-code-lines--show-all) .lh-code-lines__line--hide-by-default {
   display: none;
 }
@@ -781,9 +796,10 @@ details, summary {
   font-family: monospace;
   padding-right: 5px;
   margin-right: 5px;
-  background: #eee;
+  background: var(--medium-100-gray);
   color: #777;
   user-select: none;
+  font-weight: bold;
 }
 
 .lh-warnings {

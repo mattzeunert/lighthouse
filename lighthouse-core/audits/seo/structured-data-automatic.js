@@ -47,26 +47,42 @@ class StructuredDataAutomatic extends Audit {
         const code = jsonLD.trim();
         const snippet = code.length > 100 ? code.substr(0, 100) + '…' : code;
         const errors = await validateJsonLD(jsonLD);
-        console.log(JSON.stringify(errors));
 
+        const errorsByCode = {};
 
         errors.forEach(({message, path, line, validator, code2}) => {
+          code2 = code2 || code;
+          if (!errorsByCode[code2]) {
+            errorsByCode[code2] = [];
+          }
+          errorsByCode[code2].push({message, path, line, validator, code2});
+        });
+
+        Object.keys(errorsByCode).forEach(code => {
+          const errors = errorsByCode[code];
           const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
             type: 'code-lines',
             // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
             //   1})`,
             // snippet,
-            code: code2 || code,
+            code,
             // todo: support mutlile failures!!
-            highlightLine: line || 1,
-            highlightMessage: message + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
+            highlights: errors.map(({
+              message, path, line, validator, code2,
+            }) => {
+              return {
+                line: line || 1,
+                message: message + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
+              };
+            }),
           });
 
+          console.log(node);
 
           tableData.push({
             node,
-            message,
-            path: path || '',
+            messages: 'messsssssage',
+            path: 'pathhhhh',
           });
         });
       })
