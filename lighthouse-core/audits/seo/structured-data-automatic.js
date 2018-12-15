@@ -66,13 +66,14 @@ class StructuredDataAutomatic extends Audit {
             //   1})`,
             // snippet,
             code,
+            title: errors.filter(e => !e.line).map(e => e.message).join(''),
             // todo: support mutlile failures!!
-            highlights: errors.map(({
+            highlights: errors.filter(e => e.line).map(({
               message, path, line, validator, code2,
             }) => {
               return {
-                line: line || 1,
-                message: message + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
+                line: line,
+                message: message, // + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
               };
             }),
           });
@@ -89,7 +90,7 @@ class StructuredDataAutomatic extends Audit {
     );
 
     const headings = [
-      {key: 'node', itemType: 'code-lines', text: 'sdfasdf Failing Element'},
+      {key: 'node', itemType: 'code-lines', text: 'JSON-LD'},
       // {key: 'path', itemType: 'text', text: 'Line/Path'},
       // {key: 'message', itemType: 'text', text: 'Error'},
     ];

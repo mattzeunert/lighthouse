@@ -390,7 +390,7 @@ class DetailsRenderer {
     return pre;
   }
 
-  _renderCodeLines({code, highlights}) {
+  _renderCodeLines({code, highlights, title}) {
     // const pre = this._dom.createElement('pre', 'lh-code-lines');
 
     const lines = code.split('\n');
@@ -401,6 +401,12 @@ class DetailsRenderer {
     // todo: move to class
 
     const codeLines = this._dom.createElement('div', 'lh-code-lines');
+    if (title) {
+      const titleEl = this._dom.createElement('div');
+      titleEl.innerText = title;
+      titleEl.style.padding = '10px';
+      codeLines.append(titleEl);
+    }
     // const lineNumbers = this._dom.createElement('div');
 
     const showAll = lines.length <= 4;
@@ -418,6 +424,7 @@ class DetailsRenderer {
     }
 
     // todo: instead create line list first and then map to elements and then filter
+    let hasSeenLineWithHighlight = false;
     lines.forEach((line, lineIndex) => {
       // const lineNumber = this._dom.createElement('div');
       // lineNumber.textContent = lineIndex + 1;
@@ -432,7 +439,15 @@ class DetailsRenderer {
       const codeLine = renderLine({number: lineNumber, content: line});
 
 
-      const showByDefault = showAll || hasNearbyHighlight(lineNumber);
+      const showByDefault = showAll || hasNearbyHighlight(lineNumber) || (highlights.length === 0 && lineNumber < 4);
+      if (!showAll && showByDefault && !hasNearbyHighlight(lineNumber - 1) && hasSeenLineWithHighlight) {
+        const messageLine = renderLine({
+          number: '...',
+          content: '',
+          extraClasses: '',
+        });
+        codeLines.append(messageLine );
+      }
 
       codeLine.classList.add('lh-code-lines__line');
       if (!showByDefault) {
@@ -444,6 +459,7 @@ class DetailsRenderer {
       const lineHighlights = getLineHighlights(lineNumber);
 
       if (lineHighlights.length > 0) {
+        hasSeenLineWithHighlight = true;
         codeLine.classList.add('lh-code-lines__line--highlighted');
 
         lineHighlights.forEach(lineHighlight => {
