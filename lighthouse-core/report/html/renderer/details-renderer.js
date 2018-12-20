@@ -390,7 +390,7 @@ class DetailsRenderer {
     return pre;
   }
 
-  _renderCodeLines({code, highlights, title}) {
+  _renderCodeLines({code, highlights, description, title}) {
     // const pre = this._dom.createElement('pre', 'lh-code-lines');
 
     const lines = code.split('\n');
@@ -401,15 +401,25 @@ class DetailsRenderer {
     // todo: move to class
 
     const codeLines = this._dom.createElement('div', 'lh-code-lines');
+    const header = this._dom.createElement('div', 'lh-code-lines__header');
+    codeLines.appendChild(header);
     if (title) {
       const titleEl = this._dom.createElement('div');
       titleEl.innerText = title;
-      titleEl.style.padding = '10px';
-      codeLines.append(titleEl);
+      titleEl.style.fontWeight = 'bold';
+      header.append(titleEl);
+    }
+    if (description) {
+      const descriptionEl = this._dom.createElement('div');
+      descriptionEl.innerText = description;
+      header.append(descriptionEl);
     }
     // const lineNumbers = this._dom.createElement('div');
 
     const showAll = lines.length <= 4;
+
+    const snippet = this._dom.createElement('div', 'lh-code-lines__snippet');
+    codeLines.append(snippet);
 
     function getLineHighlights(lineNumber) {
       return highlights.filter(h => h.line === lineNumber);
@@ -446,7 +456,7 @@ class DetailsRenderer {
           content: '',
           extraClasses: '',
         });
-        codeLines.append(messageLine );
+        snippet.append(messageLine );
       }
 
       codeLine.classList.add('lh-code-lines__line');
@@ -454,7 +464,7 @@ class DetailsRenderer {
         codeLine.classList.add('lh-code-lines__line--hide-by-default');
       }
       // todo: review existing css and make new stuff more in lines with it
-      codeLines.append(codeLine);
+      snippet.append(codeLine);
 
       const lineHighlights = getLineHighlights(lineNumber);
 
@@ -469,7 +479,7 @@ class DetailsRenderer {
             extraClasses: 'lh-code-lines__line--highlight-message',
           });
           messageLine.classList.add('lh-code-lines__line--highlighted');
-          codeLines.append(messageLine );
+          snippet.append(messageLine );
         });
       }
 
@@ -495,13 +505,13 @@ class DetailsRenderer {
 
     if (!showAll) {
       const showAllButton = this._dom.createElement('button', 'lh-code-lines__show-all');
-      showAllButton.textContent = 'Show All';
+      showAllButton.textContent = 'Expand Snippet';
       showAllButton.addEventListener('click', () => {
         // todo: don't do "*" use classes
 
         codeLines.classList.add('lh-code-lines--show-all');
       });
-      codeLines.append(showAllButton);
+      header.prepend(showAllButton);
     }
 
     // container.appendChild(lineNumbers);

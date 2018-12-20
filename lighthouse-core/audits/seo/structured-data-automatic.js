@@ -58,6 +58,15 @@ class StructuredDataAutomatic extends Audit {
           errorsByCode[code2].push({message, path, line, validator, code2});
         });
 
+        let topLevelType;
+        try {
+          topLevelType = JSON.parse(code)['@type'];
+        } catch (err) {
+        }
+        topLevelType = topLevelType || 'Unknown';
+
+
+        // todo: sort out errors by code... check if it's needed, can there be errors for same snippet but different code value?
         Object.keys(errorsByCode).forEach(code => {
           const errors = errorsByCode[code];
           const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
@@ -66,7 +75,9 @@ class StructuredDataAutomatic extends Audit {
             //   1})`,
             // snippet,
             code,
-            title: errors.filter(e => !e.line).map(e => e.message).join(''),
+            // todo: how does i18n work?
+            title: `${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
+            description: errors.filter(e => !e.line).map(e => e.message).join(''),
             // todo: support mutlile failures!!
             highlights: errors.filter(e => e.line).map(({
               message, path, line, validator, code2,
@@ -86,6 +97,26 @@ class StructuredDataAutomatic extends Audit {
             path: 'pathhhhh',
           });
         });
+
+        if (errors.length === 0) {
+          const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
+            type: 'code-lines',
+            // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
+            //   1})`,
+            // snippet,
+            code,
+            // todo: how does i18n work?
+            title: `${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
+            // todo: support mutlile failures!!
+            highlights: [],
+          });
+
+          tableData.push({
+            node,
+            messages: 'messsssssage',
+            path: 'pathhhhh',
+          });
+        }
       })
     );
 

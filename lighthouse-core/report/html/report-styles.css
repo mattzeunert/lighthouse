@@ -748,9 +748,14 @@ details, summary {
   word-break: break-word;
 }
 
-.lh-code-lines {
+.lh-code-lines__snippet {
   overflow: auto;
   white-space: pre;
+}
+
+.lh-code-lines__header {
+  padding: 5px;
+  position: relative;
 }
 
 .lh-code-lines__line {
@@ -785,7 +790,10 @@ details, summary {
   cursor: pointer;
   font-size: 14px;
   margin-top: 4px;
-  width: 100%;
+  position: absolute;
+  right: 5px;
+  top: 0;
+
 }
 
 .lh-code-lines__line-number {
