@@ -126,6 +126,17 @@ class Audit {
   }
 
   /**
+   * @param {Array<Object<string, LH.Audit.DetailsItem>>} results
+   * @return {LH.Audit.DetailsRendererDetailsJSON}
+   */
+  static makeListDetails(results) {
+    return {
+      type: 'list',
+      items: results,
+    };
+  }
+
+  /**
    * @param {Array<LH.ResultLite.Audit.ColumnHeading>} headings
    * @param {Array<LH.ResultLite.Audit.WastedBytesDetailsItem>|Array<LH.ResultLite.Audit.WastedTimeDetailsItem>} items
    * @param {number} overallSavingsMs

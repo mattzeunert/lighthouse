@@ -69,6 +69,9 @@ class DetailsRenderer {
       case 'table':
         // @ts-ignore - TODO(bckenny): Fix type hierarchy
         return this._renderTable(/** @type {TableDetailsJSON} */ (details));
+      case 'list':
+        // @ts-ignore - TODO(bckenny): Fix type hierarchy
+        return this._renderList(/** @type {TableDetailsJSON} */ (details));
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
       case 'code-lines':
@@ -269,6 +272,72 @@ class DetailsRenderer {
   }
 
   /**
+   * @param {TableDetailsJSON} details
+   * @return {Element}
+   */
+  _renderList(details) {
+    if (!details.items.length) return this._dom.createElement('span');
+
+    const tableElem = this._dom.createElement('div', 'lh-list');
+    // todo: either make condtional, or find another way to sort the table
+    // tableElem.style.tableLayout = 'fixed';
+    // const theadElem = this._dom.createChildOf(tableElem, 'thead');
+    // const theadTrElem = this._dom.createChildOf(theadElem, 'tr');
+
+
+    details.items.forEach(item => {
+      console.log('Item', {item});
+      const itemEl = this._dom.createElement('div');
+      itemEl.append(this.render(item));
+      tableElem.append(itemEl);
+    });
+
+    console.log('LEN', details.items.length);
+
+
+    return tableElem;
+
+
+    // const tbodyElem = this._dom.createChildOf(tableElem, 'tbody');
+    // for (const row of details.items) {
+    //   const rowElem = this._dom.createChildOf(tbodyElem, 'tr');
+    //   for (const heading of details.headings) {
+    //     const key = /** @type {keyof DetailsJSON} */ (heading.key);
+    //     // TODO(bckenny): type should be naturally inferred here.
+    //     const value = /** @type {number|string|DetailsJSON|undefined} */ (row[key]);
+
+    //     if (typeof value === 'undefined' || value === null) {
+    //       this._dom.createChildOf(rowElem, 'td', 'lh-table-column--empty');
+    //       continue;
+    //     }
+    //     // handle nested types like code blocks in table rows.
+    //     // @ts-ignore - TODO(bckenny): narrow first
+    //     if (value.type) {
+    //       const valueAsDetails = /** @type {DetailsJSON} */ (value);
+    //       const classes = `lh-table-column--${valueAsDetails.type}`;
+    //       this._dom.createChildOf(rowElem, 'td', classes).appendChild(this.render(valueAsDetails));
+    //       continue;
+    //     }
+
+    //     // build new details item to render
+    //     const item = {
+    //       value: /** @type {number|string} */ (value),
+    //       type: heading.itemType,
+    //       displayUnit: heading.displayUnit,
+    //       granularity: heading.granularity,
+    //     };
+
+    //     /** @type {string|undefined} */
+    //     // @ts-ignore - TODO(bckenny): handle with refactoring above
+    //     const valueType = value.type;
+    //     const classes = `lh-table-column--${valueType || heading.itemType}`;
+    //     this._dom.createChildOf(rowElem, 'td', classes).appendChild(this.render(item));
+    //   }
+    // }
+    // return tableElem;
+  }
+
+  /**
    * TODO(bckenny): migrate remaining table rendering to this function, then rename
    * back to _renderTable and replace the original.
    * @param {OpportunityDetails} details
@@ -411,6 +480,7 @@ class DetailsRenderer {
     }
     if (description) {
       const descriptionEl = this._dom.createElement('div');
+      descriptionEl.style.paddingTop = '5px';
       descriptionEl.innerText = description;
       header.append(descriptionEl);
     }
@@ -452,7 +522,7 @@ class DetailsRenderer {
       const showByDefault = showAll || hasNearbyHighlight(lineNumber) || (highlights.length === 0 && lineNumber < 4);
       if (!showAll && showByDefault && !hasNearbyHighlight(lineNumber - 1) && hasSeenLineWithHighlight) {
         const messageLine = renderLine({
-          number: '...',
+          number: '…',
           content: '',
           extraClasses: '',
         });

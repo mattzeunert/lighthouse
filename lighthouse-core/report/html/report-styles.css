@@ -16,6 +16,7 @@
  */
 
 .lh-vars {
+  --tmp-light-red-highlight: #fbf1f2;
   --text-font-family: Roboto, Helvetica, Arial, sans-serif;
   --monospace-font-family: 'Menlo', 'dejavu sans mono', 'Consolas', 'Lucida Console', monospace;
   --body-background-color: #fff;
@@ -720,6 +721,10 @@ details, summary {
   margin-top: var(--section-padding);
 }
 
+.lh-list > div:not(:last-child) {
+  padding-bottom: 20px;
+}
+
 .lh-header-container {
   display: block;
   margin: 0 auto;
@@ -751,22 +756,37 @@ details, summary {
 .lh-code-lines__snippet {
   overflow: auto;
   white-space: pre;
+  border: 1px solid var(--report-border-color);
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px;
 }
 
 .lh-code-lines__header {
-  padding: 5px;
   position: relative;
+  color: var(--subheader-color);
+  border: 1px solid var(--report-border-color);
+  border-top-left-radius: 4px;
+  border-top-right-radius: 4px;
+  border-bottom: none;
+  padding: 10px;
+  background: var(--medium-50-gray);
 }
 
 .lh-code-lines__line {
   background: white;
 }
+.lh-code-lines__line:first-child {
+  padding-top: 5px;
+}
+.lh-code-lines__line:last-child {
+  padding-bottom: 5px;
+}
 .lh-code-lines__line--highlighted {
-  background: #fff5f5;
+  background: var(--tmp-light-red-highlight);
 }
 .lh-code-lines__line--highlighted .lh-code-lines__line-number {
-  color: var(--fail-color);
   
+  background: var(--tmp-light-red-highlight);
 }
 .lh-code-lines__line--highlight-message .lh-code-lines__line-number {
   padding-top: 10px;
@@ -792,22 +812,20 @@ details, summary {
   margin-top: 4px;
   position: absolute;
   right: 5px;
-  top: 0;
+  top: 5px;
 
 }
 
 .lh-code-lines__line-number {
   display: inline-block;
   width: 40px;
-  border-right: 1px solid #999;
   text-align: right;
   font-family: monospace;
   padding-right: 5px;
   margin-right: 5px;
-  background: var(--medium-100-gray);
+  /* background: var(--medium-100-gray); */
   color: #777;
   user-select: none;
-  font-weight: bold;
 }
 
 .lh-warnings {

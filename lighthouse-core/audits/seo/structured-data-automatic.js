@@ -89,13 +89,10 @@ class StructuredDataAutomatic extends Audit {
             }),
           });
 
-          console.log(node);
+          // console.log(node);
 
-          tableData.push({
-            node,
-            messages: 'messsssssage',
-            path: 'pathhhhh',
-          });
+          tableData.push(
+            node);
         });
 
         if (errors.length === 0) {
@@ -111,22 +108,18 @@ class StructuredDataAutomatic extends Audit {
             highlights: [],
           });
 
-          tableData.push({
-            node,
-            messages: 'messsssssage',
-            path: 'pathhhhh',
-          });
+          tableData.push(node);
         }
       })
     );
 
-    const headings = [
-      {key: 'node', itemType: 'code-lines', text: 'JSON-LD'},
-      // {key: 'path', itemType: 'text', text: 'Line/Path'},
-      // {key: 'message', itemType: 'text', text: 'Error'},
-    ];
+    // const headings = [
+    //   {key: 'node', itemType: 'code-lines', text: 'JSON-LD'},
+    //   // {key: 'path', itemType: 'text', text: 'Line/Path'},
+    //   // {key: 'message', itemType: 'text', text: 'Error'},
+    // ];
 
-    const details = Audit.makeTableDetails(headings, tableData);
+    const details = Audit.makeListDetails(tableData);
 
     return {
       rawValue: tableData.length === 0,
