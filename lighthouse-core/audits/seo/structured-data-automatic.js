@@ -26,6 +26,9 @@ class StructuredDataAutomatic extends Audit {
     };
   }
 
+
+  // todo: handle top level name being too long
+
   /**
    * @param {LH.Artifacts} artifacts
    * @return {Promise<LH.Audit.Product>}
@@ -65,14 +68,26 @@ class StructuredDataAutomatic extends Audit {
         });
 
         let topLevelType;
+        let topLevelName;
         try {
           topLevelType = JSON.parse(code)['@type'];
+          topLevelName = JSON.parse(code)['name'];
         } catch (err) {
         }
         topLevelType = topLevelType || 'Unknown';
 
 
+        let title = '';
+        if (topLevelName) {
+          title += `${topLevelType}: ${topLevelName}`;
+        } else {
+          title += `@type ${topLevelType}`;
+        }
+
+        title += ` (${errors.length} Error${errors.length !== 1 ? 's' : ''})`;
         // todo: sort out errors by code... check if it's needed, can there be errors for same snippet but different code value?
+
+
         Object.keys(errorsByCode).forEach(code => {
           const errors = errorsByCode[code];
           const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
@@ -82,7 +97,7 @@ class StructuredDataAutomatic extends Audit {
             // snippet,
             code,
             // todo: how does i18n work?
-            title: `@type ${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
+            title,
             description: errors.filter(e => !e.line).map(e => e.message).join(''),
             // todo: support mutlile failures!!
             highlights: errors.filter(e => e.line).map(({
@@ -107,9 +122,9 @@ class StructuredDataAutomatic extends Audit {
             // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
             //   1})`,
             // snippet,
-            code,
+            code: JSON.stringify(JSON.parse(code), null, 2),
             // todo: how does i18n work?
-            title: `@type ${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
+            title,
             // todo: support mutlile failures!!
             highlights: [],
           });

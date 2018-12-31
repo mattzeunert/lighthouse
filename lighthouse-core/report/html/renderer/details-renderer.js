@@ -519,7 +519,7 @@ class DetailsRenderer {
       const codeLine = renderLine({number: lineNumber, content: line});
 
 
-      const showByDefault = showAll || hasNearbyHighlight(lineNumber) || (highlights.length === 0 && lineNumber < 4);
+      const showByDefault = showAll || hasNearbyHighlight(lineNumber) || (highlights.length === 0 && lineNumber < 5);
       if (!showAll && showByDefault && !hasNearbyHighlight(lineNumber - 1) && hasSeenLineWithHighlight) {
         const messageLine = renderLine({
           number: '…',
