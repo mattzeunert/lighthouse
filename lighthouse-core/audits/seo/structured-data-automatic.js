@@ -41,12 +41,18 @@ class StructuredDataAutomatic extends Audit {
     /** @type {Array<Object<string, LH.Audit.DetailsItem>>} */
     const tableData = [];
 
+    let snippetsWithErrorsCount = 0;
 
     await Promise.all(
       artifacts.JsonLD.map(async (jsonLD, idx) => {
         const code = jsonLD.trim();
         const snippet = code.length > 100 ? code.substr(0, 100) + '…' : code;
         const errors = await validateJsonLD(jsonLD);
+
+        if (errors.length > 0) {
+          snippetsWithErrorsCount++;
+        }
+
 
         const errorsByCode = {};
 
@@ -122,8 +128,9 @@ class StructuredDataAutomatic extends Audit {
     const details = Audit.makeListDetails(tableData);
 
     return {
-      rawValue: tableData.length === 0,
+      rawValue: snippetsWithErrorsCount === 0,
       details,
+      displayValue: snippetsWithErrorsCount + ' snippets with errors',
     };
   }
 }
