@@ -800,10 +800,7 @@ details, summary {
 .lh-code-lines:not(.lh-code-lines--show-all) .lh-code-lines__line--hide-by-default {
   display: none;
 }
-.lh-code-lines--show-all .lh-code-lines__show-all {
-  display: none;
-}
-.lh-code-lines__show-all {
+.lh-code-lines__toggle-show-all {
   color: #0c50c7;
   background: transparent;
   border: none;

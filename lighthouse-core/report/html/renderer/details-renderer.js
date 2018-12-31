@@ -495,7 +495,7 @@ class DetailsRenderer {
       return highlights.filter(h => h.line === lineNumber);
     }
     function hasNearbyHighlight(lineNumber) {
-      for (let i = lineNumber - 2; i < lineNumber + 2; i++) {
+      for (let i = lineNumber - 2; i <= lineNumber + 2; i++) {
         if (getLineHighlights(i).length > 0) {
           return true;
         }
@@ -574,12 +574,17 @@ class DetailsRenderer {
     });
 
     if (!showAll) {
-      const showAllButton = this._dom.createElement('button', 'lh-code-lines__show-all');
+      const showAllButton = this._dom.createElement('button', 'lh-code-lines__toggle-show-all');
       showAllButton.textContent = 'Expand Snippet';
       showAllButton.addEventListener('click', () => {
-        // todo: don't do "*" use classes
-
-        codeLines.classList.add('lh-code-lines--show-all');
+        const showAllClass = 'lh-code-lines--show-all';
+        if (codeLines.classList.contains(showAllClass)) {
+          showAllButton.textContent = 'Expand Snippet';
+          codeLines.classList.remove(showAllClass);
+        } else {
+          showAllButton.textContent = 'Collapse Snippet';
+          codeLines.classList.add(showAllClass);
+        }
       });
       header.prepend(showAllButton);
     }

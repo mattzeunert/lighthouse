@@ -82,7 +82,7 @@ class StructuredDataAutomatic extends Audit {
             // snippet,
             code,
             // todo: how does i18n work?
-            title: `${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
+            title: `@type ${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
             description: errors.filter(e => !e.line).map(e => e.message).join(''),
             // todo: support mutlile failures!!
             highlights: errors.filter(e => e.line).map(({
@@ -109,7 +109,7 @@ class StructuredDataAutomatic extends Audit {
             // snippet,
             code,
             // todo: how does i18n work?
-            title: `${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
+            title: `@type ${topLevelType} (${errors.length} Error${errors.length !== 1 ? 's' : ''})`,
             // todo: support mutlile failures!!
             highlights: [],
           });
