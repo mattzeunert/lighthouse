@@ -73,7 +73,7 @@ class DetailsRenderer {
         return this._renderList(/** @type {TableDetailsJSON} */ (details));
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
-      case 'code-lines':
+      case 'code-snippet':
         return this._renderCodeLines(details);
       case 'node':
         return this.renderNode(/** @type {NodeDetailsJSON} */(details));
@@ -459,7 +459,7 @@ class DetailsRenderer {
   }
 
   _renderCodeLines({code, highlights, title}) {
-    // const pre = this._dom.createElement('pre', 'lh-code-lines');
+    // const pre = this._dom.createElement('pre', 'lh-code-snippet');
 
     const lines = code.split('\n');
 
@@ -468,8 +468,8 @@ class DetailsRenderer {
 
     // todo: move to class
 
-    const codeLines = this._dom.createElement('div', 'lh-code-lines');
-    const header = this._dom.createElement('div', 'lh-code-lines__header');
+    const codeLines = this._dom.createElement('div', 'lh-code-snippet');
+    const header = this._dom.createElement('div', 'lh-code-snippet__header');
     codeLines.appendChild(header);
     if (title) {
       const titleEl = this._dom.createElement('div');
@@ -481,7 +481,7 @@ class DetailsRenderer {
 
     const showAll = lines.length <= 4;
 
-    const snippet = this._dom.createElement('div', 'lh-code-lines__snippet');
+    const snippet = this._dom.createElement('div', 'lh-code-snippet__snippet');
     codeLines.append(snippet);
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.line !== 'number');
@@ -531,9 +531,9 @@ class DetailsRenderer {
         snippet.append(messageLine );
       }
 
-      codeLine.classList.add('lh-code-lines__line');
+      codeLine.classList.add('lh-code-snippet__line');
       if (!showByDefault) {
-        codeLine.classList.add('lh-code-lines__line--hide-by-default');
+        codeLine.classList.add('lh-code-snippet__line--hide-by-default');
       }
 
       if (lineIndex === 0 && nonLineSpecificHighlights.length > 0) {
@@ -547,7 +547,7 @@ class DetailsRenderer {
 
       if (lineHighlights.length > 0) {
         addLineHighlights(lineHighlights);
-        codeLine.classList.add('lh-code-lines__line--highlighted');
+        codeLine.classList.add('lh-code-snippet__line--highlighted');
       }
 
       function addLineHighlights(lineHighlights) {
@@ -557,9 +557,9 @@ class DetailsRenderer {
           const messageLine = renderLine({
             number: ' ',
             content: lineHighlight.message,
-            extraClasses: 'lh-code-lines__line--highlight-message',
+            extraClasses: 'lh-code-snippet__line--highlight-message',
           });
-          messageLine.classList.add('lh-code-lines__line--highlighted');
+          messageLine.classList.add('lh-code-snippet__line--highlighted');
           snippet.append(messageLine );
         });
       }
@@ -568,9 +568,9 @@ class DetailsRenderer {
 
 
       function renderLine({number, content, extraClasses = ''}) {
-        const codeLine = dom.createElement('div', 'lh-code-lines__line ' + extraClasses );
+        const codeLine = dom.createElement('div', 'lh-code-snippet__line ' + extraClasses );
         // todo: move to class
-        const lineNumber = dom.createElement('div', 'lh-code-lines__line-number');
+        const lineNumber = dom.createElement('div', 'lh-code-snippet__line-number');
 
         lineNumber.textContent = number;
 
@@ -585,10 +585,10 @@ class DetailsRenderer {
     });
 
     if (!showAll) {
-      const showAllButton = this._dom.createElement('button', 'lh-code-lines__toggle-show-all');
+      const showAllButton = this._dom.createElement('button', 'lh-code-snippet__toggle-show-all');
       showAllButton.textContent = 'Expand snippet';
       showAllButton.addEventListener('click', () => {
-        const showAllClass = 'lh-code-lines--show-all';
+        const showAllClass = 'lh-code-snippet--show-all';
         if (codeLines.classList.contains(showAllClass)) {
           showAllButton.textContent = 'Expand snippet';
           codeLines.classList.remove(showAllClass);

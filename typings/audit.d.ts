@@ -80,8 +80,8 @@ declare global {
       wastedBytes?: number;
     }
 
-    export interface DetailsRendererCodeLinesItem {
-      type: "code-lines",
+    export interface DetailsRendererCodeSnippetItem {
+      type: "code-snippet",
       code: string,
       title: string,
       highlights: {

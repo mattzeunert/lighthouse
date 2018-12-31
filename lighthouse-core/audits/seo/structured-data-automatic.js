@@ -90,8 +90,8 @@ class StructuredDataAutomatic extends Audit {
 
         Object.keys(errorsByCode).forEach(code => {
           const errors = errorsByCode[code];
-          const node = /** @type {LH.Audit.DetailsRendererCodeLinesItem} */ ({
-            type: 'code-lines',
+          const node = /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
+            type: 'code-snippet',
             // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
             //   1})`,
             // snippet,
@@ -115,15 +115,11 @@ class StructuredDataAutomatic extends Audit {
         });
 
         if (errors.length === 0) {
-          const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
-            type: 'code-lines',
-            // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
-            //   1})`,
-            // snippet,
+          const node = /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
+            type: 'code-snippet',
             code: JSON.stringify(JSON.parse(code), null, 2),
             // todo: how does i18n work?
             title,
-            // todo: support mutlile failures!!
             highlights: [],
           });
 
@@ -133,7 +129,7 @@ class StructuredDataAutomatic extends Audit {
     );
 
     // const headings = [
-    //   {key: 'node', itemType: 'code-lines', text: 'JSON-LD'},
+    //   {key: 'node', itemType: 'code-snippet', text: 'JSON-LD'},
     //   // {key: 'path', itemType: 'text', text: 'Line/Path'},
     //   // {key: 'message', itemType: 'text', text: 'Error'},
     // ];

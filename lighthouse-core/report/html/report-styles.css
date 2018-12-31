@@ -753,7 +753,7 @@ details, summary {
   word-break: break-word;
 }
 
-.lh-code-lines__snippet {
+.lh-code-snippet__snippet {
   overflow: auto;
   white-space: pre;
   border: 1px solid var(--report-border-color);
@@ -761,7 +761,7 @@ details, summary {
   border-bottom-right-radius: 4px;
 }
 
-.lh-code-lines__header {
+.lh-code-snippet__header {
   position: relative;
   color: var(--subheader-color);
   border: 1px solid var(--report-border-color);
@@ -772,35 +772,35 @@ details, summary {
   background: var(--medium-50-gray);
 }
 
-.lh-code-lines__line {
+.lh-code-snippet__line {
   background: white;
 }
-.lh-code-lines__line:first-child {
+.lh-code-snippet__line:first-child {
   padding-top: 5px;
 }
-.lh-code-lines__line:last-child {
+.lh-code-snippet__line:last-child {
   padding-bottom: 5px;
 }
-.lh-code-lines__line--highlighted {
+.lh-code-snippet__line--highlighted {
   background: var(--tmp-light-red-highlight);
 }
-.lh-code-lines__line--highlighted .lh-code-lines__line-number {
+.lh-code-snippet__line--highlighted .lh-code-snippet__line-number {
   
   background: var(--tmp-light-red-highlight);
 }
-.lh-code-lines__line--highlight-message .lh-code-lines__line-number {
+.lh-code-snippet__line--highlight-message .lh-code-snippet__line-number {
   padding-top: 10px;
   padding-bottom: 10px;
 }
-.lh-code-lines__line--highlight-message code {
+.lh-code-snippet__line--highlight-message code {
   padding: 10px;
   font-family: var(--text-font-family);
 }
 /* todo: review this and see how the rest of the css looks */
-.lh-code-lines:not(.lh-code-lines--show-all) .lh-code-lines__line--hide-by-default {
+.lh-code-snippet:not(.lh-code-snippet--show-all) .lh-code-snippet__line--hide-by-default {
   display: none;
 }
-.lh-code-lines__toggle-show-all {
+.lh-code-snippet__toggle-show-all {
   color: #0c50c7;
   background: transparent;
   border: none;
@@ -813,7 +813,7 @@ details, summary {
 
 }
 
-.lh-code-lines__line-number {
+.lh-code-snippet__line-number {
   display: inline-block;
   width: 40px;
   text-align: right;
