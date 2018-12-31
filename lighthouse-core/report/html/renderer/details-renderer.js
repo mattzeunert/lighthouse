@@ -458,7 +458,7 @@ class DetailsRenderer {
     return pre;
   }
 
-  _renderCodeLines({code, highlights, description, title}) {
+  _renderCodeLines({code, highlights, title}) {
     // const pre = this._dom.createElement('pre', 'lh-code-lines');
 
     const lines = code.split('\n');
@@ -477,12 +477,6 @@ class DetailsRenderer {
       titleEl.style.fontWeight = 'bold';
       header.append(titleEl);
     }
-    if (description) {
-      const descriptionEl = this._dom.createElement('div');
-      descriptionEl.style.paddingTop = '5px';
-      descriptionEl.innerText = description;
-      header.append(descriptionEl);
-    }
     // const lineNumbers = this._dom.createElement('div');
 
     const showAll = lines.length <= 4;
@@ -490,11 +484,20 @@ class DetailsRenderer {
     const snippet = this._dom.createElement('div', 'lh-code-lines__snippet');
     codeLines.append(snippet);
 
+    const nonLineSpecificHighlights = highlights.filter(h => typeof h.line !== 'number');
+
+    const linesToShowBefore = 2;
+    const linesToShowAfter = 2;
+    const totalSurroundingLinesToShow = linesToShowBefore + linesToShowAfter;
+
     function getLineHighlights(lineNumber) {
       return highlights.filter(h => h.line === lineNumber);
     }
     function hasNearbyHighlight(lineNumber) {
-      for (let i = lineNumber - 2; i <= lineNumber + 2; i++) {
+      if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
+        return true;
+      }
+      for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
         if (getLineHighlights(i).length > 0) {
           return true;
         }
@@ -532,14 +535,23 @@ class DetailsRenderer {
       if (!showByDefault) {
         codeLine.classList.add('lh-code-lines__line--hide-by-default');
       }
+
+      if (lineIndex === 0 && nonLineSpecificHighlights.length > 0) {
+        addLineHighlights(nonLineSpecificHighlights);
+      }
+
       // todo: review existing css and make new stuff more in lines with it
       snippet.append(codeLine);
 
       const lineHighlights = getLineHighlights(lineNumber);
 
       if (lineHighlights.length > 0) {
-        hasSeenLineWithHighlight = true;
+        addLineHighlights(lineHighlights);
         codeLine.classList.add('lh-code-lines__line--highlighted');
+      }
+
+      function addLineHighlights(lineHighlights) {
+        hasSeenLineWithHighlight = true;
 
         lineHighlights.forEach(lineHighlight => {
           const messageLine = renderLine({

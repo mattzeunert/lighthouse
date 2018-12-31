@@ -98,10 +98,8 @@ class StructuredDataAutomatic extends Audit {
             code,
             // todo: how does i18n work?
             title,
-            description: errors.filter(e => !e.line).map(e => e.message).join(''),
-            // todo: support mutlile failures!!
-            highlights: errors.filter(e => e.line).map(({
-              message, path, line, validator, code2,
+            highlights: errors.map(({
+              message, line,
             }) => {
               return {
                 line: line,
