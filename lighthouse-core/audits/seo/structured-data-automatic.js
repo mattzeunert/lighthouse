@@ -90,7 +90,7 @@ class StructuredDataAutomatic extends Audit {
 
         Object.keys(errorsByCode).forEach(code => {
           const errors = errorsByCode[code];
-          const node = /** @type {LH.Audit.DetailsRendererNodeDetailsJSON} */ ({
+          const node = /** @type {LH.Audit.DetailsRendererCodeLinesItem} */ ({
             type: 'code-lines',
             // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
             //   1})`,

@@ -80,6 +80,16 @@ declare global {
       wastedBytes?: number;
     }
 
+    export interface DetailsRendererCodeLinesItem {
+      type: "code-lines",
+      code: string,
+      title: string,
+      highlights: {
+        line: number | null,
+        message: string
+      }[]
+    } 
+
     // TODO: placeholder typedefs until Details are typed
     export interface DetailsRendererDetailsJSON {
       type: 'table';

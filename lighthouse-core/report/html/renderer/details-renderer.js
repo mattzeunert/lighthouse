@@ -70,7 +70,6 @@ class DetailsRenderer {
         // @ts-ignore - TODO(bckenny): Fix type hierarchy
         return this._renderTable(/** @type {TableDetailsJSON} */ (details));
       case 'list':
-        // @ts-ignore - TODO(bckenny): Fix type hierarchy
         return this._renderList(/** @type {TableDetailsJSON} */ (details));
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
@@ -575,14 +574,14 @@ class DetailsRenderer {
 
     if (!showAll) {
       const showAllButton = this._dom.createElement('button', 'lh-code-lines__toggle-show-all');
-      showAllButton.textContent = 'Expand Snippet';
+      showAllButton.textContent = 'Expand snippet';
       showAllButton.addEventListener('click', () => {
         const showAllClass = 'lh-code-lines--show-all';
         if (codeLines.classList.contains(showAllClass)) {
-          showAllButton.textContent = 'Expand Snippet';
+          showAllButton.textContent = 'Expand snippet';
           codeLines.classList.remove(showAllClass);
         } else {
-          showAllButton.textContent = 'Collapse Snippet';
+          showAllButton.textContent = 'Collapse snippet';
           codeLines.classList.add(showAllClass);
         }
       });
