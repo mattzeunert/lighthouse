@@ -34,7 +34,7 @@ module.exports = function parseJSON(input) {
     const regexMessageResult = error.message.match(/-+\^\n(.+)$/);
 
     if (regexMessageResult) {
-      message = regexMessageResult[1];
+      message = 'Invalid JSON: ' + regexMessageResult[1];
     }
 
     return {

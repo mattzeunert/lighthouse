@@ -104,7 +104,7 @@ function validateObjectKeys(typeOrTypes, keys) {
     // remove Schema.org input/output constraints http://schema.org/docs/actions.html#part-4
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
-    .forEach(key => errors.push({message: `Unexpected property "${key}"`, key}));
+    .forEach(key => errors.push({message: `Invalid schema: Unexpected property "${key}"`, key}));
 
   return errors;
 }
