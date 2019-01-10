@@ -774,6 +774,8 @@ details, summary {
 
 .lh-code-snippet__line {
   background: white;
+  /* make div grow across scrollable width */
+  display: table-row;
 }
 .lh-code-snippet__line:first-child {
   padding-top: 5px;
@@ -820,7 +822,6 @@ details, summary {
   font-family: monospace;
   padding-right: 5px;
   margin-right: 5px;
-  /* background: var(--medium-100-gray); */
   color: #777;
   user-select: none;
 }
