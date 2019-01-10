@@ -59,67 +59,17 @@ class CodeSnippetRenderer {
     }, 'lh-code-snippet__line--highlighted lh-code-snippet__line--highlight-message');
   }
 
-  /**
-     * @param {DOM} dom
-     * @param {ParentNode} templateContext
-     * @param {CRCDetailsJSON} details
-     * @return {Element}
-     */
-  static _render(dom, templateContext, details, collapse, updateFn) {
-    let {lines, title, highlights, lineCount} = details;
+  static renderSnippet(dom, templateContext, details, collapse) {
+    const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
+    let {lines, highlights, lineCount} = details;
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
 
-    console.log('rendering', {collapse});
     const linesToShowBefore = 2;
     const linesToShowAfter = 2;
     const totalSurroundingLinesToShow = linesToShowBefore + linesToShowAfter;
-    // const pre = this._dom.createElement('pre', 'lh-code-snippet');
 
-    const allAvailableLines = lines.slice();
-    lines = collapse ? getLinesForCollapsedView() : allAvailableLines;
-
-    function getLinesForCollapsedView() {
-      return allAvailableLines.filter(l => shouldShowInCollapsedView(l.number));
-    }
-    // todo: probably write a test for this
-
-    // todo: move to class
-
-
-    const codeLines = dom.createElement('div', 'lh-code-snippet');
-
-    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, collapse, updateFn));
-
-
-    // const lineNumbers = this._dom.createElement('div');
-
-
-    const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
-    codeLines.append(snippet);
-
-
-    function getLineHighlights(lineNumber) {
-      return highlights.filter(h => h.lineNumber === lineNumber);
-    }
-    function hasNearbyHighlight(lineNumber) {
-      if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
-        return true;
-      }
-      for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
-        if (getLineHighlights(i).length > 0) {
-          return true;
-        }
-      }
-      return false;
-    }
-    function shouldShowInCollapsedView(lineNumber) {
-      if (highlights.length === 0) {
-        return lineNumber <= 4;
-      }
-      return hasNearbyHighlight(lineNumber);
-    }
-
+    lines = collapse ? lines.filter(l => shouldShowInCollapsedView(l.number)) : lines;
 
     for (let lineIndex = 0; lineIndex < lineCount; lineIndex++) {
       const lineNumber = lineIndex + 1;
@@ -166,6 +116,41 @@ class CodeSnippetRenderer {
       }
     }
 
+    return snippet;
+
+
+    function getLineHighlights(lineNumber) {
+      return highlights.filter(h => h.lineNumber === lineNumber);
+    }
+    function hasNearbyHighlight(lineNumber) {
+      if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
+        return true;
+      }
+      for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
+        if (getLineHighlights(i).length > 0) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function shouldShowInCollapsedView(lineNumber) {
+      if (highlights.length === 0) {
+        return lineNumber <= 4;
+      }
+      return hasNearbyHighlight(lineNumber);
+    }
+  }
+
+  /**
+     * @param {DOM} dom
+     * @param {ParentNode} templateContext
+     * @param {CRCDetailsJSON} details
+     * @return {Element}
+     */
+  static _render(dom, templateContext, details, collapse, updateFn) {
+    const codeLines = dom.createElement('div', 'lh-code-snippet');
+    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, collapse, updateFn));
+    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, templateContext, details, collapse));
 
     // todo: review existing css and make new stuff more in lines with it
 
@@ -179,6 +164,7 @@ class CodeSnippetRenderer {
      * @return {Element}
      */
   static render(dom, templateContext, details) {
+    // todo: probably write a test for this
     // todo: better upate solution
     const el = dom.createElement('div');
     function update(collapse) {

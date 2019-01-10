@@ -76,10 +76,7 @@ module.exports = async function validate(textInput) {
 
   const compactedObj = await require('jsonld').compact(expandedObj, 'http://schema.org');
 
-  console.log('input');
-  console.log(JSON.stringify(inputObject, null, 4));
-  console.log('compact');
-  console.log(JSON.stringify(compactedObj, null, 4));
+
   if (schemaOrgErrors && schemaOrgErrors.length) {
     eval('debugger');
     schemaOrgErrors.forEach(error => {
