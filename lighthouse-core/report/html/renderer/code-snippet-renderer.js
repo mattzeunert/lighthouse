@@ -52,6 +52,13 @@ class CodeSnippetRenderer {
     return codeLine;
   }
 
+  static renderHighlightLine(dom, templateContext, highlight) {
+    return CodeSnippetRenderer.renderLine(dom, templateContext, {
+      number: ' ',
+      content: highlight.message,
+    }, 'lh-code-snippet__line--highlighted lh-code-snippet__line--highlight-message');
+  }
+
   /**
      * @param {DOM} dom
      * @param {ParentNode} templateContext
@@ -130,54 +137,37 @@ class CodeSnippetRenderer {
         }
         continue;
       }
-      const {content: line, number, truncated} = l;
 
       // const lineNumber = this._dom.createElement('div');
       // lineNumber.textContent = lineIndex + 1;
       // lineNumbers.appendChild(lineNumber);
-
-
       // UI: can we make the show more button prettier? just click anywhere to show all?
       // UI: no titles for code snippet looks a bit weird
 
-
       const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, l);
-
-
       codeLine.classList.add('lh-code-snippet__line');
       // todo: remove unused classes from css file
 
-      if (lineIndex === 0 && nonLineSpecificHighlights.length > 0) {
-        addLineHighlights(nonLineSpecificHighlights);
-      }
-
-      // todo: review existing css and make new stuff more in lines with it
-      snippet.append(codeLine);
-
-      const lineHighlights = getLineHighlights(lineNumber);
-
-      if (lineHighlights.length > 0) {
-        addLineHighlights(lineHighlights);
-        codeLine.classList.add('lh-code-snippet__line--highlighted');
-      }
-
-      function addLineHighlights(lineHighlights) {
-        lineHighlights.forEach(lineHighlight => {
-          const messageLine = CodeSnippetRenderer.renderLine(dom, templateContext, {
-            number: ' ',
-            content: lineHighlight.message,
-
-          }, 'lh-code-snippet__line--highlighted lh-code-snippet__line--highlight-message');
-
-          snippet.append(messageLine );
+      if (lineIndex === 0) {
+        nonLineSpecificHighlights.forEach(highlight => {
+          snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
         });
       }
 
-      // todo: check out what _dom is... does it support classname/style?
+
+      snippet.append(codeLine);
+
+      const lineHighlights = getLineHighlights(lineNumber);
+      if (lineHighlights.length > 0) {
+        lineHighlights.forEach(highlight => {
+          snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
+        });
+        codeLine.classList.add('lh-code-snippet__line--highlighted');
+      }
     }
 
 
-    // container.appendChild(lineNumbers);
+    // todo: review existing css and make new stuff more in lines with it
 
     return codeLines;
   }
