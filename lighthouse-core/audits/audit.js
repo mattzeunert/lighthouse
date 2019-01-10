@@ -163,6 +163,10 @@ class Audit {
 
     lines = Util.filterRelevantLines(lines, highlights, MAX_LINES_AROUND_HIGHLIGHT);
 
+    // table: #f8f9fa;
+
+    // hsl(210, 17%, 98%);
+
     // const totalSurroundingLinesToShow = 10;
     // const linesToShowAfter = MAX_LINES_AROUND_HIGHLIGHT;
     // const linesToShowBefore = MAX_LINES_AROUND_HIGHLIGHT;

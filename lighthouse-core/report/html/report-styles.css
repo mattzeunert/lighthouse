@@ -756,17 +756,17 @@ details, summary {
 .lh-code-snippet__snippet {
   overflow: auto;
   white-space: pre;
-  border: 1px solid var(--report-border-color);
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
+  border: 1px solid var(--report-secondary-border-color);
+  /* border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 4px; */
 }
 
 .lh-code-snippet__header {
   position: relative;
   color: var(--subheader-color);
-  border: 1px solid var(--report-border-color);
-  border-top-left-radius: 4px;
-  border-top-right-radius: 4px;
+  border: 1px solid var(--report-secondary-border-color);
+  /* border-top-left-radius: 4px;
+  border-top-right-radius: 4px; */
   border-bottom: none;
   padding: 10px;
   background: var(--medium-50-gray);
