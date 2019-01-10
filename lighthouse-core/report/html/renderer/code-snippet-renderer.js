@@ -11,6 +11,28 @@
 // todo: consider using templates instead of constructing manually
 
 
+function filterRelevantLines(lines, highlights, surroundingLineCount) {
+  if (highlights.length === 0) {
+    return lines.slice(0, surroundingLineCount * 2);
+  }
+  const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
+  return lines.filter(line => {
+    if (line.number <= surroundingLineCount * 2 && nonLineSpecificHighlights.length > 0) {
+      return true;
+    }
+    for (let i = line.number - surroundingLineCount; i <= line.number + surroundingLineCount; i++) {
+      if (getLineHighlights(highlights, i).length > 0) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
+function getLineHighlights(highlights, lineNumber) {
+  return highlights.filter(h => h.lineNumber === lineNumber);
+}
+
 class CodeSnippetRenderer {
   static renderHeader(dom, templateContext, details, collapse, updateFn) {
     const {lineCount, title} = details;
@@ -41,10 +63,10 @@ class CodeSnippetRenderer {
     // todo: move to class
     const lineNumber = dom.createElement('div', 'lh-code-snippet__line-number');
 
-    lineNumber.textContent = line.number + (line.truncated ? '…' : '');
+    lineNumber.textContent = line.number;
 
     const code = dom.createElement('code');
-    code.textContent = line.content;
+    code.textContent = line.content + (line.truncated ? '…' : '');
 
     codeLine.appendChild(lineNumber);
     codeLine.appendChild(code);
@@ -60,24 +82,18 @@ class CodeSnippetRenderer {
   }
 
   static renderSnippet(dom, templateContext, details, collapse) {
-    const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
     let {lines, highlights, lineCount} = details;
+    lines = collapse ? filterRelevantLines(lines, highlights, 2) : lines;
+    console.log('lines', lines);
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
 
-    const linesToShowBefore = 2;
-    const linesToShowAfter = 2;
-    const totalSurroundingLinesToShow = linesToShowBefore + linesToShowAfter;
-
-    lines = collapse ? lines.filter(l => shouldShowInCollapsedView(l.number)) : lines;
-
-    for (let lineIndex = 0; lineIndex < lineCount; lineIndex++) {
-      const lineNumber = lineIndex + 1;
-      // todo: extract find into function getLine()
-      const l = lines.find(l => l.number === lineNumber);
-      const previousLine = lines.find(l => l.number === lineNumber - 1);
-      const nextLine = lines.find(l => l.number === lineNumber + 1);
-      if (!l) {
+    const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
+    for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
+      const line = getLine(lineNumber);
+      const previousLine = getLine(lineNumber - 1);
+      const nextLine = getLine(lineNumber + 1);
+      if (!line) {
         if ((previousLine || nextLine)) {
           const messageLine = CodeSnippetRenderer.renderLine(dom, templateContext, {
             number: '…',
@@ -88,24 +104,17 @@ class CodeSnippetRenderer {
         continue;
       }
 
-      // const lineNumber = this._dom.createElement('div');
-      // lineNumber.textContent = lineIndex + 1;
-      // lineNumbers.appendChild(lineNumber);
-      // UI: can we make the show more button prettier? just click anywhere to show all?
-      // UI: no titles for code snippet looks a bit weird
-
-      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, l);
+      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line);
       snippet.append(codeLine);
       // todo: remove unused classes from css file
 
-      if (lineIndex === 0) {
+      if (lineNumber === 1) {
         nonLineSpecificHighlights.forEach(highlight => {
           snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
         });
       }
 
-
-      const lineHighlights = getLineHighlights(lineNumber);
+      const lineHighlights = getLineHighlights(highlights, lineNumber);
       if (lineHighlights.length > 0) {
         lineHighlights.forEach(highlight => {
           snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
@@ -116,22 +125,8 @@ class CodeSnippetRenderer {
 
     return snippet;
 
-    function getLineHighlights(lineNumber) {
-      return highlights.filter(h => h.lineNumber === lineNumber);
-    }
-    function shouldShowInCollapsedView(lineNumber) {
-      if (highlights.length === 0) {
-        return lineNumber <= 4;
-      }
-      if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
-        return true;
-      }
-      for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
-        if (getLineHighlights(i).length > 0) {
-          return true;
-        }
-      }
-      return false;
+    function getLine(lineNumber) {
+      return lines.find(l => l.number === lineNumber);
     }
   }
 

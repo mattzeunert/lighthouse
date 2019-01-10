@@ -141,8 +141,8 @@ describe('Audit', () => {
           message: 'General',
         }],
       });
-      // todo: import 30 from audit.js
-      expect(details.lines.length).toBe(30);
+      // todo: import 40 (2*20) from audit.js
+      expect(details.lines.length).toBe(40);
     });
 
     it('Limits the number of lines around highlights', () => {

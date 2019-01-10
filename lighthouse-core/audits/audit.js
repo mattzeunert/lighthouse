@@ -160,33 +160,35 @@ class Audit {
     });
     const lineCount = lines.length;
 
+    lines = filterRelevantLines(lines, highlights, MAX_LINES_AROUND_HIGHLIGHT);
+
     // const totalSurroundingLinesToShow = 10;
-    const linesToShowAfter = MAX_LINES_AROUND_HIGHLIGHT;
-    const linesToShowBefore = MAX_LINES_AROUND_HIGHLIGHT;
+    // const linesToShowAfter = MAX_LINES_AROUND_HIGHLIGHT;
+    // const linesToShowBefore = MAX_LINES_AROUND_HIGHLIGHT;
     // todo: dont copy/past this code from code snippet renderer
-    function getLineHighlights(lineNumber) {
-      return highlights.filter(h => h.lineNumber === lineNumber);
-    }
-    function hasNearbyHighlight(lineNumber) {
-      // if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
-      //   return true;
-      // }
-      for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
-        if (getLineHighlights(i).length > 0) {
-          return true;
-        }
-      }
-      return false;
-    }
+    // function getLineHighlights(lineNumber) {
+    //   return highlights.filter(h => h.lineNumber === lineNumber);
+    // }
+    // function hasNearbyHighlight(lineNumber) {
+    //   // if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
+    //   //   return true;
+    //   // }
+    //   for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
+    //     if (getLineHighlights(i).length > 0) {
+    //       return true;
+    //     }
+    //   }
+    //   return false;
+    // }
 
 
-    const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
-    const lineSpecificHighlights = highlights.filter(h => typeof h.lineNumber === 'number');
-    if (lineSpecificHighlights.length === 0) {
-      lines = lines.slice(0, MAX_LINES_IF_NO_LINE_SPECIFIC_HIGHLIGHT);
-    } else {
-      lines = lines.filter(l => hasNearbyHighlight(l.number));
-    }
+    // const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
+    // const lineSpecificHighlights = highlights.filter(h => typeof h.lineNumber === 'number');
+    // if (lineSpecificHighlights.length === 0) {
+    //   lines = lines.slice(0, MAX_LINES_IF_NO_LINE_SPECIFIC_HIGHLIGHT);
+    // } else {
+    //   lines = lines.filter(l => hasNearbyHighlight(l.number));
+    // }
 
     // general: use copyright 2019
 
@@ -301,3 +303,25 @@ class Audit {
 }
 
 module.exports = Audit;
+
+function filterRelevantLines(lines, highlights, surroundingLineCount) {
+  if (highlights.length === 0) {
+    return lines.slice(0, surroundingLineCount * 2);
+  }
+  const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
+  return lines.filter(line => {
+    if (line.number <= surroundingLineCount * 2 && nonLineSpecificHighlights.length > 0) {
+      return true;
+    }
+    for (let i = line.number - surroundingLineCount; i <= line.number + surroundingLineCount; i++) {
+      if (getLineHighlights(highlights, i).length > 0) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
+
+function getLineHighlights(highlights, lineNumber) {
+  return highlights.filter(h => h.lineNumber === lineNumber);
+}
