@@ -113,7 +113,6 @@ describe('Audit', () => {
       assert.deepEqual(details.lines[1], {
         number: 2,
         content: 'b',
-        truncated: false,
       });
     });
 
@@ -168,7 +167,6 @@ describe('Audit', () => {
       assert.deepEqual(lastLine, {
         number: 201,
         content: 'B',
-        truncated: false,
       });
     });
 

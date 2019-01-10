@@ -440,8 +440,14 @@ class Util {
     if (Util.numberDateLocale === 'en-XA') Util.numberDateLocale = 'de';
   }
 
-  // todo: add explainer comment for this function
-  // not sure where to put this... maybe render util?
+
+  // todo: is render util the right place to put this?
+  /**
+   * Filters line numbers that are near a highlight.
+   * @param {LH.Audit.DetailsRendererCodeSnippetLine[]} lines
+   * @param {LH.Audit.DetailsRendererCodeSnippetHighlight[]} highlights
+   * @param {number} surroundingLineCount
+   */
   static filterRelevantLines(lines, highlights, surroundingLineCount) {
     if (highlights.length === 0) {
       return lines.slice(0, surroundingLineCount * 2);
@@ -460,6 +466,10 @@ class Util {
     });
   }
 
+  /**
+   * @param {LH.Audit.DetailsRendererCodeSnippetHighlight[]} highlights
+   * @param {number} lineNumber
+   */
   static getLineHighlights(highlights, lineNumber) {
     return highlights.filter(h => h.lineNumber === lineNumber);
   }

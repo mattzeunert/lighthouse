@@ -1,5 +1,5 @@
 /**
- * @license Copyright 2018 Google Inc. All Rights Reserved.
+ * @license Copyright 2019 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
@@ -8,7 +8,8 @@
 /* eslint-env jest */
 
 // todo: consider using templates instead of constructing manually
-
+// todo: remove unused classes from css file
+// general: use copyright 2019 for new files
 
 class CodeSnippetRenderer {
   static renderHeader(dom, templateContext, details, isExpanded, updateFn) {
@@ -85,27 +86,16 @@ class CodeSnippetRenderer {
     for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
       const line = getLine(lineNumber);
       const previousLine = getLine(lineNumber - 1);
-      const nextLine = getLine(lineNumber + 1);
 
-      if ((line && !previousLine && hasSeenHighlight)) {
+      if (!line) {
+        continue;
+      }
+      if (!previousLine && hasSeenHighlight) {
         snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
       }
 
-      if (!line) {
-        // if ((previousLine || (nextLine && !hasRenderedLine))) {
-        //   const messageLine = CodeSnippetRenderer.renderLine(dom, templateContext, {
-        //     number: '…',
-        //     content: '',
-        //   });
-        //   snippet.append(messageLine);
-        // }
-        continue;
-      }
-
-
       const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line);
       snippet.append(codeLine);
-      // todo: remove unused classes from css file
 
 
       if (lineNumber === 1) {

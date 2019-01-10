@@ -139,77 +139,38 @@ class Audit {
 
   /**
    * @param {any} asdfdsfd
-   * @return {any}
+   * @return {LH.Audit.DetailsRendererCodeSnippetItem}
    * todo: fix any type
    */
   static makeCodeSnippetDetails({code, title, highlights}) {
     const MAX_LINE_LENGTH = 200;
     const MAX_LINES_AROUND_HIGHLIGHT = 20;
-    // todo: better name (maybe?)
-    const MAX_LINES_IF_NO_LINE_SPECIFIC_HIGHLIGHT = 30;
 
     // can i just use line number? what does jsonlint mod return? -- i think best to use line number everywhere
     // leave commment somewhere saying what line number means (i.e +1 on index)
     let lines = code.split('\n').map((line, lineIndex) => {
       const lineNumber = lineIndex + 1;
-      return {
+      /** @type LH.Audit.DetailsRendererCodeSnippetLine */
+      const lineDetail = {
         content: line.slice(0, MAX_LINE_LENGTH),
         number: lineNumber,
-        truncated: line.length > MAX_LINE_LENGTH,
-        // __debugH: getLineHighlights(lineNumber),
       };
+      if (line.length > MAX_LINE_LENGTH) {
+        lineDetail.truncated = true;
+      }
+      return lineDetail;
     });
     const lineCount = lines.length;
 
     lines = Util.filterRelevantLines(lines, highlights, MAX_LINES_AROUND_HIGHLIGHT);
 
-    // table: #f8f9fa;
-
-    // hsl(210, 17%, 98%);
-
-    // const totalSurroundingLinesToShow = 10;
-    // const linesToShowAfter = MAX_LINES_AROUND_HIGHLIGHT;
-    // const linesToShowBefore = MAX_LINES_AROUND_HIGHLIGHT;
-    // todo: dont copy/past this code from code snippet renderer
-    // function getLineHighlights(lineNumber) {
-    //   return highlights.filter(h => h.lineNumber === lineNumber);
-    // }
-    // function hasNearbyHighlight(lineNumber) {
-    //   // if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
-    //   //   return true;
-    //   // }
-    //   for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
-    //     if (getLineHighlights(i).length > 0) {
-    //       return true;
-    //     }
-    //   }
-    //   return false;
-    // }
-
-
-    // const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
-    // const lineSpecificHighlights = highlights.filter(h => typeof h.lineNumber === 'number');
-    // if (lineSpecificHighlights.length === 0) {
-    //   lines = lines.slice(0, MAX_LINES_IF_NO_LINE_SPECIFIC_HIGHLIGHT);
-    // } else {
-    //   lines = lines.filter(l => hasNearbyHighlight(l.number));
-    // }
-
-    // general: use copyright 2019
-
     // todo: also include node link
     return /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
       type: 'code-snippet',
       lines,
-      // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
-      //   1})`,
-      // snippet,
-      // code,
       title,
-      // todo: rename?
       highlights,
       lineCount,
-      // highlights,
     });
   }
 

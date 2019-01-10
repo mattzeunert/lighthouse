@@ -5,6 +5,7 @@
  */
 
 import ArbitraryEqualityMap = require('../lighthouse-core/lib/arbitrary-equality-map.js');
+import { truncate } from 'fs';
 
 declare global {
   module LH.Audit {
@@ -80,14 +81,23 @@ declare global {
       wastedBytes?: number;
     }
 
+    export interface DetailsRendererCodeSnippetHighlight {
+      lineNumber: number | null,
+      message: string
+    }
+
+    export interface DetailsRendererCodeSnippetLine {
+      content: string
+      number: number
+      truncated?: boolean
+    }
+
     export interface DetailsRendererCodeSnippetItem {
       type: "code-snippet",
-      code: string,
+      lines: DetailsRendererCodeSnippetLine,
       title: string,
-      highlights: {
-        line: number | null,
-        message: string
-      }[]
+      highlights: DetailsRendererCodeSnippetHighlight[]
+      lineCount: number
     } 
 
     // TODO: placeholder typedefs until Details are typed
