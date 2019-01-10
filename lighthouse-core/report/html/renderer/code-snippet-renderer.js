@@ -86,7 +86,9 @@ class CodeSnippetRenderer {
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
 
-    const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
+    const snippetOuter = dom.createElement('div', 'lh-code-snippet__snippet');
+    const snippet = dom.createElement('div', 'lh-code-snippet__snippet-inner');
+    snippetOuter.appendChild(snippet);
 
     if (!firstLineIsVisible && isExpanded) {
       snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
@@ -126,7 +128,7 @@ class CodeSnippetRenderer {
       snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
     }
 
-    return snippet;
+    return snippetOuter;
 
     /**
      * @param {number} lineNumber

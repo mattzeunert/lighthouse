@@ -760,6 +760,11 @@ details, summary {
   /* border-bottom-left-radius: 4px;
   border-bottom-right-radius: 4px; */
 }
+/* Container needed so that all children grow to the width of the scroll container */
+.lh-code-snippet__snippet-inner {
+  display: inline-block;
+  min-width: 100%;
+}
 
 .lh-code-snippet__header {
   position: relative;
@@ -775,7 +780,7 @@ details, summary {
 .lh-code-snippet__line {
   background: white;
   /* make div grow across scrollable width */
-  display: table-row;
+  /* display: table-row; */
 }
 .lh-code-snippet__line:first-child {
   padding-top: 5px;
