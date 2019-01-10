@@ -48,8 +48,9 @@ class StructuredDataAutomatic extends Audit {
 
     await Promise.all(
       artifacts.JsonLD.map(async (jsonLD, idx) => {
-        const code = jsonLD.trim();
-        const snippet = code.length > 100 ? code.substr(0, 100) + '…' : code;
+        // We don't want to show empty lines around the snippet
+        jsonLD = jsonLD.trim();
+        const snippet = jsonLD.length > 100 ? jsonLD.substr(0, 100) + '…' : jsonLD;
         const errors = await validateJsonLD(jsonLD);
 
         if (errors.length > 0) {
@@ -60,7 +61,7 @@ class StructuredDataAutomatic extends Audit {
         const errorsByCode = {};
 
         errors.forEach(({message, path, line, validator, code2}) => {
-          code2 = code2 || code;
+          code2 = code2 || jsonLD;
           if (!errorsByCode[code2]) {
             errorsByCode[code2] = [];
           }
@@ -70,8 +71,8 @@ class StructuredDataAutomatic extends Audit {
         let topLevelType;
         let topLevelName;
         try {
-          topLevelType = JSON.parse(code)['@type'];
-          topLevelName = JSON.parse(code)['name'];
+          topLevelType = JSON.parse(jsonLD)['@type'];
+          topLevelName = JSON.parse(jsonLD)['name'];
         } catch (err) {
         }
         topLevelType = topLevelType || 'Unknown';
@@ -117,7 +118,7 @@ class StructuredDataAutomatic extends Audit {
         if (errors.length === 0) {
           const node = /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
             type: 'code-snippet',
-            code: JSON.stringify(JSON.parse(code), null, 2),
+            code: JSON.stringify(JSON.parse(jsonLD), null, 2),
             // todo: how does i18n work?
             title,
             highlights: [],
@@ -136,10 +137,11 @@ class StructuredDataAutomatic extends Audit {
 
     const details = Audit.makeListDetails(tableData);
 
+
     return {
       rawValue: snippetsWithErrorsCount === 0,
       details,
-      displayValue: snippetsWithErrorsCount + ' snippets with errors',
+      displayValue: snippetsWithErrorsCount + '/' + artifacts.JsonLD.length + ' snippets with errors found',
     };
   }
 }
