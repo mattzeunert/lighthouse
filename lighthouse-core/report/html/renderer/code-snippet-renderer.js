@@ -7,9 +7,12 @@
 
 /* eslint-env jest */
 
+/* globals self, Util */
+
 // todo: consider using templates instead of constructing manually
 // todo: remove unused classes from css file
 // general: use copyright 2019 for new files
+// todo: probably write a test for this
 
 class CodeSnippetRenderer {
   static renderHeader(dom, templateContext, details, isExpanded, updateFn) {
@@ -66,8 +69,15 @@ class CodeSnippetRenderer {
     });
   }
 
+  /**
+   * @param {DOM} dom
+   * @param {DocumentFragment} templateContext
+   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @param {*} isExpanded
+   */
   static renderSnippet(dom, templateContext, details, isExpanded) {
-    let {lines, highlights, lineCount} = details;
+    const {highlights, lineCount} = details;
+    let {lines} = details;
     if (!isExpanded) {
       lines = Util.filterRelevantLines(lines, highlights, 2);
     }
@@ -93,16 +103,14 @@ class CodeSnippetRenderer {
       if (!previousLine && hasSeenHighlight) {
         snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
       }
-
-      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line);
-      snippet.append(codeLine);
-
-
       if (lineNumber === 1) {
         nonLineSpecificHighlights.forEach(highlight => {
           snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
         });
       }
+      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line);
+      snippet.append(codeLine);
+
 
       const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
       if (lineHighlights.length > 0) {
@@ -120,6 +128,9 @@ class CodeSnippetRenderer {
 
     return snippet;
 
+    /**
+     * @param {number} lineNumber
+     */
     function getLine(lineNumber) {
       return lines.find(l => l.number === lineNumber);
     }
@@ -127,34 +138,22 @@ class CodeSnippetRenderer {
 
   /**
      * @param {DOM} dom
-     * @param {ParentNode} templateContext
-     * @param {CRCDetailsJSON} details
-     * @return {Element}
-     */
-  static _render(dom, templateContext, details, isExpanded, updateFn) {
-    const codeLines = dom.createElement('div', 'lh-code-snippet');
-    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, isExpanded, updateFn));
-    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, templateContext, details, isExpanded));
-
-    // todo: review existing css and make new stuff more in lines with it
-
-    return codeLines;
-  }
-
-  /**
-     * @param {DOM} dom
-     * @param {ParentNode} templateContext
-     * @param {CRCDetailsJSON} details
+     * @param {DocumentFragment} templateContext
+     * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
      * @return {Element}
      */
   static render(dom, templateContext, details) {
-    // todo: probably write a test for this
     // todo: better upate solution
+    // cant i just figure out which element needs to be hidden in what state and then toggle a class?
     const el = dom.createElement('div');
     function update(isExpanded) {
+      const codeLines = dom.createElement('div', 'lh-code-snippet');
+      codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, isExpanded, update));
+      codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, templateContext, details, isExpanded));
+
       el.innerHTML = '';
       el.appendChild(
-        CodeSnippetRenderer._render(dom, templateContext, details, isExpanded, update));
+        codeLines);
     }
     update(false);
 
