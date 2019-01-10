@@ -827,7 +827,7 @@ details, summary {
   font-family: monospace;
   padding-right: 5px;
   margin-right: 5px;
-  color: #777;
+  color: var(--medium-75-gray);
   user-select: none;
 }
 
