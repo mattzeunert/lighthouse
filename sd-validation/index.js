@@ -83,7 +83,7 @@ module.exports = async function validate(textInput) {
         validator: 'schema-org',
         path: error.path,
         // stringify again here because stringified has different property order from input
-        code2: JSON.stringify(inputObject, null, 4) + '(sdfakslfjld custom json from schem org validtor)',
+        code2: JSON.stringify(inputObject, null, 2) + '(sdfakslfjld custom json from schem org validtor)',
         // todo: figure out if we can do this operation with inputobj instead of exp obj
         line: getLineFromJsonPath(inputObject, error.path),
         message: error.message,

@@ -456,7 +456,9 @@ class Util {
     }
 
     return lines.filter(line => {
-      for (let i = -surroundingLineCount; i <= surroundingLineCount; i++) {
+      const firstSurroundingLineNumber = -surroundingLineCount;
+      const lastSurroundingLineNumber = surroundingLineCount;
+      for (let i = firstSurroundingLineNumber; i <= lastSurroundingLineNumber; i++) {
         const surroundingLineNumber = i + line.number;
         if (Util.getLineHighlights(highlights, surroundingLineNumber).length > 0) {
           return true;
