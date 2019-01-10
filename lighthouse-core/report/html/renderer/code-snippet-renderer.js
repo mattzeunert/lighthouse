@@ -18,18 +18,19 @@ class CodeSnippetRenderer {
      * @param {CRCDetailsJSON} details
      * @return {Element}
      */
-  static render(dom, templateContext, details) {
+  static _render(dom, templateContext, details, collapse, updateFn) {
     let {lines, title, highlights, lineCount} = details;
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
 
+    console.log('rendering', {collapse});
     const linesToShowBefore = 2;
     const linesToShowAfter = 2;
     const totalSurroundingLinesToShow = linesToShowBefore + linesToShowAfter;
     // const pre = this._dom.createElement('pre', 'lh-code-snippet');
 
     const allAvailableLines = lines.slice();
-    lines = getLinesForCollapsedView();
+    lines = collapse ? getLinesForCollapsedView() : allAvailableLines;
 
     function getLinesForCollapsedView() {
       return allAvailableLines.filter(l => shouldShowInCollapsedView(l.number));
@@ -50,7 +51,7 @@ class CodeSnippetRenderer {
     // const lineNumbers = this._dom.createElement('div');
 
 
-    const showAll = lines.length <= 4;
+    const showAll = lineCount <= 4;
 
     const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
     codeLines.append(snippet);
@@ -114,9 +115,9 @@ class CodeSnippetRenderer {
 
 
       codeLine.classList.add('lh-code-snippet__line');
-      if (!showByDefault) {
-        codeLine.classList.add('lh-code-snippet__line--hide-by-default');
-      }
+      // if (!showByDefault) {
+      //   codeLine.classList.add('lh-code-snippet__line--hide-by-default');
+      // }
 
       if (lineIndex === 0 && nonLineSpecificHighlights.length > 0) {
         addLineHighlights(nonLineSpecificHighlights);
@@ -174,17 +175,40 @@ class CodeSnippetRenderer {
         if (codeLines.classList.contains(showAllClass)) {
           showAllButton.textContent = 'Expand snippet';
           codeLines.classList.remove(showAllClass);
+
+          updateFn(true);
         } else {
           showAllButton.textContent = 'Collapse snippet';
           codeLines.classList.add(showAllClass);
+          updateFn(false);
         }
       });
+
       header.prepend(showAllButton);
     }
 
     // container.appendChild(lineNumbers);
 
     return codeLines;
+  }
+
+  /**
+     * @param {DOM} dom
+     * @param {ParentNode} templateContext
+     * @param {CRCDetailsJSON} details
+     * @return {Element}
+     */
+  static render(dom, templateContext, details) {
+    // todo: better upate solution
+    const el = dom.createElement('div');
+    function update(collapse) {
+      el.innerHTML = '';
+      el.appendChild(
+        CodeSnippetRenderer._render(dom, templateContext, details, collapse, update));
+    }
+    update(true);
+
+    return el;
   }
 }
 
