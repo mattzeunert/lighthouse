@@ -74,7 +74,10 @@ class DetailsRenderer {
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
       case 'code-snippet':
-        return this._renderCodeLines(details);
+        return CodeSnippetRenderer.render(this._dom, this._templateContext,
+
+          // ..... copied from below where there's a todo, need to do type thing here too?
+          details);
       case 'node':
         return this.renderNode(/** @type {NodeDetailsJSON} */(details));
       case 'criticalrequestchain':
@@ -456,157 +459,6 @@ class DetailsRenderer {
     const pre = this._dom.createElement('pre', 'lh-code');
     pre.textContent = /** @type {string} */ (details.value);
     return pre;
-  }
-
-  _renderCodeLines({code, highlights, title}) {
-    // const pre = this._dom.createElement('pre', 'lh-code-snippet');
-
-    const lines = code.split('\n');
-
-
-    // todo: probably write a test for this
-
-    // todo: move to class
-
-    const codeLines = this._dom.createElement('div', 'lh-code-snippet');
-    const header = this._dom.createElement('div', 'lh-code-snippet__header');
-    codeLines.appendChild(header);
-    if (title) {
-      const titleEl = this._dom.createElement('div');
-      titleEl.innerText = title;
-      titleEl.style.fontWeight = 'bold';
-      header.append(titleEl);
-    }
-    // const lineNumbers = this._dom.createElement('div');
-
-    const showAll = lines.length <= 4;
-
-    const snippet = this._dom.createElement('div', 'lh-code-snippet__snippet');
-    codeLines.append(snippet);
-
-    const nonLineSpecificHighlights = highlights.filter(h => typeof h.line !== 'number');
-
-    const linesToShowBefore = 2;
-    const linesToShowAfter = 2;
-    const totalSurroundingLinesToShow = linesToShowBefore + linesToShowAfter;
-
-    function getLineHighlights(lineNumber) {
-      return highlights.filter(h => h.line === lineNumber);
-    }
-    function hasNearbyHighlight(lineNumber) {
-      if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
-        return true;
-      }
-      for (let i = lineNumber - linesToShowAfter; i <= lineNumber + linesToShowBefore; i++) {
-        if (getLineHighlights(i).length > 0) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    // todo: instead create line list first and then map to elements and then filter
-    let hasSeenLineWithHighlight = false;
-    lines.forEach((line, lineIndex) => {
-      // const lineNumber = this._dom.createElement('div');
-      // lineNumber.textContent = lineIndex + 1;
-      // lineNumbers.appendChild(lineNumber);
-
-
-      // UI: can we make the show more button prettier? just click anywhere to show all?
-      // UI: no titles for code snippet looks a bit weird
-
-      const dom = this._dom;
-      const lineNumber = lineIndex + 1;
-      const codeLine = renderLine({number: lineNumber, content: line});
-
-
-      const showByDefault = showAll || hasNearbyHighlight(lineNumber) || (highlights.length === 0 && lineNumber < 5);
-      if (!showAll && showByDefault && !hasNearbyHighlight(lineNumber - 1) && hasSeenLineWithHighlight) {
-        const messageLine = renderLine({
-          number: '…',
-          content: '',
-          extraClasses: '',
-        });
-        snippet.append(messageLine );
-      }
-
-      codeLine.classList.add('lh-code-snippet__line');
-      if (!showByDefault) {
-        codeLine.classList.add('lh-code-snippet__line--hide-by-default');
-      }
-
-      if (lineIndex === 0 && nonLineSpecificHighlights.length > 0) {
-        addLineHighlights(nonLineSpecificHighlights);
-      }
-
-      // todo: review existing css and make new stuff more in lines with it
-      snippet.append(codeLine);
-
-      const lineHighlights = getLineHighlights(lineNumber);
-
-      if (lineHighlights.length > 0) {
-        addLineHighlights(lineHighlights);
-        codeLine.classList.add('lh-code-snippet__line--highlighted');
-      }
-
-      function addLineHighlights(lineHighlights) {
-        hasSeenLineWithHighlight = true;
-
-        lineHighlights.forEach(lineHighlight => {
-          const messageLine = renderLine({
-            number: ' ',
-            content: lineHighlight.message,
-            extraClasses: 'lh-code-snippet__line--highlight-message',
-          });
-          messageLine.classList.add('lh-code-snippet__line--highlighted');
-          snippet.append(messageLine );
-        });
-      }
-
-      // todo: check out what _dom is... does it support classname/style?
-
-
-      function renderLine({number, content, extraClasses = ''}) {
-        const codeLine = dom.createElement('div', 'lh-code-snippet__line ' + extraClasses );
-        // todo: move to class
-        const lineNumber = dom.createElement('div', 'lh-code-snippet__line-number');
-
-        lineNumber.textContent = number;
-
-        const code = dom.createElement('code');
-        code.textContent = content;
-
-        codeLine.appendChild(lineNumber);
-        codeLine.appendChild(code);
-
-        return codeLine;
-      }
-    });
-
-    if (!showAll) {
-      const showAllButton = this._dom.createElement('button', 'lh-code-snippet__toggle-show-all');
-      showAllButton.textContent = 'Expand snippet';
-      showAllButton.addEventListener('click', () => {
-        const showAllClass = 'lh-code-snippet--show-all';
-        if (codeLines.classList.contains(showAllClass)) {
-          showAllButton.textContent = 'Expand snippet';
-          codeLines.classList.remove(showAllClass);
-        } else {
-          showAllButton.textContent = 'Collapse snippet';
-          codeLines.classList.add(showAllClass);
-        }
-      });
-      header.prepend(showAllButton);
-    }
-
-    // container.appendChild(lineNumbers);
-
-    return codeLines;
-
-
-    // pre.textContent = /** @type {string} */ (details.code);
-    // return pre;
   }
 }
 
