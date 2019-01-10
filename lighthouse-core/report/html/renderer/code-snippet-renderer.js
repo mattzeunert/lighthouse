@@ -11,7 +11,7 @@
 
 
 class CodeSnippetRenderer {
-  static renderHeader(dom, templateContext, details, collapse, updateFn) {
+  static renderHeader(dom, templateContext, details, isExpanded, updateFn) {
     const {lineCount, title} = details;
     const showAll = lineCount <= 4;
     const header = dom.createElement('div', 'lh-code-snippet__header');
@@ -24,9 +24,9 @@ class CodeSnippetRenderer {
 
     if (!showAll) {
       const showAllButton = dom.createElement('button', 'lh-code-snippet__toggle-show-all');
-      showAllButton.textContent = collapse ? 'Expand snippet' : 'Collapse snippet';
+      showAllButton.textContent = isExpanded ? 'Collapse snippet' : 'Expand snippet';
       showAllButton.addEventListener('click', () => {
-        updateFn(!collapse);
+        updateFn(!isExpanded);
       });
 
       header.prepend(showAllButton);
@@ -58,32 +58,55 @@ class CodeSnippetRenderer {
     }, 'lh-code-snippet__line--highlighted lh-code-snippet__line--highlight-message');
   }
 
-  static renderSnippet(dom, templateContext, details, collapse) {
+  static renderOmittedLinesIndicator(dom, templateContext) {
+    return CodeSnippetRenderer.renderLine(dom, templateContext, {
+      number: '…',
+      content: '',
+    });
+  }
+
+  static renderSnippet(dom, templateContext, details, isExpanded) {
     let {lines, highlights, lineCount} = details;
-    lines = collapse ? Util.filterRelevantLines(lines, highlights, 2) : lines;
-    console.log('lines', lines);
+    if (!isExpanded) {
+      lines = Util.filterRelevantLines(lines, highlights, 2);
+    }
+    const firstLineIsVisible = lines[0].number === 1;
+    const lastLineIsVisible = lines.slice(-1)[0].number === lineCount;
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
 
     const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
+
+    if (!firstLineIsVisible && isExpanded) {
+      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
+    }
+
+    let hasSeenHighlight = false;
     for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
       const line = getLine(lineNumber);
       const previousLine = getLine(lineNumber - 1);
       const nextLine = getLine(lineNumber + 1);
+
+      if ((line && !previousLine && hasSeenHighlight)) {
+        snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
+      }
+
       if (!line) {
-        if ((previousLine || nextLine)) {
-          const messageLine = CodeSnippetRenderer.renderLine(dom, templateContext, {
-            number: '…',
-            content: '',
-          });
-          snippet.append(messageLine);
-        }
+        // if ((previousLine || (nextLine && !hasRenderedLine))) {
+        //   const messageLine = CodeSnippetRenderer.renderLine(dom, templateContext, {
+        //     number: '…',
+        //     content: '',
+        //   });
+        //   snippet.append(messageLine);
+        // }
         continue;
       }
+
 
       const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line);
       snippet.append(codeLine);
       // todo: remove unused classes from css file
+
 
       if (lineNumber === 1) {
         nonLineSpecificHighlights.forEach(highlight => {
@@ -95,9 +118,14 @@ class CodeSnippetRenderer {
       if (lineHighlights.length > 0) {
         lineHighlights.forEach(highlight => {
           snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
+          hasSeenHighlight = true;
         });
         codeLine.classList.add('lh-code-snippet__line--highlighted');
       }
+    }
+
+    if (!lastLineIsVisible && isExpanded) {
+      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
     }
 
     return snippet;
@@ -113,10 +141,10 @@ class CodeSnippetRenderer {
      * @param {CRCDetailsJSON} details
      * @return {Element}
      */
-  static _render(dom, templateContext, details, collapse, updateFn) {
+  static _render(dom, templateContext, details, isExpanded, updateFn) {
     const codeLines = dom.createElement('div', 'lh-code-snippet');
-    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, collapse, updateFn));
-    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, templateContext, details, collapse));
+    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, isExpanded, updateFn));
+    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, templateContext, details, isExpanded));
 
     // todo: review existing css and make new stuff more in lines with it
 
@@ -133,12 +161,12 @@ class CodeSnippetRenderer {
     // todo: probably write a test for this
     // todo: better upate solution
     const el = dom.createElement('div');
-    function update(collapse) {
+    function update(isExpanded) {
       el.innerHTML = '';
       el.appendChild(
-        CodeSnippetRenderer._render(dom, templateContext, details, collapse, update));
+        CodeSnippetRenderer._render(dom, templateContext, details, isExpanded, update));
     }
-    update(true);
+    update(false);
 
     return el;
   }
