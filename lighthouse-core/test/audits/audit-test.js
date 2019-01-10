@@ -103,30 +103,76 @@ describe('Audit', () => {
   // is audit the right place to put this logic?
   describe('makeCodeSnippetDetails', () => {
     it('Transforms code string to lines array', () => {
-      const highlights = [{
-        message: 'General message',
-      }, {
-        lineNumber: 2,
-        message: 'Error',
-      }];
       const details = Audit.makeCodeSnippetDetails({
         code: 'a\nb\nc',
         title: 'Title',
-        highlights,
+        highlights: [],
       });
 
-      assert.deepEqual(details.nonLineSpecificHighlights, [{
-        message: 'General message',
-      }]);
-
-      console.log(details);
       assert.equal(details.lines.length, 3);
-
       assert.deepEqual(details.lines[1], {
         number: 2,
-        highlights,
         content: 'b',
+        truncated: false,
       });
     });
+
+
+    it('Truncates long lines', () => {
+      const details = Audit.makeCodeSnippetDetails({
+        code: Array(1001).join('-'),
+        title: 'Title',
+        highlights: [],
+      });
+
+      assert.equal(details.lines[0].truncated, true);
+      assert.ok(details.lines[0].content.length < 1000);
+    });
+
+    function makeLines(lineCount) {
+      return Array(lineCount + 1).join('-\n');
+    }
+
+    it('Limits the number of lines if there are no line-specific highlights', () => {
+      const details = Audit.makeCodeSnippetDetails({
+        code: makeLines(100),
+        title: 'Title',
+        highlights: [{
+          message: 'General',
+        }],
+      });
+      // todo: import 30 from audit.js
+      expect(details.lines.length).toBe(30);
+    });
+
+    it('Limits the number of lines around highlights', () => {
+      const code = makeLines(99) + 'A\n' + makeLines(99) + '\nB';
+      const allLines = code.split('\n');
+      const details = Audit.makeCodeSnippetDetails({
+        code,
+        title: 'Title',
+        highlights: [{
+          lineNumber: allLines.findIndex(l => l === 'A') + 1,
+          message: 'a',
+        }, {
+          lineNumber: allLines.findIndex(l => l === 'B') + 1,
+          message: 'b',
+        }],
+      });
+
+      // todo: use consts to calculate and explain this
+      const lineCount = 20 + 1 + 20 + 20 + 1;
+      // console.log(details);
+      assert.equal(details.lines.length, lineCount);
+      const lastLine = details.lines.slice(-1)[0];
+      assert.deepEqual(lastLine, {
+        number: 201,
+        content: 'B',
+        truncated: false,
+      });
+    });
+
+
+    // todo maybe: does not truncate if fewer than 30 lines in total (LINE_COUNT_TRUNCATE_THRESHOLD)
   });
 });
