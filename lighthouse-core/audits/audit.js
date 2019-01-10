@@ -190,6 +190,7 @@ class Audit {
 
     // general: use copyright 2019
 
+    // todo: also include node link
     return /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
       type: 'code-snippet',
       lines,

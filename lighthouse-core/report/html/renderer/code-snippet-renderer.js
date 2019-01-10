@@ -95,7 +95,7 @@ class CodeSnippetRenderer {
       // UI: no titles for code snippet looks a bit weird
 
       const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, l);
-      codeLine.classList.add('lh-code-snippet__line');
+      snippet.append(codeLine);
       // todo: remove unused classes from css file
 
       if (lineIndex === 0) {
@@ -104,8 +104,6 @@ class CodeSnippetRenderer {
         });
       }
 
-
-      snippet.append(codeLine);
 
       const lineHighlights = getLineHighlights(lineNumber);
       if (lineHighlights.length > 0) {
@@ -118,11 +116,13 @@ class CodeSnippetRenderer {
 
     return snippet;
 
-
     function getLineHighlights(lineNumber) {
       return highlights.filter(h => h.lineNumber === lineNumber);
     }
-    function hasNearbyHighlight(lineNumber) {
+    function shouldShowInCollapsedView(lineNumber) {
+      if (highlights.length === 0) {
+        return lineNumber <= 4;
+      }
       if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
         return true;
       }
@@ -132,12 +132,6 @@ class CodeSnippetRenderer {
         }
       }
       return false;
-    }
-    function shouldShowInCollapsedView(lineNumber) {
-      if (highlights.length === 0) {
-        return lineNumber <= 4;
-      }
-      return hasNearbyHighlight(lineNumber);
     }
   }
 
