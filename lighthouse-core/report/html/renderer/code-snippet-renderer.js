@@ -7,31 +7,8 @@
 
 /* eslint-env jest */
 
-
 // todo: consider using templates instead of constructing manually
 
-
-function filterRelevantLines(lines, highlights, surroundingLineCount) {
-  if (highlights.length === 0) {
-    return lines.slice(0, surroundingLineCount * 2);
-  }
-  const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
-  return lines.filter(line => {
-    if (line.number <= surroundingLineCount * 2 && nonLineSpecificHighlights.length > 0) {
-      return true;
-    }
-    for (let i = line.number - surroundingLineCount; i <= line.number + surroundingLineCount; i++) {
-      if (getLineHighlights(highlights, i).length > 0) {
-        return true;
-      }
-    }
-    return false;
-  });
-}
-
-function getLineHighlights(highlights, lineNumber) {
-  return highlights.filter(h => h.lineNumber === lineNumber);
-}
 
 class CodeSnippetRenderer {
   static renderHeader(dom, templateContext, details, collapse, updateFn) {
@@ -83,7 +60,7 @@ class CodeSnippetRenderer {
 
   static renderSnippet(dom, templateContext, details, collapse) {
     let {lines, highlights, lineCount} = details;
-    lines = collapse ? filterRelevantLines(lines, highlights, 2) : lines;
+    lines = collapse ? Util.filterRelevantLines(lines, highlights, 2) : lines;
     console.log('lines', lines);
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
@@ -114,7 +91,7 @@ class CodeSnippetRenderer {
         });
       }
 
-      const lineHighlights = getLineHighlights(highlights, lineNumber);
+      const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
       if (lineHighlights.length > 0) {
         lineHighlights.forEach(highlight => {
           snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
