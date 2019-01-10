@@ -99,4 +99,34 @@ describe('Audit', () => {
     assert.equal(result.score, null);
     assert.equal(result.scoreDisplayMode, 'error');
   });
+
+  // is audit the right place to put this logic?
+  describe('makeCodeSnippetDetails', () => {
+    it('Transforms code string to lines array', () => {
+      const highlights = [{
+        message: 'General message',
+      }, {
+        lineNumber: 2,
+        message: 'Error',
+      }];
+      const details = Audit.makeCodeSnippetDetails({
+        code: 'a\nb\nc',
+        title: 'Title',
+        highlights,
+      });
+
+      assert.deepEqual(details.nonLineSpecificHighlights, [{
+        message: 'General message',
+      }]);
+
+      console.log(details);
+      assert.equal(details.lines.length, 3);
+
+      assert.deepEqual(details.lines[1], {
+        number: 2,
+        highlights,
+        content: 'b',
+      });
+    });
+  });
 });

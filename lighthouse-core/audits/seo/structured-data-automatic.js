@@ -95,7 +95,7 @@ class StructuredDataAutomatic extends Audit {
             message, line,
           }) => {
             return {
-              line: line,
+              lineNumber: line,
               message: message, // + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
             };
           });

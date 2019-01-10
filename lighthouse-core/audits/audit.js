@@ -142,15 +142,29 @@ class Audit {
    * todo: fix any type
    */
   static makeCodeSnippetDetails({code, title, highlights}) {
+    // can i just use line number? what does jsonlint mod return? -- i think best to use line number everywhere
+    // leave commment somewhere saying what line number means (i.e +1 on index)
+    const allLines = code.split('\n').map((line, lineIndex) => {
+      const lineNumber = lineIndex + 1;
+      return {
+        content: line,
+        number: lineNumber,
+      };
+    });
+
+    // general: use copyright 2019
+
     return /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
       type: 'code-snippet',
+      lines: allLines,
       // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
       //   1})`,
       // snippet,
-      code,
-      // todo: how does i18n work?
+      // code,
       title,
+      // todo: rename?
       highlights,
+      // highlights,
     });
   }
 

@@ -19,11 +19,9 @@ class CodeSnippetRenderer {
      * @return {Element}
      */
   static render(dom, templateContext, details) {
-    const {code, highlights, title} = details;
+    const {lines, title, highlights} = details;
 
     // const pre = this._dom.createElement('pre', 'lh-code-snippet');
-
-    const lines = code.split('\n');
 
 
     // todo: probably write a test for this
@@ -40,20 +38,19 @@ class CodeSnippetRenderer {
       header.append(titleEl);
     }
     // const lineNumbers = this._dom.createElement('div');
+    const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
 
     const showAll = lines.length <= 4;
 
     const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
     codeLines.append(snippet);
 
-    const nonLineSpecificHighlights = highlights.filter(h => typeof h.line !== 'number');
-
     const linesToShowBefore = 2;
     const linesToShowAfter = 2;
     const totalSurroundingLinesToShow = linesToShowBefore + linesToShowAfter;
 
     function getLineHighlights(lineNumber) {
-      return highlights.filter(h => h.line === lineNumber);
+      return highlights.filter(h => h.lineNumber === lineNumber);
     }
     function hasNearbyHighlight(lineNumber) {
       if (lineNumber <= totalSurroundingLinesToShow && nonLineSpecificHighlights.length > 0) {
@@ -69,7 +66,9 @@ class CodeSnippetRenderer {
 
     // todo: instead create line list first and then map to elements and then filter
     let hasSeenLineWithHighlight = false;
-    lines.forEach((line, lineIndex) => {
+    lines.forEach((l) => {
+      const {content: line, number} = l;
+      const lineIndex = number - 1;
       // const lineNumber = this._dom.createElement('div');
       // lineNumber.textContent = lineIndex + 1;
       // lineNumbers.appendChild(lineNumber);
