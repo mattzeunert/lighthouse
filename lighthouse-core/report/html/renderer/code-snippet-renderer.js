@@ -35,6 +35,23 @@ class CodeSnippetRenderer {
     return header;
   }
 
+  static renderLine(dom, templateContext, line, extraClasses = '') {
+    // todo: destructure line first
+    const codeLine = dom.createElement('div', 'lh-code-snippet__line ' + extraClasses );
+    // todo: move to class
+    const lineNumber = dom.createElement('div', 'lh-code-snippet__line-number');
+
+    lineNumber.textContent = line.number + (line.truncated ? '…' : '');
+
+    const code = dom.createElement('code');
+    code.textContent = line.content;
+
+    codeLine.appendChild(lineNumber);
+    codeLine.appendChild(code);
+
+    return codeLine;
+  }
+
   /**
      * @param {DOM} dom
      * @param {ParentNode} templateContext
@@ -105,10 +122,9 @@ class CodeSnippetRenderer {
       const nextLine = lines.find(l => l.number === lineNumber + 1);
       if (!l) {
         if ((previousLine || nextLine)) {
-          const messageLine = renderLine({
+          const messageLine = CodeSnippetRenderer.renderLine(dom, templateContext, {
             number: '…',
             content: '',
-            extraClasses: '',
           });
           snippet.append(messageLine);
         }
@@ -125,13 +141,11 @@ class CodeSnippetRenderer {
       // UI: no titles for code snippet looks a bit weird
 
 
-      const codeLine = renderLine({number: lineNumber, content: line + (truncated ? '…' : '')});
+      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, l);
 
 
       codeLine.classList.add('lh-code-snippet__line');
-      // if (!showByDefault) {
-      //   codeLine.classList.add('lh-code-snippet__line--hide-by-default');
-      // }
+      // todo: remove unused classes from css file
 
       if (lineIndex === 0 && nonLineSpecificHighlights.length > 0) {
         addLineHighlights(nonLineSpecificHighlights);
@@ -149,34 +163,17 @@ class CodeSnippetRenderer {
 
       function addLineHighlights(lineHighlights) {
         lineHighlights.forEach(lineHighlight => {
-          const messageLine = renderLine({
+          const messageLine = CodeSnippetRenderer.renderLine(dom, templateContext, {
             number: ' ',
             content: lineHighlight.message,
-            extraClasses: 'lh-code-snippet__line--highlight-message',
-          });
-          messageLine.classList.add('lh-code-snippet__line--highlighted');
+
+          }, 'lh-code-snippet__line--highlighted lh-code-snippet__line--highlight-message');
+
           snippet.append(messageLine );
         });
       }
 
       // todo: check out what _dom is... does it support classname/style?
-
-
-      function renderLine({number, content, extraClasses = ''}) {
-        const codeLine = dom.createElement('div', 'lh-code-snippet__line ' + extraClasses );
-        // todo: move to class
-        const lineNumber = dom.createElement('div', 'lh-code-snippet__line-number');
-
-        lineNumber.textContent = number;
-
-        const code = dom.createElement('code');
-        code.textContent = content;
-
-        codeLine.appendChild(lineNumber);
-        codeLine.appendChild(code);
-
-        return codeLine;
-      }
     }
 
 
