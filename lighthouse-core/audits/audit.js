@@ -127,8 +127,8 @@ class Audit {
   }
 
   /**
-   * @param {Array<Object<string, LH.Audit.DetailsItem>>} results
-   * @return {LH.Audit.DetailsRendererDetailsJSON}
+   * @param {Array<LH.Audit.DetailsItem>} results
+   * @return {LH.Audit.DetailsRendererList}
    */
   static makeListDetails(results) {
     return {
@@ -138,7 +138,7 @@ class Audit {
   }
 
   /**
-   * @param {any} asdfdsfd
+   * @param {{code: string, title: string, highlights: LH.Audit.DetailsRendererCodeSnippetHighlight[]}} opts
    * @return {LH.Audit.DetailsRendererCodeSnippetItem}
    * todo: fix any type
    */

@@ -449,16 +449,16 @@ class Util {
    * @param {number} surroundingLineCount
    */
   static filterRelevantLines(lines, highlights, surroundingLineCount) {
-    if (highlights.length === 0) {
+    const lineSpecificHighlights = highlights.filter(h => typeof h.lineNumber === 'number');
+    if (lineSpecificHighlights.length === 0) {
+      // no specific line highlighted, just return the first bunch of lines
       return lines.slice(0, surroundingLineCount * 2);
     }
-    const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
+
     return lines.filter(line => {
-      if (line.number <= surroundingLineCount * 2 && nonLineSpecificHighlights.length > 0) {
-        return true;
-      }
-      for (let i = line.number - surroundingLineCount; i <= line.number + surroundingLineCount; i++) {
-        if (Util.getLineHighlights(highlights, i).length > 0) {
+      for (let i = -surroundingLineCount; i <= surroundingLineCount; i++) {
+        const surroundingLineNumber = i + line.number;
+        if (Util.getLineHighlights(highlights, surroundingLineNumber).length > 0) {
           return true;
         }
       }

@@ -82,22 +82,29 @@ declare global {
     }
 
     export interface DetailsRendererCodeSnippetHighlight {
+      /** Line number, starting from 1 */
       lineNumber: number | null,
       message: string
     }
 
     export interface DetailsRendererCodeSnippetLine {
       content: string
+      /** Line number, starting from 1 */
       number: number
       truncated?: boolean
     }
 
     export interface DetailsRendererCodeSnippetItem {
       type: "code-snippet",
-      lines: DetailsRendererCodeSnippetLine,
+      lines: DetailsRendererCodeSnippetLine[],
       title: string,
       highlights: DetailsRendererCodeSnippetHighlight[]
       lineCount: number
+    }
+
+    export interface DetailsRendererList {
+      type: "list",
+      items: DetailsItem[]
     } 
 
     // TODO: placeholder typedefs until Details are typed
