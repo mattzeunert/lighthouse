@@ -12,6 +12,29 @@
 
 
 class CodeSnippetRenderer {
+  static renderHeader(dom, templateContext, details, collapse, updateFn) {
+    const {lineCount, title} = details;
+    const showAll = lineCount <= 4;
+    const header = dom.createElement('div', 'lh-code-snippet__header');
+    if (title) {
+      const titleEl = dom.createElement('div');
+      titleEl.innerText = title;
+      titleEl.style.fontWeight = 'bold';
+      header.append(titleEl);
+    }
+
+    if (!showAll) {
+      const showAllButton = dom.createElement('button', 'lh-code-snippet__toggle-show-all');
+      showAllButton.textContent = collapse ? 'Expand snippet' : 'Collapse snippet';
+      showAllButton.addEventListener('click', () => {
+        updateFn(!collapse);
+      });
+
+      header.prepend(showAllButton);
+    }
+    return header;
+  }
+
   /**
      * @param {DOM} dom
      * @param {ParentNode} templateContext
@@ -39,19 +62,14 @@ class CodeSnippetRenderer {
 
     // todo: move to class
 
+
     const codeLines = dom.createElement('div', 'lh-code-snippet');
-    const header = dom.createElement('div', 'lh-code-snippet__header');
-    codeLines.appendChild(header);
-    if (title) {
-      const titleEl = dom.createElement('div');
-      titleEl.innerText = title;
-      titleEl.style.fontWeight = 'bold';
-      header.append(titleEl);
-    }
+
+    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, collapse, updateFn));
+
+
     // const lineNumbers = this._dom.createElement('div');
 
-
-    const showAll = lineCount <= 4;
 
     const snippet = dom.createElement('div', 'lh-code-snippet__snippet');
     codeLines.append(snippet);
@@ -78,8 +96,7 @@ class CodeSnippetRenderer {
       return hasNearbyHighlight(lineNumber);
     }
 
-    // todo: instead create line list first and then map to elements and then filter
-    let hasSeenLineWithHighlight = false;
+
     for (let lineIndex = 0; lineIndex < lineCount; lineIndex++) {
       const lineNumber = lineIndex + 1;
       // todo: extract find into function getLine()
@@ -111,9 +128,6 @@ class CodeSnippetRenderer {
       const codeLine = renderLine({number: lineNumber, content: line + (truncated ? '…' : '')});
 
 
-      const showByDefault = showAll || hasNearbyHighlight(lineNumber) || (highlights.length === 0 && lineNumber < 5);
-
-
       codeLine.classList.add('lh-code-snippet__line');
       // if (!showByDefault) {
       //   codeLine.classList.add('lh-code-snippet__line--hide-by-default');
@@ -134,8 +148,6 @@ class CodeSnippetRenderer {
       }
 
       function addLineHighlights(lineHighlights) {
-        hasSeenLineWithHighlight = true;
-
         lineHighlights.forEach(lineHighlight => {
           const messageLine = renderLine({
             number: ' ',
@@ -167,25 +179,6 @@ class CodeSnippetRenderer {
       }
     }
 
-    if (!showAll) {
-      const showAllButton = dom.createElement('button', 'lh-code-snippet__toggle-show-all');
-      showAllButton.textContent = 'Expand snippet';
-      showAllButton.addEventListener('click', () => {
-        const showAllClass = 'lh-code-snippet--show-all';
-        if (codeLines.classList.contains(showAllClass)) {
-          showAllButton.textContent = 'Expand snippet';
-          codeLines.classList.remove(showAllClass);
-
-          updateFn(true);
-        } else {
-          showAllButton.textContent = 'Collapse snippet';
-          codeLines.classList.add(showAllClass);
-          updateFn(false);
-        }
-      });
-
-      header.prepend(showAllButton);
-    }
 
     // container.appendChild(lineNumbers);
 
