@@ -91,22 +91,22 @@ class StructuredDataAutomatic extends Audit {
 
         Object.keys(errorsByCode).forEach(code => {
           const errors = errorsByCode[code];
-          const node = /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
-            type: 'code-snippet',
+          const highlights = errors.map(({
+            message, line,
+          }) => {
+            return {
+              line: line,
+              message: message, // + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
+            };
+          });
+          const node = Audit.makeCodeSnippetDetails({
             // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
             //   1})`,
             // snippet,
             code,
             // todo: how does i18n work?
             title,
-            highlights: errors.map(({
-              message, line,
-            }) => {
-              return {
-                line: line,
-                message: message, // + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
-              };
-            }),
+            highlights,
           });
 
           // console.log(node);
@@ -116,8 +116,7 @@ class StructuredDataAutomatic extends Audit {
         });
 
         if (errors.length === 0) {
-          const node = /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
-            type: 'code-snippet',
+          const node = Audit.makeCodeSnippetDetails({
             code: JSON.stringify(JSON.parse(jsonLD), null, 2),
             // todo: how does i18n work?
             title,

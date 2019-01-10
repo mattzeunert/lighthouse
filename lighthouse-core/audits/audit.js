@@ -137,6 +137,24 @@ class Audit {
   }
 
   /**
+   * @param {any} asdfdsfd
+   * @return {any}
+   * todo: fix any type
+   */
+  static makeCodeSnippetDetails({code, title, highlights}) {
+    return /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
+      type: 'code-snippet',
+      // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
+      //   1})`,
+      // snippet,
+      code,
+      // todo: how does i18n work?
+      title,
+      highlights,
+    });
+  }
+
+  /**
    * @param {Array<LH.ResultLite.Audit.ColumnHeading>} headings
    * @param {Array<LH.ResultLite.Audit.WastedBytesDetailsItem>|Array<LH.ResultLite.Audit.WastedTimeDetailsItem>} items
    * @param {number} overallSavingsMs
