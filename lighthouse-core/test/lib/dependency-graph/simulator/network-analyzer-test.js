@@ -9,7 +9,7 @@ const assert = require('assert');
 
 // eslint-disable-next-line
 const NetworkAnalyzer = require('../../../../lib/dependency-graph/simulator/network-analyzer');
-const NetworkRecords = require('../../../../gather/computed/network-records.js');
+const NetworkRecords = require('../../../../computed/network-records.js');
 const devtoolsLog = require('../../../fixtures/traces/progressive-app-m60.devtools.log.json');
 
 /* eslint-env jest */
@@ -373,6 +373,17 @@ describe('DependencyGraph/Simulator/NetworkAnalyzer', () => {
       const records = await NetworkRecords.request(devtoolsLog, {computedCache: new Map()});
       const mainDocument = NetworkAnalyzer.findMainDocument(records);
       assert.equal(mainDocument.url, 'https://pwa.rocks/');
+    });
+
+    it('should break ties using position in array', async () => {
+      const records = [
+        {url: 'http://example.com', resourceType: 'Other'},
+        {url: 'https://example.com', resourceType: 'Other'},
+        {url: 'https://www.example.com', resourceType: 'Document', startTime: 0},
+        {url: 'https://www.iframe.com', resourceType: 'Document', startTime: 0},
+      ];
+      const mainDocument = NetworkAnalyzer.findMainDocument(records);
+      assert.equal(mainDocument.url, 'https://www.example.com');
     });
   });
 });

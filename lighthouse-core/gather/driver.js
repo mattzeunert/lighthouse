@@ -26,11 +26,11 @@ const Connection = require('./connections/connection.js');
 // Controls how long to wait after onLoad before continuing
 const DEFAULT_PAUSE_AFTER_LOAD = 0;
 // Controls how long to wait between network requests before determining the network is quiet
-const DEFAULT_NETWORK_QUIET_THRESHOLD = 10000;
+const DEFAULT_NETWORK_QUIET_THRESHOLD = 5000;
 // Controls how long to wait between longtasks before determining the CPU is idle, off by default
 const DEFAULT_CPU_QUIET_THRESHOLD = 0;
 // Controls how long to wait for a response after sending a DevTools protocol command.
-const DEFAULT_PROTOCOL_TIMEOUT = 5000;
+const DEFAULT_PROTOCOL_TIMEOUT = 30000;
 
 /**
  * @typedef {LH.Protocol.StrictEventEmitter<LH.CrdpEvents>} CrdpEventEmitter
@@ -80,13 +80,6 @@ class Driver {
       // properties. See https://github.com/Microsoft/TypeScript/pull/22348.
       this._eventEmitter.emit(event.method, event.params);
     });
-
-    /**
-     * Used for monitoring network status events during gotoURL.
-     * @type {?LH.Crdp.Security.SecurityStateChangedEvent}
-     * @private
-     */
-    this._lastSecurityState = null;
 
     /**
      * @type {number}
@@ -259,6 +252,7 @@ class Driver {
   }
 
   /**
+   * timeout is used for the next call to 'sendCommand'.
    * NOTE: This can eventually be replaced when TypeScript
    * resolves https://github.com/Microsoft/TypeScript/issues/5453.
    * @param {number} timeout
@@ -268,7 +262,7 @@ class Driver {
   }
 
   /**
-   * Call protocol methods.
+   * Call protocol methods, with a timeout.
    * To configure the timeout for the next call, use 'setNextProtocolTimeout'.
    * @template {keyof LH.CrdpCommands} C
    * @param {C} method
@@ -278,6 +272,34 @@ class Driver {
   sendCommand(method, ...params) {
     const timeout = this._nextProtocolTimeout;
     this._nextProtocolTimeout = DEFAULT_PROTOCOL_TIMEOUT;
+    return new Promise(async (resolve, reject) => {
+      const asyncTimeout = setTimeout((() => {
+        const err = new LHError(
+          LHError.errors.PROTOCOL_TIMEOUT,
+          {protocolMethod: method}
+        );
+        reject(err);
+      }), timeout);
+      try {
+        const result = await this._innerSendCommand(method, ...params);
+        resolve(result);
+      } catch (err) {
+        reject(err);
+      } finally {
+        clearTimeout(asyncTimeout);
+      }
+    });
+  }
+
+  /**
+   * Call protocol methods.
+   * @private
+   * @template {keyof LH.CrdpCommands} C
+   * @param {C} method
+   * @param {LH.CrdpCommands[C]['paramsType']} params
+   * @return {Promise<LH.CrdpCommands[C]['returnType']>}
+   */
+  _innerSendCommand(method, ...params) {
     const domainCommand = /^(\w+)\.(enable|disable)$/.exec(method);
     if (domainCommand) {
       const enable = domainCommand[2] === 'enable';
@@ -285,21 +307,7 @@ class Driver {
         return Promise.resolve();
       }
     }
-    return new Promise(async (resolve, reject) => {
-      const asyncTimeout = setTimeout((_ => {
-        const err = new LHError(LHError.errors.PROTOCOL_TIMEOUT);
-        err.message += ` Method: ${method}`;
-        reject(err);
-      }), timeout);
-      try {
-        const result = await this._connection.sendCommand(method, ...params);
-        clearTimeout(asyncTimeout);
-        resolve(result);
-      } catch (err) {
-        clearTimeout(asyncTimeout);
-        reject(err);
-      }
-    });
+    return this._connection.sendCommand(method, ...params);
   }
 
   /**
@@ -369,6 +377,7 @@ class Driver {
       includeCommandLineAPI: true,
       awaitPromise: true,
       returnByValue: true,
+      timeout: 60000,
       contextId,
     };
 
@@ -497,6 +506,16 @@ class Driver {
   }
 
   /**
+   * Returns a promise that resolves immediately.
+   * Used for placeholder conditions that we don't want to start waiting for just yet, but still want
+   * to satisfy the same interface.
+   * @return {{promise: Promise<void>, cancel: function(): void}}
+   */
+  _waitForNothing() {
+    return {promise: Promise.resolve(), cancel() {}};
+  }
+
+  /**
    * Returns a promise that resolve when a frame has been navigated.
    * Used for detecting that our about:blank reset has been completed.
    */
@@ -504,6 +523,41 @@ class Driver {
     return new Promise(resolve => {
       this.once('Page.frameNavigated', resolve);
     });
+  }
+
+  /**
+   * Returns a promise that resolve when a frame has a FCP.
+   * @return {{promise: Promise<void>, cancel: function(): void}}
+   */
+  _waitForFCP() {
+    /** @type {(() => void)} */
+    let cancel = () => {
+      throw new Error('_waitForFCP.cancel() called before it was defined');
+    };
+
+    const promise = new Promise(resolve => {
+      /** @param {LH.Crdp.Page.LifecycleEventEvent} e */
+      const lifecycleListener = e => {
+        if (e.name === 'firstContentfulPaint') {
+          cancel();
+          resolve();
+        }
+      };
+
+      this.on('Page.lifecycleEvent', lifecycleListener);
+
+      let canceled = false;
+      cancel = () => {
+        if (canceled) return;
+        canceled = true;
+        this.off('Page.lifecycleEvent', lifecycleListener);
+      };
+    });
+
+    return {
+      promise,
+      cancel,
+    };
   }
 
   /**
@@ -576,7 +630,10 @@ class Driver {
       networkStatusMonitor.on('network-2-busy', logStatus);
 
       this.once('Page.domContentEventFired', domContentLoadedListener);
+      let canceled = false;
       cancel = () => {
+        if (canceled) return;
+        canceled = true;
         idleTimeout && clearTimeout(idleTimeout);
         this.off('Page.domContentEventFired', domContentLoadedListener);
         networkStatusMonitor.removeListener('network-2-busy', onBusy);
@@ -608,31 +665,29 @@ class Driver {
 
     /** @type {NodeJS.Timer|undefined} */
     let lastTimeout;
-    let cancelled = false;
+    let canceled = false;
 
     const checkForQuietExpression = `(${pageFunctions.checkTimeSinceLastLongTaskString})()`;
     /**
      * @param {Driver} driver
      * @param {() => void} resolve
+     * @return {Promise<void>}
      */
-    function checkForQuiet(driver, resolve) {
-      if (cancelled) return;
+    async function checkForQuiet(driver, resolve) {
+      if (canceled) return;
+      const timeSinceLongTask = await driver.evaluateAsync(checkForQuietExpression);
+      if (canceled) return;
 
-      return driver.evaluateAsync(checkForQuietExpression)
-        .then(timeSinceLongTask => {
-          if (cancelled) return;
-
-          if (typeof timeSinceLongTask === 'number') {
-            if (timeSinceLongTask >= waitForCPUQuiet) {
-              log.verbose('Driver', `CPU has been idle for ${timeSinceLongTask} ms`);
-              resolve();
-            } else {
-              log.verbose('Driver', `CPU has been idle for ${timeSinceLongTask} ms`);
-              const timeToWait = waitForCPUQuiet - timeSinceLongTask;
-              lastTimeout = setTimeout(() => checkForQuiet(driver, resolve), timeToWait);
-            }
-          }
-        });
+      if (typeof timeSinceLongTask === 'number') {
+        if (timeSinceLongTask >= waitForCPUQuiet) {
+          log.verbose('Driver', `CPU has been idle for ${timeSinceLongTask} ms`);
+          resolve();
+        } else {
+          log.verbose('Driver', `CPU has been idle for ${timeSinceLongTask} ms`);
+          const timeToWait = waitForCPUQuiet - timeSinceLongTask;
+          lastTimeout = setTimeout(() => checkForQuiet(driver, resolve), timeToWait);
+        }
+      }
     }
 
     /** @type {(() => void)} */
@@ -640,11 +695,12 @@ class Driver {
       throw new Error('_waitForCPUIdle.cancel() called before it was defined');
     };
     const promise = new Promise((resolve, reject) => {
-      checkForQuiet(this, resolve);
+      checkForQuiet(this, resolve).catch(reject);
       cancel = () => {
-        cancelled = true;
+        if (canceled) return;
+        canceled = true;
         if (lastTimeout) clearTimeout(lastTimeout);
-        reject(new Error('Wait for CPU idle cancelled'));
+        reject(new Error('Wait for CPU idle canceled'));
       };
     });
 
@@ -675,7 +731,10 @@ class Driver {
       };
       this.once('Page.loadEventFired', loadListener);
 
+      let canceled = false;
       cancel = () => {
+        if (canceled) return;
+        canceled = true;
         this.off('Page.loadEventFired', loadListener);
         loadTimeout && clearTimeout(loadTimeout);
       };
@@ -688,8 +747,71 @@ class Driver {
   }
 
   /**
+   * Return a promise that resolves when an insecure security state is encountered
+   * and a method to cancel internal listeners.
+   * @return {{promise: Promise<string>, cancel: function(): void}}
+   * @private
+   */
+  _monitorForInsecureState() {
+    /** @type {(() => void)} */
+    let cancel = () => {
+      throw new Error('_monitorForInsecureState.cancel() called before it was defined');
+    };
+
+    const promise = new Promise((resolve, reject) => {
+      /**
+       * @param {LH.Crdp.Security.SecurityStateChangedEvent} event
+       */
+      const securityStateChangedListener = ({securityState, explanations}) => {
+        if (securityState === 'insecure') {
+          cancel();
+          const insecureDescriptions = explanations
+            .filter(exp => exp.securityState === 'insecure')
+            .map(exp => exp.description);
+          resolve(insecureDescriptions.join(' '));
+        }
+      };
+      let canceled = false;
+      cancel = () => {
+        if (canceled) return;
+        canceled = true;
+        this.off('Security.securityStateChanged', securityStateChangedListener);
+        // TODO(@patrickhulce): cancel() should really be a promise itself to handle things like this
+        this.sendCommand('Security.disable').catch(() => {});
+      };
+      this.on('Security.securityStateChanged', securityStateChangedListener);
+      this.sendCommand('Security.enable').catch(() => {});
+    });
+
+    return {
+      promise,
+      cancel,
+    };
+  }
+
+  /**
+   * Returns whether the page appears to be hung.
+   * @return {Promise<boolean>}
+   */
+  async isPageHung() {
+    try {
+      this.setNextProtocolTimeout(1000);
+      await this.sendCommand('Runtime.evaluate', {
+        expression: '"ping"',
+        returnByValue: true,
+        timeout: 1000,
+      });
+
+      return false;
+    } catch (err) {
+      return true;
+    }
+  }
+
+  /**
    * Returns a promise that resolves when:
    * - All of the following conditions have been met:
+   *    - page has no security issues
    *    - pauseAfterLoadMs milliseconds have passed since the load event.
    *    - networkQuietThresholdMs milliseconds have passed since the last network request that exceeded
    *      2 inflight requests (network-2-quiet has been reached).
@@ -700,25 +822,35 @@ class Driver {
    * @param {number} networkQuietThresholdMs
    * @param {number} cpuQuietThresholdMs
    * @param {number} maxWaitForLoadedMs
+   * @param {boolean} shouldWaitForFCP
    * @return {Promise<void>}
    * @private
    */
   async _waitForFullyLoaded(pauseAfterLoadMs, networkQuietThresholdMs, cpuQuietThresholdMs,
-      maxWaitForLoadedMs) {
+      maxWaitForLoadedMs, shouldWaitForFCP) {
     /** @type {NodeJS.Timer|undefined} */
     let maxTimeoutHandle;
 
+    // Listener for onload. Resolves on first FCP event.
+    const waitForFCP = shouldWaitForFCP ? this._waitForFCP() : this._waitForNothing();
     // Listener for onload. Resolves pauseAfterLoadMs ms after load.
     const waitForLoadEvent = this._waitForLoadEvent(pauseAfterLoadMs);
     // Network listener. Resolves when the network has been idle for networkQuietThresholdMs.
     const waitForNetworkIdle = this._waitForNetworkIdle(networkQuietThresholdMs);
     // CPU listener. Resolves when the CPU has been idle for cpuQuietThresholdMs after network idle.
-    /** @type {{promise: Promise<void>, cancel: function(): void}|null} */
-    let waitForCPUIdle = null;
+    let waitForCPUIdle = this._waitForNothing();
+
+    const monitorForInsecureState = this._monitorForInsecureState();
+    const securityCheckPromise = monitorForInsecureState.promise.then(securityMessages => {
+      return function() {
+        throw new LHError(LHError.errors.INSECURE_DOCUMENT_REQUEST, {securityMessages});
+      };
+    });
 
     // Wait for both load promises. Resolves on cleanup function the clears load
     // timeout timer.
     const loadPromise = Promise.all([
+      waitForFCP.promise,
       waitForLoadEvent.promise,
       waitForNetworkIdle.promise,
     ]).then(() => {
@@ -727,7 +859,6 @@ class Driver {
     }).then(() => {
       return function() {
         log.verbose('Driver', 'loadEventFired and network considered idle');
-        maxTimeoutHandle && clearTimeout(maxTimeoutHandle);
       };
     });
 
@@ -736,20 +867,32 @@ class Driver {
     const maxTimeoutPromise = new Promise((resolve, reject) => {
       maxTimeoutHandle = setTimeout(resolve, maxWaitForLoadedMs);
     }).then(_ => {
-      return function() {
-        log.warn('Driver', 'Timed out waiting for page load. Moving on...');
-        waitForLoadEvent.cancel();
-        waitForNetworkIdle.cancel();
-        waitForCPUIdle && waitForCPUIdle.cancel();
+      return async () => {
+        log.warn('Driver', 'Timed out waiting for page load. Checking if page is hung...');
+        if (await this.isPageHung()) {
+          log.warn('Driver', 'Page appears to be hung, killing JavaScript...');
+          await this.sendCommand('Emulation.setScriptExecutionDisabled', {value: true});
+          await this.sendCommand('Runtime.terminateExecution');
+          throw new LHError(LHError.errors.PAGE_HUNG);
+        }
       };
     });
 
-    // Wait for load or timeout and run the cleanup function the winner returns.
+    // Wait for security issue, load or timeout and run the cleanup function the winner returns.
     const cleanupFn = await Promise.race([
+      securityCheckPromise,
       loadPromise,
       maxTimeoutPromise,
     ]);
-    cleanupFn();
+
+    maxTimeoutHandle && clearTimeout(maxTimeoutHandle);
+    waitForFCP.cancel();
+    waitForLoadEvent.cancel();
+    waitForNetworkIdle.cancel();
+    waitForCPUIdle.cancel();
+    monitorForInsecureState.cancel();
+
+    await cleanupFn();
   }
 
   /**
@@ -834,35 +977,32 @@ class Driver {
    * possible workaround.
    * Resolves on the url of the loaded page, taking into account any redirects.
    * @param {string} url
-   * @param {{waitForLoad?: boolean, waitForNavigated?: boolean, passContext?: LH.Gatherer.PassContext}} options
+   * @param {{waitForFCP?: boolean, waitForLoad?: boolean, waitForNavigated?: boolean, passContext?: LH.Gatherer.PassContext}} options
    * @return {Promise<string>}
    */
   async gotoURL(url, options = {}) {
+    const waitForFCP = options.waitForFCP || false;
     const waitForNavigated = options.waitForNavigated || false;
     const waitForLoad = options.waitForLoad || false;
     const passContext = /** @type {Partial<LH.Gatherer.PassContext>} */ (options.passContext || {});
     const disableJS = passContext.disableJavaScript || false;
 
-    if (waitForNavigated && waitForLoad) {
-      throw new Error('Cannot use both waitForNavigated and waitForLoad, pick just one');
+    if (waitForNavigated && (waitForFCP || waitForLoad)) {
+      throw new Error('Cannot use both waitForNavigated and another event, pick just one');
     }
 
     await this._beginNetworkStatusMonitoring(url);
     await this._clearIsolatedContextId();
 
-    // These can 'race' and that's OK.
-    // We don't want to wait for Page.navigate's resolution, as it can now
-    // happen _after_ onload: https://crbug.com/768961
-    this.sendCommand('Page.enable');
-    this.sendCommand('Emulation.setScriptExecutionDisabled', {value: disableJS});
-    this.setNextProtocolTimeout(30 * 1000);
-    this.sendCommand('Page.navigate', {url});
+    await this.sendCommand('Page.enable');
+    await this.sendCommand('Page.setLifecycleEventsEnabled', {enabled: true});
+    await this.sendCommand('Emulation.setScriptExecutionDisabled', {value: disableJS});
+    // No timeout needed for Page.navigate. See #6413.
+    const waitforPageNavigateCmd = this._innerSendCommand('Page.navigate', {url});
 
     if (waitForNavigated) {
       await this._waitForFrameNavigated();
-    }
-
-    if (waitForLoad) {
+    } else if (waitForLoad) {
       const passConfig = /** @type {Partial<LH.Config.Pass>} */ (passContext.passConfig || {});
       let {pauseAfterLoadMs, networkQuietThresholdMs, cpuQuietThresholdMs} = passConfig;
       let maxWaitMs = passContext.settings && passContext.settings.maxWaitForLoad;
@@ -875,8 +1015,11 @@ class Driver {
       /* eslint-enable max-len */
 
       await this._waitForFullyLoaded(pauseAfterLoadMs, networkQuietThresholdMs, cpuQuietThresholdMs,
-          maxWaitMs);
+          maxWaitMs, waitForFCP);
     }
+
+    // Bring `Page.navigate` errors back into the promise chain. See #6739.
+    await waitforPageNavigateCmd;
 
     return this._endNetworkStatusMonitoring();
   }
@@ -919,26 +1062,6 @@ class Driver {
     this.setNextProtocolTimeout(timeout);
     const result = await this.sendCommand('Network.getResponseBody', {requestId});
     return result.body;
-  }
-
-  async listenForSecurityStateChanges() {
-    this.on('Security.securityStateChanged', state => {
-      this._lastSecurityState = state;
-    });
-    await this.sendCommand('Security.enable');
-  }
-
-  /**
-   * @return {LH.Crdp.Security.SecurityStateChangedEvent}
-   */
-  getSecurityState() {
-    if (!this._lastSecurityState) {
-      // happens if 'listenForSecurityStateChanges' is not called,
-      // or if some assumptions about the Security domain are wrong
-      throw new Error('Expected a security state.');
-    }
-
-    return this._lastSecurityState;
   }
 
   /**

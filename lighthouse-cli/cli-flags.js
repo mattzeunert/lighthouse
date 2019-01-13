@@ -35,7 +35,7 @@ function getFlags(manualArgv) {
           'lighthouse <url> --disable-device-emulation --throttling-method=provided',
           'Disable device emulation and all throttling')
       .example(
-          'lighthouse <url> --chrome-flags="--window-size=412,732"',
+          'lighthouse <url> --chrome-flags="--window-size=412,660"',
           'Launch Chrome with a specific window size')
       .example(
           'lighthouse <url> --quiet --chrome-flags="--headless"',
@@ -90,7 +90,7 @@ function getFlags(manualArgv) {
         'config-path': 'The path to the config JSON.',
         'preset': 'Use a built-in configuration.',
         'chrome-flags':
-            `Custom flags to pass to Chrome (space-delimited). For a full list of flags, see http://bit.ly/chrome-flags
+            `Custom flags to pass to Chrome (space-delimited). For a full list of flags, see https://bit.ly/chrome-flags
             Additionally, use the CHROME_PATH environment variable to use a specific Chrome binary. Requires Chromium version 66.0 or later. If omitted, any detected Chrome Canary or Chrome stable will be used.`,
         'hostname': 'The hostname to use for the debugging protocol.',
         'port': 'The port to use for the debugging protocol. Use 0 for a random port',
@@ -137,7 +137,6 @@ function getFlags(manualArgv) {
       // default values
       .default('chrome-flags', '')
       .default('output', ['html'])
-      .default('emulated-form-factor', 'mobile')
       .default('port', 0)
       .default('hostname', 'localhost')
       .default('enable-error-reporting', undefined) // Undefined so prompted by default

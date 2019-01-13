@@ -8,10 +8,6 @@
     "strict": true,
     // "listFiles": true,
     // "noErrorTruncation": true,
-    "typeRoots": [
-      "@types",
-      "./typings"
-    ],
 
     "resolveJsonModule": true,
     "diagnostics": true
@@ -21,13 +17,12 @@
     "lighthouse-core/**/*.js",
     "clients/**/*.js",
     "build/**/*.js",
-    "./typings/*.d.ts",
+    "./types/**/*.d.ts",
     "sd-validation/typings/*.d.ts",
   ],
   "exclude": [
-    "lighthouse-cli/test/**/*.js",
-    "lighthouse-core/report/html/third_party/",
     "lighthouse-core/test/**/*.js",
     "clients/test/**/*.js",
+    "lighthouse-cli/test/fixtures/**/*.js",
   ]
 }

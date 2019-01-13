@@ -42,6 +42,7 @@ class ReportRenderer {
   /**
    * @param {LH.Result} result
    * @param {Element} container Parent element to render the report into.
+   * @return {Element}
    */
   renderReport(result, container) {
     // Mutate the UIStrings if necessary (while saving originals)
@@ -55,7 +56,7 @@ class ReportRenderer {
     // put the UIStrings back into original state
     Util.updateAllUIStrings(originalUIStrings);
 
-    return /** @type {Element} **/ (container);
+    return container;
   }
 
   /**
@@ -201,15 +202,35 @@ class ReportRenderer {
     const categories = reportSection.appendChild(this._dom.createElement('div', 'lh-categories'));
 
     for (const category of report.reportCategories) {
-      if (scoreHeader) {
-        scoreHeader.appendChild(categoryRenderer.renderScoreGauge(category));
-      }
-
       const renderer = specificCategoryRenderers[category.id] || categoryRenderer;
       categories.appendChild(renderer.render(category, report.categoryGroups));
     }
 
+    // Fireworks
+    const scoresAll100 = report.reportCategories.every(cat => cat.score === 1);
+    if (scoresAll100) {
+      headerContainer.classList.add('score100');
+      this._dom.find('.lh-header', headerContainer).addEventListener('click', _ => {
+        headerContainer.classList.toggle('fireworks-paused');
+      });
+    }
+
     if (scoreHeader) {
+      const defaultGauges = [];
+      const customGauges = [];
+      for (const category of report.reportCategories) {
+        const renderer = specificCategoryRenderers[category.id] || categoryRenderer;
+        const categoryGauge = renderer.renderScoreGauge(category, report.categoryGroups || {});
+
+        // Group gauges that aren't default at the end of the header
+        if (renderer.renderScoreGauge === categoryRenderer.renderScoreGauge) {
+          defaultGauges.push(categoryGauge);
+        } else {
+          customGauges.push(categoryGauge);
+        }
+      }
+      scoreHeader.append(...defaultGauges, ...customGauges);
+
       const scoreScale = this._dom.cloneTemplate('#tmpl-lh-scorescale', this._templateContext);
       this._dom.find('.lh-scorescale-label', scoreScale).textContent =
         Util.UIStrings.scorescaleLabel;

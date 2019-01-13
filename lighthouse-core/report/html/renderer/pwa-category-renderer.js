@@ -27,11 +27,11 @@ class PwaCategoryRenderer extends CategoryRenderer {
   render(category, groupDefinitions = {}) {
     const categoryElem = this.dom.createElement('div', 'lh-category');
     this.createPermalinkSpan(categoryElem, category.id);
-    categoryElem.appendChild(this.renderCategoryHeader(category));
+    categoryElem.appendChild(this.renderCategoryHeader(category, groupDefinitions));
 
     const auditRefs = category.auditRefs;
 
-    // Regular audits aren't split up into pass/fail/not-applicable clumps, they're
+    // Regular audits aren't split up into pass/fail/notApplicable clumps, they're
     // all put in a top-level clump that isn't expandable/collapsable.
     const regularAuditRefs = auditRefs.filter(ref => ref.result.scoreDisplayMode !== 'manual');
     const auditsElem = this._renderAudits(regularAuditRefs, groupDefinitions);
@@ -40,10 +40,52 @@ class PwaCategoryRenderer extends CategoryRenderer {
     // Manual audits are still in a manual clump.
     const manualAuditRefs = auditRefs.filter(ref => ref.result.scoreDisplayMode === 'manual');
     const manualElem = this.renderClump('manual',
-      {auditRefs: manualAuditRefs, groupDefinitions, description: category.manualDescription});
+      {auditRefs: manualAuditRefs, description: category.manualDescription});
     categoryElem.appendChild(manualElem);
 
     return categoryElem;
+  }
+
+  /**
+   * @param {LH.ReportResult.Category} category
+   * @param {Record<string, LH.Result.ReportGroup>} groupDefinitions
+   * @return {DocumentFragment}
+   */
+  renderScoreGauge(category, groupDefinitions) {
+    // Defer to parent-gauge style if category error.
+    if (category.score === null) {
+      return super.renderScoreGauge(category, groupDefinitions);
+    }
+
+    const tmpl = this.dom.cloneTemplate('#tmpl-lh-gauge--pwa', this.templateContext);
+    const wrapper = /** @type {HTMLAnchorElement} */ (this.dom.find('.lh-gauge--pwa__wrapper',
+      tmpl));
+    wrapper.href = `#${category.id}`;
+
+    const allGroups = this._getGroupIds(category.auditRefs);
+    const passingGroupIds = this._getPassingGroupIds(category.auditRefs);
+
+    if (passingGroupIds.size === allGroups.size) {
+      wrapper.classList.add('lh-badged--all');
+    } else {
+      for (const passingGroupId of passingGroupIds) {
+        wrapper.classList.add(`lh-badged--${passingGroupId}`);
+      }
+    }
+
+    this.dom.find('.lh-gauge__label', tmpl).textContent = category.title;
+    wrapper.title = this._getGaugeTooltip(category.auditRefs, groupDefinitions);
+    return tmpl;
+  }
+
+  /**
+   * Returns the group IDs found in auditRefs.
+   * @param {Array<LH.ReportResult.AuditRef>} auditRefs
+   * @return {Set<string>}
+   */
+  _getGroupIds(auditRefs) {
+    const groupIds = auditRefs.map(ref => ref.group).filter(/** @return {g is string} */ g => !!g);
+    return new Set(groupIds);
   }
 
   /**
@@ -52,8 +94,7 @@ class PwaCategoryRenderer extends CategoryRenderer {
    * @return {Set<string>}
    */
   _getPassingGroupIds(auditRefs) {
-    const groupIds = auditRefs.map(ref => ref.group).filter(/** @return {g is string} */ g => !!g);
-    const uniqueGroupIds = new Set(groupIds);
+    const uniqueGroupIds = this._getGroupIds(auditRefs);
 
     // Remove any that have a failing audit.
     for (const auditRef of auditRefs) {
@@ -63,6 +104,28 @@ class PwaCategoryRenderer extends CategoryRenderer {
     }
 
     return uniqueGroupIds;
+  }
+
+  /**
+   * Returns a tooltip string summarizing group pass rates.
+   * @param {Array<LH.ReportResult.AuditRef>} auditRefs
+   * @param {Record<string, LH.Result.ReportGroup>} groupDefinitions
+   * @return {string}
+   */
+  _getGaugeTooltip(auditRefs, groupDefinitions) {
+    const groupIds = this._getGroupIds(auditRefs);
+
+    const tips = [];
+    for (const groupId of groupIds) {
+      const groupAuditRefs = auditRefs.filter(ref => ref.group === groupId);
+      const auditCount = groupAuditRefs.length;
+      const passedCount = groupAuditRefs.filter(ref => Util.showAsPassed(ref.result)).length;
+
+      const title = groupDefinitions[groupId].title;
+      tips.push(`${title}: ${passedCount}/${auditCount}`);
+    }
+
+    return tips.join(', ');
   }
 
   /**

@@ -12,7 +12,7 @@ const CSS_URL_REGEX = /url\((.*?)\)/;
 const CSS_URL_GLOBAL_REGEX = new RegExp(CSS_URL_REGEX, 'g');
 const i18n = require('../lib/i18n/i18n.js');
 const Sentry = require('../lib/sentry.js');
-const NetworkRecords = require('../gather/computed/network-records.js');
+const NetworkRecords = require('../computed/network-records.js');
 
 const UIStrings = {
   /** Title of a diagnostic audit that provides detail on if all the text on a webpage was visible while the page was loading its webfonts. This descriptive title is shown to users when the amount is acceptable and no user action is required. */
@@ -84,7 +84,8 @@ class FontDisplay extends Audit {
         // Convert the relative CSS URL to an absolute URL and add it to the passing set
         for (const relativeURL of relativeURLs) {
           try {
-            const absoluteURL = new URL(relativeURL, artifacts.URL.finalUrl);
+            const relativeRoot = stylesheet.header.sourceURL || artifacts.URL.finalUrl;
+            const absoluteURL = new URL(relativeURL, relativeRoot);
             passingURLs.add(absoluteURL.href);
           } catch (err) {
             Sentry.captureException(err, {tags: {audit: this.meta.id}});

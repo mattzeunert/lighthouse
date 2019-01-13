@@ -1,3 +1,74 @@
+ <a name="4.0.0-beta"></a>
+# 4.0.0-beta (2018-11-29)
+[Full Changelog](https://github.com/googlechrome/lighthouse/compare/v4.0.0-alpha.1...v4.0.0-beta)
+
+## Core
+
+* service-worker: check that test page is in SW scope ([#6609](https://github.com/googlechrome/lighthouse/pull/6609))
+* throw fatally on page hang ([#6497](https://github.com/googlechrome/lighthouse/pull/6497))
+* define new DNS failure LH Error ([#6579](https://github.com/googlechrome/lighthouse/pull/6579))
+* assert securityIssues before getPageLoadError ([#6578](https://github.com/googlechrome/lighthouse/pull/6578))
+* remove protocol timeout for Page.navigate ([#6413](https://github.com/googlechrome/lighthouse/pull/6413))
+* rename webapp-install-banner audit to installable-manifest ([#6630](https://github.com/googlechrome/lighthouse/pull/6630))
+* computed-artifacts: fix cache and add perf timing ([#6619](https://github.com/googlechrome/lighthouse/pull/6619))
+
+## Report
+
+* add PWA category badge gauge ([#6526](https://github.com/googlechrome/lighthouse/pull/6526), [#6670](https://github.com/googlechrome/lighthouse/pull/6670))
+* give passed-opportunities group an icon ([#6594](https://github.com/googlechrome/lighthouse/pull/6594))
+* safari: fix dropdown overlap translateZ ([#6546](https://github.com/googlechrome/lighthouse/pull/6546))
+* use details-element-polyfill from node_modules ([#6593](https://github.com/googlechrome/lighthouse/pull/6593), [#6607](https://github.com/googlechrome/lighthouse/pull/6607))
+
+## CLI
+
+* exit and kill Chrome on unhandledRejection ([#6394](https://github.com/googlechrome/lighthouse/pull/6394))
+
+## Tests
+
+* add smoketest for slow service worker ([#6648](https://github.com/googlechrome/lighthouse/pull/6648))
+
+## Misc
+
+* tsc: infer dom.createElement type from tag name ([#6637](https://github.com/googlechrome/lighthouse/pull/6637))
+* rename core/gather/computed/ to core/computed/ ([#6618](https://github.com/googlechrome/lighthouse/pull/6618))
+* rename typings/ to types/ ([#6617](https://github.com/googlechrome/lighthouse/pull/6617))
+* bump extension version ([#6569](https://github.com/googlechrome/lighthouse/pull/6569))
+
+ <a name="4.0.0-alpha.1"></a>
+# 4.0.0-alpha.1 (2018-11-15)
+[Full Changelog](https://github.com/googlechrome/lighthouse/compare/v4.0.0-alpha.0...v4.0.0-alpha.1)
+
+## Core
+
+* skip h2 audit in LR ([#6564](https://github.com/googlechrome/lighthouse/pull/6564))
+* config: faster category validation ([#6445](https://github.com/googlechrome/lighthouse/pull/6445))
+* driver: wait for Page.frameNavigated for about:blank ([#6446](https://github.com/googlechrome/lighthouse/pull/6446))
+* lib: add chrome-extension to URL allowedProtocols and add test ([#6447](https://github.com/googlechrome/lighthouse/pull/6447))
+* pwa: audit and report group renames ([#6494](https://github.com/googlechrome/lighthouse/pull/6494))
+* seo: properly handle anchors in SVG ([#6483](https://github.com/googlechrome/lighthouse/pull/6483))
+* increase protocol timeout to 30s ([#6505](https://github.com/googlechrome/lighthouse/pull/6505), [#6531](https://github.com/googlechrome/lighthouse/pull/6531))
+
+## Report
+
+* pwa: give badges to groups with all passing audits ([#6504](https://github.com/googlechrome/lighthouse/pull/6504))
+* pwa: add pwa-category-renderer ([#6486](https://github.com/googlechrome/lighthouse/pull/6486))
+* compat: add details-element polyfill for Edge ([#6465](https://github.com/googlechrome/lighthouse/pull/6465))
+* compat: fix support for edge ([#6459](https://github.com/googlechrome/lighthouse/pull/6459))
+* compat: ignore Edge's Invalid Argument error ([#6456](https://github.com/googlechrome/lighthouse/pull/6456))
+* compat: fix summary rendering in FF ([#6448](https://github.com/googlechrome/lighthouse/pull/6448))
+* handle underscored not_applicable scoreDisplayMode ([#6549](https://github.com/googlechrome/lighthouse/pull/6549))
+* css: make performance category more compact ([#6437](https://github.com/googlechrome/lighthouse/pull/6437))
+* rename clump classes; give classes to all audit groups ([#6482](https://github.com/googlechrome/lighthouse/pull/6482))
+* refactor rendering of top-level failed/passing/etc clumps ([#6460](https://github.com/googlechrome/lighthouse/pull/6460))
+
+## Misc
+
+* build: fix viewer deploy ([#6449](https://github.com/googlechrome/lighthouse/pull/6449))
+* timing: move timing-trace to async events ([#6440](https://github.com/googlechrome/lighthouse/pull/6440))
+* update puppeteer to version 1.10.0 ([#6493](https://github.com/googlechrome/lighthouse/pull/6493))
+* readme: use official appveyor badge ([#6443](https://github.com/googlechrome/lighthouse/pull/6443))
+* i18n: convert accessibility audits ([#6229](https://github.com/googlechrome/lighthouse/pull/6229))
+
  <a name="4.0.0-alpha.0"></a>
 # 4.0.0-alpha.0 (2018-10-31)
 [Full Changelog](https://github.com/googlechrome/lighthouse/compare/v3.2.0...v4.0.0-alpha.0)
