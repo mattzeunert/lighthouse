@@ -79,6 +79,9 @@ module.exports = [
         rawValue: true,
         scoreDisplayMode: 'notApplicable',
       },
+      'structured-data-automatic': {
+        rawValue: true,
+      },
     },
   },
   {
@@ -137,6 +140,14 @@ module.exports = [
       'canonical': {
         score: 0,
         explanation: 'Multiple conflicting URLs (https://example.com, https://example.com/)',
+      },
+      'structured-data-automatic': {
+        rawValue: false,
+        details: {
+          items: {
+            length: 3,
+          },
+        },
       },
     },
   },

@@ -1,0 +1,17 @@
+{
+  "name": "sd-validation",
+  "private": true,
+  "engines": {
+    "node": ">=8"
+  },
+  "scripts": {
+    "test": "mocha test/**/*-test.js"
+  },
+  "dependencies": {
+    "jsonld": "^1.0.2",
+    "jsonlint-mod": "^1.7.2"
+  },
+  "devDependencies": {
+    "request-promise-native": "^1.0.5"
+  }
+}

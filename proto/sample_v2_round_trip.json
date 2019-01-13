@@ -1977,6 +1977,14 @@
             "scoreDisplayMode": "manual", 
             "title": "Structured data is valid"
         }, 
+        "structured-data-automatic": {
+            "description": "Structured data contains rich metadata about a web page. The data is used in search results and social sharing. Invalid metadata will affect how the page appears in these contexts. This audit is currently doing basic JSON-LD validation.", 
+            "errorMessage": "Audit error: Required JsonLD gatherer did not run.", 
+            "id": "structured-data-automatic", 
+            "score": null, 
+            "scoreDisplayMode": "error", 
+            "title": "Invalid structured data"
+        }, 
         "tabindex": {
             "description": "A value greater than 0 implies an explicit navigation ordering. Although technically valid, this often creates frustrating experiences for users who rely on assistive technologies. [Learn more](https://dequeuniversity.com/rules/axe/3.1/tabindex?application=lighthouse).", 
             "id": "tabindex", 
@@ -3221,6 +3229,11 @@
                     "weight": 1.0
                 }, 
                 {
+                    "group": "seo-content", 
+                    "id": "structured-data-automatic", 
+                    "weight": 1.0
+                }, 
+                {
                     "id": "mobile-friendly", 
                     "weight": 0.0
                 }, 
@@ -4208,6 +4221,12 @@
                 "duration": 100.0, 
                 "entryType": "measure", 
                 "name": "lh:audit:canonical", 
+                "startTime": 0.0
+            }, 
+            {
+                "duration": 100.0, 
+                "entryType": "measure", 
+                "name": "lh:audit:structured-data-automatic", 
                 "startTime": 0.0
             }, 
             {
