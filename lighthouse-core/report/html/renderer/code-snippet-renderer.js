@@ -179,21 +179,18 @@ class CodeSnippetRenderer {
    */
   static render(dom, templateContext, details) {
     const tmpl = dom.cloneTemplate('#tmpl-lh-code-snippet', templateContext);
-    const containerEl = dom.find('.lh-code-snippet', tmpl);
+    const codeSnippet = dom.find('.lh-code-snippet', tmpl);
 
     const codeLines = dom.createElement('div');
-    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, () =>{
-      containerEl.classList.toggle('lh-code-snippet--expanded');
+    codeSnippet.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, () =>{
+      codeSnippet.classList.toggle('lh-code-snippet--expanded');
     }));
     // better solution than double render?
-    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, false));
-    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, true));
+    codeSnippet.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, false));
+    codeSnippet.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, true));
 
-    // containerEl.innerHTML = '';
-    containerEl.appendChild(codeLines);
-
-
-    return containerEl;
+    codeSnippet.appendChild(codeLines);
+    return codeSnippet;
   }
 }
 
