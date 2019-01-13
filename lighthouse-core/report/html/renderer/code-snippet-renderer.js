@@ -85,6 +85,7 @@ class CodeSnippetRenderer {
     const lastLineIsVisible = lines.slice(-1)[0].number === lineCount;
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
+    const hasOnlyNonLineSpecficHighlights = nonLineSpecificHighlights.length === highlights.length;
 
     const snippetOuter = dom.createElement('div', 'lh-code-snippet__snippet');
     const snippet = dom.createElement('div', 'lh-code-snippet__snippet-inner');
@@ -120,6 +121,9 @@ class CodeSnippetRenderer {
           snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
           hasSeenHighlight = true;
         });
+      }
+
+      if (lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights) {
         codeLine.classList.add('lh-code-snippet__line--highlighted');
       }
     }
