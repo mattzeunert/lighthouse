@@ -77,7 +77,7 @@ class DetailsRenderer {
         return CodeSnippetRenderer.render(this._dom, this._templateContext,
 
           // ..... copied from below where there's a todo, need to do type thing here too?
-          details);
+          details, this);
       case 'node':
         return this.renderNode(/** @type {NodeDetailsJSON} */(details));
       case 'criticalrequestchain':

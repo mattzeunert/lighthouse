@@ -95,7 +95,8 @@ declare global {
       lines: DetailsRendererCodeSnippetLine[],
       title: string,
       highlights: DetailsRendererCodeSnippetHighlight[]
-      lineCount: number
+      lineCount: number,
+      node?: DetailsRendererNodeDetailsJSON,
     }
 
     export interface DetailsRendererList {

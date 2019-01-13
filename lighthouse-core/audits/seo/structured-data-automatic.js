@@ -48,8 +48,9 @@ class StructuredDataAutomatic extends Audit {
     let snippetsWithErrorsCount = 0;
 
     await Promise.all(
-      artifacts.JsonLD.map(async (jsonLD, idx) => {
+      artifacts.JsonLD.map(async (aaaa, idx) => {
         // We don't want to show empty lines around the snippet
+        let {text: jsonLD, path} = aaaa;
         jsonLD = jsonLD.trim();
         const snippet = jsonLD.length > 100 ? jsonLD.substr(0, 100) + '…' : jsonLD;
         const errors = await validateJsonLD(jsonLD);
@@ -102,20 +103,29 @@ class StructuredDataAutomatic extends Audit {
               message: message + (types || []).map(t => ` [${t}](${t})`), // + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
             };
           });
-          const node = Audit.makeCodeSnippetDetails({
-            // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
-            //   1})`,
-            // snippet,
-            code,
-            // todo: how does i18n work?
-            title,
-            highlights,
-          });
+
+          // todo: check this actualy works
+          const node = {
+
+            type: 'node',
+            path,
+            snippet: `<script type="application/ld+json">`,
+
+          };
 
           // console.log(node);
 
           tableData.push(
-            node);
+            Audit.makeCodeSnippetDetails({
+              // selector: `script[type="application/ld+json" i]:nth-of-type(${idx +
+              //   1})`,
+              // snippet,
+              code,
+              // todo: how does i18n work?
+              title,
+              highlights,
+              node,
+            }));
         });
 
         if (errors.length === 0) {

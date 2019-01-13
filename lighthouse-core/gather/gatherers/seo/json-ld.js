@@ -6,7 +6,7 @@
 'use strict';
 
 const Gatherer = require('../gatherer');
-const {getElementsInDocumentString} = require('../../../lib/page-functions');
+const {getElementsInDocumentString, getNodePathString} = require('../../../lib/page-functions');
 
 class JsonLD extends Gatherer {
   /**
@@ -16,9 +16,13 @@ class JsonLD extends Gatherer {
   afterPass(passContext) {
     const expression = `(function() {
       ${getElementsInDocumentString}; // define function on page
+      ${getNodePathString};
       const selector = 'script[type="application/ld+json" i]';
       const elements = getElementsInDocument(selector);
-      return elements.map(node => node.innerText);
+      return elements.map(node => ({
+        text: node.innerText,
+        path: getNodePath(node)
+      }));
     })()`;
 
     return passContext.driver.evaluateAsync(expression);

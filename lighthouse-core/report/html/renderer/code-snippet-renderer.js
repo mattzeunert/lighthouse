@@ -25,7 +25,7 @@ class CodeSnippetRenderer {
    * @param {function} toggleExpandedFn
    * @return {DocumentFragment}
    */
-  static renderHeader(dom, tmpl, details, toggleExpandedFn) {
+  static renderHeader(dom, tmpl, details, detailsRenderer, toggleExpandedFn) {
     const {lineCount, title} = details;
     const showAll = lineCount <= 4;
 
@@ -43,6 +43,14 @@ class CodeSnippetRenderer {
       toggleShowAllButton.addEventListener('click', () => {
         toggleExpandedFn();
       });
+    }
+
+    const nodeContainer = dom.find('.lh-code-snippet__node', header);
+    console.log(details.node);
+    if (details.node) {
+      // todo: only do this if isdevtools
+      // (and check that it works fine)
+      nodeContainer.appendChild(detailsRenderer.renderNode(details.node));
     }
 
     return header;
@@ -210,12 +218,12 @@ class CodeSnippetRenderer {
    * @param {LH.Audit.DetailsRendererCodeSnippet} details
    * @return {Element}
    */
-  static render(dom, templateContext, details) {
+  static render(dom, templateContext, details, detailsRenderer) {
     const tmpl = dom.cloneTemplate('#tmpl-lh-code-snippet', templateContext);
     const codeSnippet = dom.find('.lh-code-snippet', tmpl);
 
     const codeLines = dom.createElement('div');
-    codeSnippet.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, () =>{
+    codeSnippet.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, detailsRenderer, () =>{
       codeSnippet.classList.toggle('lh-code-snippet--expanded');
     }));
     // better solution than double render?

@@ -138,11 +138,10 @@ class Audit {
   }
 
   /**
-   * @param {{code: string, title: string, highlights: LH.Audit.DetailsRendererCodeSnippetHighlight[]}} opts
+   * @param {{code: string, title: string, highlights: LH.Audit.DetailsRendererCodeSnippetHighlight[], node: LH.Audit.DetailsRendererNodeDetailsJSON}} opts
    * @return {LH.Audit.DetailsRendererCodeSnippet}
-   * todo: fix any type
    */
-  static makeCodeSnippetDetails({code, title, highlights}) {
+  static makeCodeSnippetDetails({code, title, highlights, node = null}) {
     const MAX_LINE_LENGTH = 200;
     const MAX_LINES_AROUND_HIGHLIGHT = 20;
 
@@ -171,6 +170,7 @@ class Audit {
       title,
       highlights,
       lineCount,
+      node,
     });
   }
 
