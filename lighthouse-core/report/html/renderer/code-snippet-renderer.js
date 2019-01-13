@@ -169,7 +169,7 @@ class CodeSnippetRenderer {
     const hasLineSpecificHighlights = highlights.some(h => typeof h.lineNumber === 'number');
     const hasOnlyNonLineSpecficHighlights = highlights.length > 0 && !hasLineSpecificHighlights;
 
-    const linesEl = dom.createFragment();
+    const lineContainer = dom.createFragment();
 
     // Keep track if a highlighted line has been seen, because in collapsed mode
     // we don't show the omitted lines indication before the first visible set of lines
@@ -184,27 +184,29 @@ class CodeSnippetRenderer {
       if (hasSeenHighlight) {
         // Show if some lines were omitted
         if (line && !previousLine) {
-          linesEl.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
+          lineContainer.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
         }
         if (collapsedLine && !collapsedPreviousLine) {
-          linesEl.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {collapsedOnly: true}));
+          lineContainer.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {collapsedOnly: true}));
         }
       }
 
-      if (line) {
-        linesEl.append(CodeSnippetRenderer.renderLine(dom, tmpl, line, {
-          highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
-          expandedOnly: !collapsedLine,
-          code: true,
-        }));
-        lineHighlights.forEach(highlight => {
-          linesEl.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
-          hasSeenHighlight = true;
-        });
+      if (!line) {
+        continue;
       }
+
+      lineContainer.append(CodeSnippetRenderer.renderLine(dom, tmpl, line, {
+        highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
+        expandedOnly: !collapsedLine,
+        code: true,
+      }));
+      lineHighlights.forEach(highlight => {
+        lineContainer.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
+        hasSeenHighlight = true;
+      });
     }
 
-    return linesEl;
+    return lineContainer;
   }
 
   /**

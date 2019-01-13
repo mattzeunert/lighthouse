@@ -137,40 +137,50 @@ class Audit {
     };
   }
 
+  /** @typedef {{
+   * code: string,
+   * title: string,
+   * highlights: LH.Audit.DetailsRendererCodeSnippetHighlight[],
+   * node?: LH.Audit.DetailsRendererNodeDetailsJSON
+   * }} CodeSnippetInfo */
   /**
-   * @param {{code: string, title: string, highlights: LH.Audit.DetailsRendererCodeSnippetHighlight[], node: LH.Audit.DetailsRendererNodeDetailsJSON}} opts
+   * @param {CodeSnippetInfo} opts
    * @return {LH.Audit.DetailsRendererCodeSnippet}
    */
-  static makeCodeSnippetDetails({code, title, highlights, node = null}) {
+  static makeCodeSnippetDetails({code, title, highlights, node}) {
     const MAX_LINE_LENGTH = 200;
     const MAX_LINES_AROUND_HIGHLIGHT = 20;
 
-    // can i just use line number? what does jsonlint mod return? -- i think best to use line number everywhere
-    // leave commment somewhere saying what line number means (i.e +1 on index)
-    let lines = code.split('\n').map((line, lineIndex) => {
-      const lineNumber = lineIndex + 1;
-      /** @type LH.Audit.DetailsRendererCodeSnippetLine */
-      const lineDetail = {
-        content: line.slice(0, MAX_LINE_LENGTH),
-        number: lineNumber,
-      };
-      if (line.length > MAX_LINE_LENGTH) {
-        lineDetail.truncated = true;
-      }
-      return lineDetail;
-    });
-    const lineCount = lines.length;
+    const allLines = Audit._makeCodeSnippetLinesArray(code, MAX_LINE_LENGTH);
+    const lines = Util.filterRelevantLines(allLines, highlights, MAX_LINES_AROUND_HIGHLIGHT);
 
-    lines = Util.filterRelevantLines(lines, highlights, MAX_LINES_AROUND_HIGHLIGHT);
-
-    // todo: also include node link
-    return /** @type {LH.Audit.DetailsRendererCodeSnippet} */ ({
+    return {
       type: 'code-snippet',
       lines,
       title,
       highlights,
-      lineCount,
+      lineCount: allLines.length,
       node,
+    };
+  }
+
+  /**
+   * @param {string} code
+   * @param {number} maxLineLength
+   * @returns {LH.Audit.DetailsRendererCodeSnippetLine[]}
+   */
+  static _makeCodeSnippetLinesArray(code, maxLineLength) {
+    return code.split('\n').map((line, lineIndex) => {
+      const lineNumber = lineIndex + 1;
+      /** @type LH.Audit.DetailsRendererCodeSnippetLine */
+      const lineDetail = {
+        content: line.slice(0, maxLineLength),
+        number: lineNumber,
+      };
+      if (line.length > maxLineLength) {
+        lineDetail.truncated = true;
+      }
+      return lineDetail;
     });
   }
 

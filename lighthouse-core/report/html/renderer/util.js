@@ -451,7 +451,6 @@ class Util {
   }
 
 
-  // todo: is render util the right place to put this?
   /**
    * Filters line numbers that are near a highlight.
    * @param {LH.Audit.DetailsRendererCodeSnippetLine[]} lines
