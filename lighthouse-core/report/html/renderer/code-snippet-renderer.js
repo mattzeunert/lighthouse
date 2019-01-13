@@ -12,7 +12,7 @@
 // todo: consider using templates instead of constructing manually
 // todo: remove unused classes from css file
 // general: use copyright 2019 for new files
-// todo: probably write a test for this
+// todo: probably write a test for this --- see crc test
 
 class CodeSnippetRenderer {
   static renderHeader(dom, templateContext, details, isExpanded, updateFn) {
@@ -151,19 +151,32 @@ class CodeSnippetRenderer {
   static render(dom, templateContext, details) {
     // todo: better upate solution
     // cant i just figure out which element needs to be hidden in what state and then toggle a class?
-    const el = dom.createElement('div');
+
+
+    const tmpl = dom.cloneTemplate('#tmpl-lh-code-snippet', templateContext);
+    const containerEl = dom.find('.lh-code-snippet', tmpl);
+
+
+    // Fill in top summary.
+    // dom.find('.crc-initial-nav', tmpl).textContent = Util.UIStrings.crcInitialNavigation;
+    // dom.find('.lh-crc__longest_duration_label', tmpl).textContent =
+    //     Util.UIStrings.crcLongestDurationLabel;
+    // dom.find('.lh-crc__longest_duration', tmpl).textContent =
+    //     Util.formatMilliseconds(details.longestChain.duration);
+
+    // Construct visual tree.
+
     function update(isExpanded) {
-      const codeLines = dom.createElement('div', 'lh-code-snippet');
+      const codeLines = dom.createElement('div');
       codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, isExpanded, update));
       codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, templateContext, details, isExpanded));
 
-      el.innerHTML = '';
-      el.appendChild(
-        codeLines);
+      // containerEl.innerHTML = '';
+      containerEl.appendChild(codeLines);
     }
     update(false);
 
-    return el;
+    return containerEl;
   }
 }
 
