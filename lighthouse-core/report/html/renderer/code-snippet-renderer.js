@@ -16,24 +16,18 @@
 
 class CodeSnippetRenderer {
   static renderHeader(dom, templateContext, details, isExpanded, updateFn) {
+    const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', templateContext);
+
     const {lineCount, title} = details;
     const showAll = lineCount <= 4;
-    const header = dom.createElement('div', 'lh-code-snippet__header');
-    if (title) {
-      const titleEl = dom.createElement('div');
-      titleEl.innerText = title;
-      titleEl.style.fontWeight = 'bold';
-      header.append(titleEl);
-    }
+    dom.find('.lh-code-snippet__title', header).textContent = title;
 
-    if (!showAll) {
-      const showAllButton = dom.createElement('button', 'lh-code-snippet__toggle-show-all');
-      showAllButton.textContent = isExpanded ? 'Collapse snippet' : 'Expand snippet';
-      showAllButton.addEventListener('click', () => {
-        updateFn(!isExpanded);
-      });
-
-      header.prepend(showAllButton);
+    const toggleShowAllButton = dom.find('.lh-code-snippet__toggle-show-all', header);
+    toggleShowAllButton.addEventListener('click', () => {
+      updateFn();
+    });
+    if (showAll) {
+      toggleShowAllButton.remove();
     }
     return header;
   }
@@ -78,6 +72,8 @@ class CodeSnippetRenderer {
   static renderSnippet(dom, templateContext, details, isExpanded) {
     const {highlights, lineCount} = details;
     let {lines} = details;
+    // todo: comments in this function and try to shorten it
+    // todo: comments in general
     if (!isExpanded) {
       lines = Util.filterRelevantLines(lines, highlights, 2);
     }
@@ -90,6 +86,8 @@ class CodeSnippetRenderer {
     const snippetOuter = dom.createElement('div', 'lh-code-snippet__snippet');
     const snippet = dom.createElement('div', 'lh-code-snippet__snippet-inner');
     snippetOuter.appendChild(snippet);
+    snippetOuter.classList.toggle('lh-code-snippet__show-if-expanded', isExpanded);
+    snippetOuter.classList.toggle('lh-code-snippet__show-if-collapsed', !isExpanded);
 
     if (!firstLineIsVisible && isExpanded) {
       snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
@@ -149,7 +147,6 @@ class CodeSnippetRenderer {
      * @return {Element}
      */
   static render(dom, templateContext, details) {
-    // todo: better upate solution
     // cant i just figure out which element needs to be hidden in what state and then toggle a class?
 
 
@@ -164,17 +161,16 @@ class CodeSnippetRenderer {
     // dom.find('.lh-crc__longest_duration', tmpl).textContent =
     //     Util.formatMilliseconds(details.longestChain.duration);
 
-    // Construct visual tree.
+    const codeLines = dom.createElement('div');
+    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, false, () =>{
+      containerEl.classList.toggle('lh-code-snippet--expanded');
+    }));
+    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, false));
+    codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, true));
 
-    function update(isExpanded) {
-      const codeLines = dom.createElement('div');
-      codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, templateContext, details, isExpanded, update));
-      codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, templateContext, details, isExpanded));
+    // containerEl.innerHTML = '';
+    containerEl.appendChild(codeLines);
 
-      // containerEl.innerHTML = '';
-      containerEl.appendChild(codeLines);
-    }
-    update(false);
 
     return containerEl;
   }
