@@ -14,12 +14,16 @@
 // general: use copyright 2019 for new files
 // todo:  write a test for this --- see crc test
 
+const SHOW_IF_EXPANDED_CLASS = 'lh-code-snippet__show-if-expanded';
+const SHOW_IF_COLLAPSED_CLASS = 'lh-code-snippet__show-if-collapsed';
+
 class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
    * @param {function} toggleExpandedFn
+   * @return {DocumentFragment}
    */
   static renderHeader(dom, tmpl, details, toggleExpandedFn) {
     const {lineCount, title} = details;
@@ -29,8 +33,8 @@ class CodeSnippetRenderer {
     dom.find('.lh-code-snippet__title', header).textContent = title;
 
     const {codeSnippetCollapse, codeSnippetExpand} = Util.UIStrings;
-    dom.find('.lh-code-snippet__show-if-expanded', header).textContent = codeSnippetCollapse;
-    dom.find('.lh-code-snippet__show-if-collapsed', header).textContent = codeSnippetExpand;
+    dom.find('.' + SHOW_IF_EXPANDED_CLASS, header).textContent = codeSnippetCollapse;
+    dom.find('.' + SHOW_IF_COLLAPSED_CLASS, header).textContent = codeSnippetExpand;
 
     const toggleShowAllButton = dom.find('.lh-code-snippet__toggle-show-all', header);
     if (showAll) {
@@ -50,12 +54,13 @@ class CodeSnippetRenderer {
    * @param {DocumentFragment} tmpl
    * @param {{content: string, number: number | string,truncated?: boolean}} line
    * @param {LineClassOptions} classOptions
+   * @return {Element}
    */
   static renderLine(dom, tmpl, line, classOptions = {}) {
     const {content, number, truncated} = line;
 
-    const template = dom.cloneTemplate('#tmpl-lh-code-snippet__line', tmpl);
-    const codeLine = dom.find('.lh-code-snippet__line', template);
+    const clonedTemplate = dom.cloneTemplate('#tmpl-lh-code-snippet__line', tmpl);
+    const codeLine = dom.find('.lh-code-snippet__line', clonedTemplate);
 
     if (classOptions.highlight) {
       codeLine.classList.add('lh-code-snippet__line--highlighted');
@@ -64,14 +69,15 @@ class CodeSnippetRenderer {
       codeLine.classList.add('lh-code-snippet__line--highlight-message');
     }
     if (classOptions.collapsedOnly) {
-      codeLine.classList.add('lh-code-snippet__show-if-collapsed');
+      codeLine.classList.add(SHOW_IF_COLLAPSED_CLASS);
     }
     if (classOptions.expandedOnly) {
-      codeLine.classList.add('lh-code-snippet__show-if-expanded');
+      codeLine.classList.add(SHOW_IF_EXPANDED_CLASS);
     }
 
     dom.find('.lh-code-snippet__line-number', codeLine).textContent = number.toString();
-    dom.find('.lh-code-snippet__line code', codeLine).textContent = content + (truncated ? '…' : '');
+    const lineContent = content + (truncated ? '…' : '');
+    dom.find('.lh-code-snippet__line code', codeLine).textContent = lineContent;
 
     return codeLine;
   }
@@ -80,6 +86,7 @@ class CodeSnippetRenderer {
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetHighlight} highlight
+   * @return {Element}
    */
   static renderHighlightMessage(dom, tmpl, highlight) {
     return CodeSnippetRenderer.renderLine(dom, tmpl, {
@@ -95,6 +102,7 @@ class CodeSnippetRenderer {
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LineClassOptions} classOptions
+   * @return {Element}
    */
   static renderOmittedLines(dom, tmpl, classOptions = {}) {
     return CodeSnippetRenderer.renderLine(dom, tmpl, {
@@ -113,53 +121,22 @@ class CodeSnippetRenderer {
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @return {Element}
    */
   static renderSnippet(dom, tmpl, details) {
     const {highlights, lineCount, lines} = details;
-    const collapsedLines = Util.filterRelevantLines(lines, highlights, 2);
 
-    const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
-    const hasOnlyNonLineSpecficHighlights = nonLineSpecificHighlights.length > 0 && nonLineSpecificHighlights.length === highlights.length;
 
     const template = dom.cloneTemplate('#tmpl-lh-code-snippet__content', tmpl);
     const snippetOuter = dom.find('.lh-code-snippet__snippet', template);
     const snippet = dom.find('.lh-code-snippet__snippet-inner', snippetOuter);
 
+    const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
     nonLineSpecificHighlights.forEach(highlight => {
       snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
     });
 
-    let hasSeenHighlight = false;
-    for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
-      const line = lines.find(l => l.number === lineNumber);
-      const previousLine = lines.find(l => l.number === lineNumber - 1);
-      const collapsedLine = collapsedLines.find(l => l.number === lineNumber);
-      const collapsedPreviousLine = collapsedLines.find(l => l.number === lineNumber - 1);
-      const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
-
-      if (hasSeenHighlight) {
-        // Show if some lines were omitted
-        if (line && !previousLine) {
-          snippet.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
-        }
-        if (collapsedLine && !collapsedPreviousLine) {
-          snippet.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {collapsedOnly: true}));
-        }
-      }
-
-      if (!line) {
-        continue;
-      }
-
-      snippet.append(CodeSnippetRenderer.renderLine(dom, tmpl, line, {
-        highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
-        collapsedOnly: !collapsedLine,
-      }));
-      lineHighlights.forEach(highlight => {
-        snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
-        hasSeenHighlight = true;
-      });
-    }
+    snippet.append(CodeSnippetRenderer.renderSnippetLines(dom, tmpl, details));
 
     // If expanded view still doesn't include all lines then show that
     const firstLineIsVisible = lines[0].number === 1;
@@ -172,6 +149,52 @@ class CodeSnippetRenderer {
     }
 
     return snippetOuter;
+  }
+
+  /**
+   * @param {DOM} dom
+   * @param {DocumentFragment} tmpl
+   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @returns {DocumentFragment}
+   */
+  static renderSnippetLines(dom, tmpl, details) {
+    const {highlights, lineCount, lines} = details;
+    const linesEl = dom.createFragment();
+
+    const collapsedLines = Util.filterRelevantLines(lines, highlights, 2);
+
+    const hasLineSpecificHighlights = highlights.some(h => typeof h.lineNumber === 'number');
+    const hasOnlyNonLineSpecficHighlights = highlights.length > 0 && !hasLineSpecificHighlights;
+
+    let hasSeenHighlight = false;
+    for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
+      const line = lines.find(l => l.number === lineNumber);
+      const previousLine = lines.find(l => l.number === lineNumber - 1);
+      const collapsedLine = collapsedLines.find(l => l.number === lineNumber);
+      const collapsedPreviousLine = collapsedLines.find(l => l.number === lineNumber - 1);
+      const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
+      if (hasSeenHighlight) {
+        // Show if some lines were omitted
+        if (line && !previousLine) {
+          linesEl.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
+        }
+        if (collapsedLine && !collapsedPreviousLine) {
+          linesEl.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {collapsedOnly: true}));
+        }
+      }
+      if (line) {
+        linesEl.append(CodeSnippetRenderer.renderLine(dom, tmpl, line, {
+          highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
+          expandedOnly: !collapsedLine,
+        }));
+        lineHighlights.forEach(highlight => {
+          linesEl.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
+          hasSeenHighlight = true;
+        });
+      }
+    }
+
+    return linesEl;
   }
 
   /**
