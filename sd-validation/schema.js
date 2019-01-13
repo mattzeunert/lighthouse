@@ -104,7 +104,10 @@ function validateObjectKeys(typeOrTypes, keys) {
     // remove Schema.org input/output constraints http://schema.org/docs/actions.html#part-4
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
-    .forEach(key => errors.push({message: `Invalid schema: Unexpected property "${key}"`, key}));
+    .forEach(key => {
+      console.log('unexpected proeprty', {key, types});
+      errors.push({message: `Invalid schema: Unexpected property "${key}"`, key, types});
+    });
 
   return errors;
 }
@@ -135,6 +138,7 @@ module.exports = function validateSchemaOrg(expandedObj) {
           // get rid of the first chunk (/@type) as it's the same for all errors
           path: '/' + [...path.slice(0, -1), ...(key ? [key] : [])].map(cleanName).join('/'),
           message,
+          key,
         });
       }
       );

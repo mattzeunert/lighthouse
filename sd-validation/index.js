@@ -99,8 +99,8 @@ module.exports = async function validate(textInput) {
 // todo: move this function maybe
 function getLineFromJsonPath(obj, path) {
   try {
-    console.log(obj);
-    console.log({path});
+    // console.log(obj);
+    // console.log({path});
     obj = JSON.parse(JSON.stringify(obj));
     const searchKey = Math.random().toString();
     // eval('debugger');
