@@ -40,12 +40,16 @@ class CodeSnippetRenderer {
     return header;
   }
 
-  static renderLine(dom, templateContext, line, extraClasses = '') {
+  static renderLine(dom, templateContext, line, options = {}) {
     const template = dom.cloneTemplate('#tmpl-lh-code-snippet__line', templateContext);
     const codeLine = dom.find('.lh-code-snippet__line', template);
 
-    // todo: use classlist... instead of extraclasses param just use an options object
-    codeLine.className += ' ' + extraClasses;
+    if (options.highlight) {
+      codeLine.classList.add('lh-code-snippet__line--highlighted');
+    }
+    if (options.highlightMessage) {
+      codeLine.classList.add('lh-code-snippet__line--highlight-message');
+    }
 
     const lineNumber = dom.find('.lh-code-snippet__line-number', codeLine);
     lineNumber.textContent = line.number;
@@ -56,11 +60,14 @@ class CodeSnippetRenderer {
     return codeLine;
   }
 
-  static renderHighlightLine(dom, templateContext, highlight) {
+  static renderHighlightMessage(dom, templateContext, highlight) {
     return CodeSnippetRenderer.renderLine(dom, templateContext, {
       number: ' ',
       content: highlight.message,
-    }, 'lh-code-snippet__line--highlighted lh-code-snippet__line--highlight-message');
+    }, {
+      highlight: true,
+      highlightMessage: true,
+    });
   }
 
   static renderOmittedLinesIndicator(dom, templateContext) {
@@ -90,11 +97,14 @@ class CodeSnippetRenderer {
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
     const hasOnlyNonLineSpecficHighlights = nonLineSpecificHighlights.length === highlights.length;
 
-    const snippetOuter = dom.createElement('div', 'lh-code-snippet__snippet');
-    const snippet = dom.createElement('div', 'lh-code-snippet__snippet-inner');
-    snippetOuter.appendChild(snippet);
+    // todo rename snippet__snippet to snippet__content everywhere (or is __snippet better?)
+    const template = dom.cloneTemplate('#tmpl-lh-code-snippet__content', templateContext);
+    const snippetOuter = dom.find('.lh-code-snippet__snippet', template);
     snippetOuter.classList.toggle('lh-code-snippet__show-if-expanded', isExpanded);
     snippetOuter.classList.toggle('lh-code-snippet__show-if-collapsed', !isExpanded);
+
+    const snippet = dom.find('.lh-code-snippet__snippet-inner', snippetOuter);
+
 
     if (!firstLineIsVisible && isExpanded) {
       snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
@@ -113,23 +123,23 @@ class CodeSnippetRenderer {
       }
       if (lineNumber === 1) {
         nonLineSpecificHighlights.forEach(highlight => {
-          snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
+          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, templateContext, highlight));
         });
       }
-      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line);
+
+      const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
+
+      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line, {
+        highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
+      });
       snippet.append(codeLine);
 
 
-      const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
       if (lineHighlights.length > 0) {
         lineHighlights.forEach(highlight => {
-          snippet.append(CodeSnippetRenderer.renderHighlightLine(dom, templateContext, highlight));
+          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, templateContext, highlight));
           hasSeenHighlight = true;
         });
-      }
-
-      if (lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights) {
-        codeLine.classList.add('lh-code-snippet__line--highlighted');
       }
     }
 
@@ -169,6 +179,7 @@ class CodeSnippetRenderer {
     codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, () =>{
       containerEl.classList.toggle('lh-code-snippet--expanded');
     }));
+    // better solution than double render?
     codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, false));
     codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, true));
 

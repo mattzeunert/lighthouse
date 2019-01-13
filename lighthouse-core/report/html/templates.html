@@ -657,7 +657,7 @@ limitations under the License.
     <style>
       .lh-code-snippet__snippet {
         overflow: auto;
-        white-space: pre;
+        
         border: 1px solid var(--report-secondary-border-color);
         /* border-bottom-left-radius: 4px;
         border-bottom-right-radius: 4px; */
@@ -694,6 +694,7 @@ limitations under the License.
 
       .lh-code-snippet__line {
         background: white;
+        white-space: pre;
         /* make div grow across scrollable width */
         /* display: table-row; */
       }
@@ -768,6 +769,11 @@ limitations under the License.
         <div class="lh-code-snippet__title"></div>
       </div>
     </template>
+    <template id="tmpl-lh-code-snippet__content">
+      <div class="lh-code-snippet__snippet">
+        <div class="lh-code-snippet__snippet-inner"></div>
+      </div>
+    </template>
     <template id="tmpl-lh-code-snippet__line">
         <div class="lh-code-snippet__line"><!--
           Comments to avoid whitespace showing in UI
@@ -775,6 +781,7 @@ limitations under the License.
             --><code></code><!--
         --></div>
       </template>
+
    
   </div>
 </template>
