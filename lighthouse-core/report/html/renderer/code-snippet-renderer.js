@@ -9,16 +9,10 @@
 
 /* globals self, Util */
 
-// todo: consider using templates instead of constructing manually
-// todo: remove unused classes from css file
-// general: use copyright 2019 for new files
-// todo:  write a test for this --- see crc test
+/** @typedef {import('./details-renderer')} DetailsRenderer */
 
 const SHOW_IF_EXPANDED_CLASS = 'lh-code-snippet__show-if-expanded';
 const SHOW_IF_COLLAPSED_CLASS = 'lh-code-snippet__show-if-collapsed';
-
-/** @typedef {import('./details-renderer')} DetailsRenderer */
-// todo: when rendering messages or ... lines, should there be a <code> element at all?
 
 class CodeSnippetRenderer {
   /**
@@ -51,14 +45,12 @@ class CodeSnippetRenderer {
 
     const nodeContainer = dom.find('.lh-code-snippet__node', header);
     if (details.node) {
-      // todo: only do this if isdevtools
-      // (and check that it works fine)
+      // todo: only do this if isdevtools (and check that it works fine there)
       nodeContainer.appendChild(detailsRenderer.renderNode(details.node));
     }
 
     return header;
   }
-
 
   /**
    * @param {DOM} dom
@@ -80,7 +72,6 @@ class CodeSnippetRenderer {
       codeLine.classList.add('lh-code-snippet__line--highlight-message');
     }
     if (lineOptions.code) {
-      // todo: need thsi? right now just used for test... probs can remove some :not in test
       codeLine.classList.add('lh-code-snippet__line--code');
     }
     if (lineOptions.collapsedOnly) {
@@ -133,12 +124,6 @@ class CodeSnippetRenderer {
     }, classOptions);
   }
 
-  // todo: comments in this function and try to shorten it
-  // todo: comments in general
-
-  // todo: separate logic and DOM generation?
-  // todo rename snippet__snippet to snippet__content everywhere (or is __snippet better?)
-
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
@@ -147,7 +132,6 @@ class CodeSnippetRenderer {
    */
   static renderSnippet(dom, tmpl, details) {
     const {highlights, lineCount, lines} = details;
-
 
     const template = dom.cloneTemplate('#tmpl-lh-code-snippet__content', tmpl);
     const snippetOuter = dom.find('.lh-code-snippet__snippet', template);
@@ -160,7 +144,7 @@ class CodeSnippetRenderer {
 
     snippet.append(CodeSnippetRenderer.renderSnippetLines(dom, tmpl, details));
 
-    // If expanded view still doesn't include all lines then show that
+    // If expanded view still doesn't include all lines then indicate that that
     const firstLineIsVisible = lines[0].number === 1;
     const lastLineIsVisible = lines.slice(-1)[0].number === lineCount;
     if (!firstLineIsVisible) {
@@ -181,13 +165,14 @@ class CodeSnippetRenderer {
    */
   static renderSnippetLines(dom, tmpl, details) {
     const {highlights, lineCount, lines} = details;
-    const linesEl = dom.createFragment();
-
     const collapsedLines = Util.filterRelevantLines(lines, highlights, 2);
-
     const hasLineSpecificHighlights = highlights.some(h => typeof h.lineNumber === 'number');
     const hasOnlyNonLineSpecficHighlights = highlights.length > 0 && !hasLineSpecificHighlights;
 
+    const linesEl = dom.createFragment();
+
+    // Keep track if a highlighted line has been seen, because in collapsed mode
+    // we don't show the omitted lines indication before the first visible set of lines
     let hasSeenHighlight = false;
     for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
       const line = lines.find(l => l.number === lineNumber);
@@ -195,6 +180,7 @@ class CodeSnippetRenderer {
       const collapsedLine = collapsedLines.find(l => l.number === lineNumber);
       const collapsedPreviousLine = collapsedLines.find(l => l.number === lineNumber - 1);
       const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
+
       if (hasSeenHighlight) {
         // Show if some lines were omitted
         if (line && !previousLine) {
@@ -204,6 +190,7 @@ class CodeSnippetRenderer {
           linesEl.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {collapsedOnly: true}));
         }
       }
+
       if (line) {
         linesEl.append(CodeSnippetRenderer.renderLine(dom, tmpl, line, {
           highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
@@ -231,20 +218,17 @@ class CodeSnippetRenderer {
     const tmpl = dom.cloneTemplate('#tmpl-lh-code-snippet', templateContext);
     const codeSnippet = dom.find('.lh-code-snippet', tmpl);
 
-    const codeLines = dom.createElement('div');
     codeSnippet.appendChild(CodeSnippetRenderer.renderHeader(
       dom,
       tmpl,
       details,
       detailsRenderer,
-      () =>{
+      () => {
         codeSnippet.classList.toggle('lh-code-snippet--expanded');
       }
     ));
-    // better solution than double render?
     codeSnippet.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details));
 
-    codeSnippet.appendChild(codeLines);
     return codeSnippet;
   }
 }
