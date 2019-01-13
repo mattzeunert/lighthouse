@@ -122,14 +122,15 @@ class CodeSnippetRenderer {
     snippetOuter.classList.toggle('lh-code-snippet__show-if-collapsed', !isExpanded);
     const snippet = dom.find('.lh-code-snippet__snippet-inner', snippetOuter);
 
-    if (!firstLineIsVisible && isExpanded) {
-      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
-    }
+    nonLineSpecificHighlights.forEach(highlight => {
+      snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
+    });
 
     let hasSeenHighlight = false;
     for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
       const line = getLine(lineNumber);
       const previousLine = getLine(lineNumber - 1);
+      const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
 
       if (!line) {
         continue;
@@ -137,13 +138,6 @@ class CodeSnippetRenderer {
       if (!previousLine && hasSeenHighlight) {
         snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
       }
-      if (lineNumber === 1) {
-        nonLineSpecificHighlights.forEach(highlight => {
-          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
-        });
-      }
-
-      const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
 
       const codeLine = CodeSnippetRenderer.renderLine(dom, tmpl, line, {
         highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
@@ -156,8 +150,13 @@ class CodeSnippetRenderer {
       });
     }
 
-    if (!lastLineIsVisible && isExpanded) {
-      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
+    if (isExpanded) {
+      if (!firstLineIsVisible) {
+        snippet.prepend(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
+      }
+      if (!lastLineIsVisible) {
+        snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
+      }
     }
 
     return snippetOuter;
