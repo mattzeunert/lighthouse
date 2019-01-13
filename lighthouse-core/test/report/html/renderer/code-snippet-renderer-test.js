@@ -73,7 +73,8 @@ describe('DetailsRenderer', () => {
 
     const renderedLines = el.querySelectorAll('.lh-code-snippet__line');
     const codeLines = el.querySelectorAll('.lh-code-snippet__line--code');
-    const collapsedCodeLines = el.querySelectorAll('.lh-code-snippet__line--code.lh-code-snippet__show-if-expanded');
+    const collapsedCodeLines = el.querySelectorAll(
+      '.lh-code-snippet__line--code.lh-code-snippet__show-if-expanded');
     const highlightLines = el.querySelectorAll('.lh-code-snippet__line--highlight-message');
 
     // 4 Lines are visible, 2 are collapsed

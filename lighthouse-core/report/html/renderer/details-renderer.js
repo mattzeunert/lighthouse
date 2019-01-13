@@ -16,7 +16,7 @@
  */
 'use strict';
 
-/* globals self CriticalRequestChainRenderer Util URL */
+/* globals self CriticalRequestChainRenderer CodeSnippetRenderer Util URL */
 
 /** @typedef {import('./dom.js')} DOM */
 /** @typedef {import('./crc-details-renderer.js')} CRCDetailsJSON */
@@ -70,14 +70,15 @@ class DetailsRenderer {
         // @ts-ignore - TODO(bckenny): Fix type hierarchy
         return this._renderTable(/** @type {TableDetailsJSON} */ (details));
       case 'list':
+        // @ts-ignore
         return this._renderList(/** @type {TableDetailsJSON} */ (details));
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
       case 'code-snippet':
         return CodeSnippetRenderer.render(this._dom, this._templateContext,
-
-          // ..... copied from below where there's a todo, need to do type thing here too?
-          details, this);
+          // @ts-ignore
+          // todo: leave pr comment here... why is details passed in as opportunitydetails, what's the plan here?
+          /** @type {LH.Audit.DetailsRendererCodeSnippet} */(details), this);
       case 'node':
         return this.renderNode(/** @type {NodeDetailsJSON} */(details));
       case 'criticalrequestchain':
@@ -288,13 +289,10 @@ class DetailsRenderer {
 
 
     details.items.forEach(item => {
-      console.log('Item', {item});
       const itemEl = this._dom.createElement('div');
       itemEl.append(this.render(item));
       tableElem.append(itemEl);
     });
-
-    console.log('LEN', details.items.length);
 
 
     return tableElem;

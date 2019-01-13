@@ -17,7 +17,7 @@
 const SHOW_IF_EXPANDED_CLASS = 'lh-code-snippet__show-if-expanded';
 const SHOW_IF_COLLAPSED_CLASS = 'lh-code-snippet__show-if-collapsed';
 
-
+/** @typedef {import('./details-renderer')} DetailsRenderer */
 // todo: when rendering messages or ... lines, should there be a <code> element at all?
 
 class CodeSnippetRenderer {
@@ -25,6 +25,7 @@ class CodeSnippetRenderer {
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippet} details
+   * @param {DetailsRenderer} detailsRenderer
    * @param {function} toggleExpandedFn
    * @return {DocumentFragment}
    */
@@ -221,8 +222,9 @@ class CodeSnippetRenderer {
 
   /**
    * @param {DOM} dom
-   * @param {DocumentFragment} templateContext
+   * @param {ParentNode} templateContext
    * @param {LH.Audit.DetailsRendererCodeSnippet} details
+   * @param {DetailsRenderer} detailsRenderer
    * @return {Element}
    */
   static render(dom, templateContext, details, detailsRenderer) {
@@ -230,9 +232,15 @@ class CodeSnippetRenderer {
     const codeSnippet = dom.find('.lh-code-snippet', tmpl);
 
     const codeLines = dom.createElement('div');
-    codeSnippet.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, detailsRenderer, () =>{
-      codeSnippet.classList.toggle('lh-code-snippet--expanded');
-    }));
+    codeSnippet.appendChild(CodeSnippetRenderer.renderHeader(
+      dom,
+      tmpl,
+      details,
+      detailsRenderer,
+      () =>{
+        codeSnippet.classList.toggle('lh-code-snippet--expanded');
+      }
+    ));
     // better solution than double render?
     codeSnippet.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details));
 
