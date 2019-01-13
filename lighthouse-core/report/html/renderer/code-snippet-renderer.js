@@ -21,7 +21,7 @@ class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
-   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @param {LH.Audit.DetailsRendererCodeSnippet} details
    * @param {function} toggleExpandedFn
    * @return {DocumentFragment}
    */
@@ -120,7 +120,7 @@ class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
-   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @param {LH.Audit.DetailsRendererCodeSnippet} details
    * @return {Element}
    */
   static renderSnippet(dom, tmpl, details) {
@@ -154,7 +154,7 @@ class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
-   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @param {LH.Audit.DetailsRendererCodeSnippet} details
    * @returns {DocumentFragment}
    */
   static renderSnippetLines(dom, tmpl, details) {
@@ -200,7 +200,7 @@ class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} templateContext
-   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @param {LH.Audit.DetailsRendererCodeSnippet} details
    * @return {Element}
    */
   static render(dom, templateContext, details) {

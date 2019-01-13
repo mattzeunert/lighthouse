@@ -94,7 +94,7 @@ declare global {
       truncated?: boolean
     }
 
-    export interface DetailsRendererCodeSnippetItem {
+    export interface DetailsRendererCodeSnippet {
       type: "code-snippet",
       lines: DetailsRendererCodeSnippetLine[],
       title: string,

@@ -139,7 +139,7 @@ class Audit {
 
   /**
    * @param {{code: string, title: string, highlights: LH.Audit.DetailsRendererCodeSnippetHighlight[]}} opts
-   * @return {LH.Audit.DetailsRendererCodeSnippetItem}
+   * @return {LH.Audit.DetailsRendererCodeSnippet}
    * todo: fix any type
    */
   static makeCodeSnippetDetails({code, title, highlights}) {
@@ -165,7 +165,7 @@ class Audit {
     lines = Util.filterRelevantLines(lines, highlights, MAX_LINES_AROUND_HIGHLIGHT);
 
     // todo: also include node link
-    return /** @type {LH.Audit.DetailsRendererCodeSnippetItem} */ ({
+    return /** @type {LH.Audit.DetailsRendererCodeSnippet} */ ({
       type: 'code-snippet',
       lines,
       title,
