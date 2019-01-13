@@ -75,14 +75,14 @@ class StructuredDataAutomatic extends Audit {
           topLevelName = JSON.parse(jsonLD)['name'];
         } catch (err) {
         }
-        topLevelType = topLevelType || 'Unknown';
-
 
         let title = '';
-        if (topLevelName) {
-          title += `${topLevelType}: ${topLevelName}`;
+        if (topLevelName && topLevelType) {
+          title = `${topLevelType}: ${topLevelName}`;
+        } else if (topLevelType) {
+          title = `@type ${topLevelType}`;
         } else {
-          title += `@type ${topLevelType}`;
+          title = 'Invalid JSON-LD element';
         }
 
         title += ` (${errors.length} Error${errors.length !== 1 ? 's' : ''})`;

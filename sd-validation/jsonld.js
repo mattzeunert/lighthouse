@@ -42,7 +42,7 @@ function validKeyword(fieldName) {
  */
 function validateKey(keyName) {
   if (keyName[0] === '@' && !validKeyword(keyName)) {
-    return 'Unknown keyword ' + keyName;
+    return 'Unknown keyword "' + keyName + '"';
   }
 
   return null;
