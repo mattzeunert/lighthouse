@@ -103,26 +103,24 @@ class CodeSnippetRenderer {
     }, classOptions);
   }
 
+  // todo: comments in this function and try to shorten it
+  // todo: comments in general
+
+  // todo: separate logic and DOM generation?
+  // todo rename snippet__snippet to snippet__content everywhere (or is __snippet better?)
+
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
    */
   static renderSnippet(dom, tmpl, details) {
-    const {highlights, lineCount} = details;
-    const {lines} = details;
-    // todo: comments in this function and try to shorten it
-    // todo: comments in general
-
+    const {highlights, lineCount, lines} = details;
     const collapsedLines = Util.filterRelevantLines(lines, highlights, 2);
-
-    const firstLineIsVisible = lines[0].number === 1;
-    const lastLineIsVisible = lines.slice(-1)[0].number === lineCount;
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
     const hasOnlyNonLineSpecficHighlights = nonLineSpecificHighlights.length > 0 && nonLineSpecificHighlights.length === highlights.length;
 
-    // todo rename snippet__snippet to snippet__content everywhere (or is __snippet better?)
     const template = dom.cloneTemplate('#tmpl-lh-code-snippet__content', tmpl);
     const snippetOuter = dom.find('.lh-code-snippet__snippet', template);
     const snippet = dom.find('.lh-code-snippet__snippet-inner', snippetOuter);
@@ -157,13 +155,15 @@ class CodeSnippetRenderer {
         highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
         collapsedOnly: !collapsedLine,
       }));
-
       lineHighlights.forEach(highlight => {
         snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
         hasSeenHighlight = true;
       });
     }
 
+    // If expanded view still doesn't include all lines then show that
+    const firstLineIsVisible = lines[0].number === 1;
+    const lastLineIsVisible = lines.slice(-1)[0].number === lineCount;
     if (!firstLineIsVisible) {
       snippet.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
     }
