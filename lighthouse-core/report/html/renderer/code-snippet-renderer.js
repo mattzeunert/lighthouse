@@ -12,20 +12,20 @@
 // todo: consider using templates instead of constructing manually
 // todo: remove unused classes from css file
 // general: use copyright 2019 for new files
-// todo: probably write a test for this --- see crc test
+// todo:  write a test for this --- see crc test
 
 class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
-   * @param {DocumentFragment} templateContext
+   * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
    * @param {function} toggleExpandedFn
    */
-  static renderHeader(dom, templateContext, details, toggleExpandedFn) {
+  static renderHeader(dom, tmpl, details, toggleExpandedFn) {
     const {lineCount, title} = details;
     const showAll = lineCount <= 4;
 
-    const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', templateContext);
+    const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', tmpl);
     dom.find('.lh-code-snippet__title', header).textContent = title;
 
     dom.find('.lh-code-snippet__show-if-expanded', header).textContent = Util.UIStrings.codeSnippetCollpase;
@@ -45,14 +45,14 @@ class CodeSnippetRenderer {
 
   /**
    * @param {DOM} dom
-   * @param {DocumentFragment} templateContext
+   * @param {DocumentFragment} tmpl
    * @param {{content: string, number: number | string,truncated?: boolean}} line
    * @param {{highlight?: boolean, highlightMessage?: boolean}} classOptions
    */
-  static renderLine(dom, templateContext, line, classOptions = {}) {
+  static renderLine(dom, tmpl, line, classOptions = {}) {
     const {content, number, truncated} = line;
 
-    const template = dom.cloneTemplate('#tmpl-lh-code-snippet__line', templateContext);
+    const template = dom.cloneTemplate('#tmpl-lh-code-snippet__line', tmpl);
     const codeLine = dom.find('.lh-code-snippet__line', template);
 
     if (classOptions.highlight) {
@@ -70,11 +70,11 @@ class CodeSnippetRenderer {
 
   /**
    * @param {DOM} dom
-   * @param {DocumentFragment} templateContext
+   * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetHighlight} highlight
    */
-  static renderHighlightMessage(dom, templateContext, highlight) {
-    return CodeSnippetRenderer.renderLine(dom, templateContext, {
+  static renderHighlightMessage(dom, tmpl, highlight) {
+    return CodeSnippetRenderer.renderLine(dom, tmpl, {
       number: ' ',
       content: highlight.message,
     }, {
@@ -85,10 +85,10 @@ class CodeSnippetRenderer {
 
   /**
    * @param {DOM} dom
-   * @param {DocumentFragment} templateContext
+   * @param {DocumentFragment} tmpl
    */
-  static renderOmittedLinesIndicator(dom, templateContext) {
-    return CodeSnippetRenderer.renderLine(dom, templateContext, {
+  static renderOmittedLinesIndicator(dom, tmpl) {
+    return CodeSnippetRenderer.renderLine(dom, tmpl, {
       number: '…',
       content: '',
     });
@@ -96,11 +96,11 @@ class CodeSnippetRenderer {
 
   /**
    * @param {DOM} dom
-   * @param {DocumentFragment} templateContext
+   * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
    * @param {*} isExpanded
    */
-  static renderSnippet(dom, templateContext, details, isExpanded) {
+  static renderSnippet(dom, tmpl, details, isExpanded) {
     const {highlights, lineCount} = details;
     let {lines} = details;
     // todo: comments in this function and try to shorten it
@@ -115,7 +115,7 @@ class CodeSnippetRenderer {
     const hasOnlyNonLineSpecficHighlights = nonLineSpecificHighlights.length === highlights.length;
 
     // todo rename snippet__snippet to snippet__content everywhere (or is __snippet better?)
-    const template = dom.cloneTemplate('#tmpl-lh-code-snippet__content', templateContext);
+    const template = dom.cloneTemplate('#tmpl-lh-code-snippet__content', tmpl);
     const snippetOuter = dom.find('.lh-code-snippet__snippet', template);
     snippetOuter.classList.toggle('lh-code-snippet__show-if-expanded', isExpanded);
     snippetOuter.classList.toggle('lh-code-snippet__show-if-collapsed', !isExpanded);
@@ -124,7 +124,7 @@ class CodeSnippetRenderer {
 
 
     if (!firstLineIsVisible && isExpanded) {
-      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
+      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
     }
 
     let hasSeenHighlight = false;
@@ -136,17 +136,17 @@ class CodeSnippetRenderer {
         continue;
       }
       if (!previousLine && hasSeenHighlight) {
-        snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
+        snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
       }
       if (lineNumber === 1) {
         nonLineSpecificHighlights.forEach(highlight => {
-          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, templateContext, highlight));
+          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
         });
       }
 
       const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
 
-      const codeLine = CodeSnippetRenderer.renderLine(dom, templateContext, line, {
+      const codeLine = CodeSnippetRenderer.renderLine(dom, tmpl, line, {
         highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
       });
       snippet.append(codeLine);
@@ -154,14 +154,14 @@ class CodeSnippetRenderer {
 
       if (lineHighlights.length > 0) {
         lineHighlights.forEach(highlight => {
-          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, templateContext, highlight));
+          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
           hasSeenHighlight = true;
         });
       }
     }
 
     if (!lastLineIsVisible && isExpanded) {
-      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, templateContext));
+      snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
     }
 
     return snippetOuter;

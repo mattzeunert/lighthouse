@@ -34,6 +34,7 @@ declare global {
   interface Window {
     CategoryRenderer: typeof _CategoryRenderer;
     CriticalRequestChainRenderer: typeof _CriticalRequestChainRenderer;
+    CodeSnippetRenderer: typeof _CodeSnippetRenderer;
     DetailsRenderer: typeof _DetailsRenderer;
     DOM: typeof _DOM;
     PerformanceCategoryRenderer: typeof _PerformanceCategoryRenderer;
