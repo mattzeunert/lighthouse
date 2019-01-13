@@ -53,31 +53,37 @@ class CodeSnippetRenderer {
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {{content: string, number: number | string,truncated?: boolean}} line
-   * @param {LineClassOptions} classOptions
+   * @param {LineOptions} lineOptions
    * @return {Element}
    */
-  static renderLine(dom, tmpl, line, classOptions = {}) {
+  static renderLine(dom, tmpl, line, lineOptions = {}) {
     const {content, number, truncated} = line;
 
     const clonedTemplate = dom.cloneTemplate('#tmpl-lh-code-snippet__line', tmpl);
     const codeLine = dom.find('.lh-code-snippet__line', clonedTemplate);
 
-    if (classOptions.highlight) {
+    if (lineOptions.highlight) {
       codeLine.classList.add('lh-code-snippet__line--highlighted');
     }
-    if (classOptions.highlightMessage) {
+    if (lineOptions.highlightMessage) {
       codeLine.classList.add('lh-code-snippet__line--highlight-message');
     }
-    if (classOptions.collapsedOnly) {
+    if (lineOptions.collapsedOnly) {
       codeLine.classList.add(SHOW_IF_COLLAPSED_CLASS);
     }
-    if (classOptions.expandedOnly) {
+    if (lineOptions.expandedOnly) {
       codeLine.classList.add(SHOW_IF_EXPANDED_CLASS);
     }
 
-    dom.find('.lh-code-snippet__line-number', codeLine).textContent = number.toString();
     const lineContent = content + (truncated ? '…' : '');
-    dom.find('.lh-code-snippet__line code', codeLine).textContent = lineContent;
+    const lineContentEl = dom.find('.lh-code-snippet__line code', codeLine);
+    if (lineOptions.convertMarkdownLinkSnippets) {
+      lineContentEl.appendChild(dom.convertMarkdownLinkSnippets(lineContent));
+    } else {
+      lineContentEl.textContent = lineContent;
+    }
+
+    dom.find('.lh-code-snippet__line-number', codeLine).textContent = number.toString();
 
     return codeLine;
   }
@@ -95,13 +101,14 @@ class CodeSnippetRenderer {
     }, {
       highlight: true,
       highlightMessage: true,
+      convertMarkdownLinkSnippets: true,
     });
   }
 
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
-   * @param {LineClassOptions} classOptions
+   * @param {LineOptions} classOptions
    * @return {Element}
    */
   static renderOmittedLines(dom, tmpl, classOptions = {}) {
@@ -231,5 +238,6 @@ if (typeof module !== 'undefined' && module.exports) {
       highlightMessage?: boolean;
       collapsedOnly?: boolean;
       expandedOnly?: boolean;
-  }} LineClassOptions
+      convertMarkdownLinkSnippets?: boolean
+  }} LineOptions
  */
