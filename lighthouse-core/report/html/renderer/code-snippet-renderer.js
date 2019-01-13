@@ -28,8 +28,8 @@ class CodeSnippetRenderer {
     const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', tmpl);
     dom.find('.lh-code-snippet__title', header).textContent = title;
 
-    const {codeSnippetCollpase, codeSnippetExpand} = Util.UIStrings;
-    dom.find('.lh-code-snippet__show-if-expanded', header).textContent = codeSnippetCollpase;
+    const {codeSnippetCollapse, codeSnippetExpand} = Util.UIStrings;
+    dom.find('.lh-code-snippet__show-if-expanded', header).textContent = codeSnippetCollapse;
     dom.find('.lh-code-snippet__show-if-collapsed', header).textContent = codeSnippetExpand;
 
     const toggleShowAllButton = dom.find('.lh-code-snippet__toggle-show-all', header);
@@ -44,11 +44,12 @@ class CodeSnippetRenderer {
     return header;
   }
 
+
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {{content: string, number: number | string,truncated?: boolean}} line
-   * @param {{highlight?: boolean, highlightMessage?: boolean}} classOptions
+   * @param {LineClassOptions} classOptions
    */
   static renderLine(dom, tmpl, line, classOptions = {}) {
     const {content, number, truncated} = line;
@@ -61,6 +62,12 @@ class CodeSnippetRenderer {
     }
     if (classOptions.highlightMessage) {
       codeLine.classList.add('lh-code-snippet__line--highlight-message');
+    }
+    if (classOptions.collapsedOnly) {
+      codeLine.classList.add('lh-code-snippet__show-if-collapsed');
+    }
+    if (classOptions.expandedOnly) {
+      codeLine.classList.add('lh-code-snippet__show-if-expanded');
     }
 
     dom.find('.lh-code-snippet__line-number', codeLine).textContent = number.toString();
@@ -87,39 +94,37 @@ class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
+   * @param {LineClassOptions} classOptions
    */
-  static renderOmittedLinesIndicator(dom, tmpl) {
+  static renderOmittedLines(dom, tmpl, classOptions = {}) {
     return CodeSnippetRenderer.renderLine(dom, tmpl, {
       number: '…',
       content: '',
-    });
+    }, classOptions);
   }
 
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
-   * @param {*} isExpanded
    */
-  static renderSnippet(dom, tmpl, details, isExpanded) {
+  static renderSnippet(dom, tmpl, details) {
     const {highlights, lineCount} = details;
-    let {lines} = details;
+    const {lines} = details;
     // todo: comments in this function and try to shorten it
     // todo: comments in general
-    if (!isExpanded) {
-      lines = Util.filterRelevantLines(lines, highlights, 2);
-    }
+
+    const collapsedLines = Util.filterRelevantLines(lines, highlights, 2);
+
     const firstLineIsVisible = lines[0].number === 1;
     const lastLineIsVisible = lines.slice(-1)[0].number === lineCount;
 
     const nonLineSpecificHighlights = highlights.filter(h => typeof h.lineNumber !== 'number');
-    const hasOnlyNonLineSpecficHighlights = nonLineSpecificHighlights.length === highlights.length;
+    const hasOnlyNonLineSpecficHighlights = nonLineSpecificHighlights.length > 0 && nonLineSpecificHighlights.length === highlights.length;
 
     // todo rename snippet__snippet to snippet__content everywhere (or is __snippet better?)
     const template = dom.cloneTemplate('#tmpl-lh-code-snippet__content', tmpl);
     const snippetOuter = dom.find('.lh-code-snippet__snippet', template);
-    snippetOuter.classList.toggle('lh-code-snippet__show-if-expanded', isExpanded);
-    snippetOuter.classList.toggle('lh-code-snippet__show-if-collapsed', !isExpanded);
     const snippet = dom.find('.lh-code-snippet__snippet-inner', snippetOuter);
 
     nonLineSpecificHighlights.forEach(highlight => {
@@ -128,21 +133,30 @@ class CodeSnippetRenderer {
 
     let hasSeenHighlight = false;
     for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
-      const line = getLine(lineNumber);
-      const previousLine = getLine(lineNumber - 1);
+      const line = lines.find(l => l.number === lineNumber);
+      const previousLine = lines.find(l => l.number === lineNumber - 1);
+      const collapsedLine = collapsedLines.find(l => l.number === lineNumber);
+      const collapsedPreviousLine = collapsedLines.find(l => l.number === lineNumber - 1);
       const lineHighlights = Util.getLineHighlights(highlights, lineNumber);
+
+      if (hasSeenHighlight) {
+        // Show if some lines were omitted
+        if (line && !previousLine) {
+          snippet.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
+        }
+        if (collapsedLine && !collapsedPreviousLine) {
+          snippet.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {collapsedOnly: true}));
+        }
+      }
 
       if (!line) {
         continue;
       }
-      if (!previousLine && hasSeenHighlight) {
-        snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
-      }
 
-      const codeLine = CodeSnippetRenderer.renderLine(dom, tmpl, line, {
+      snippet.append(CodeSnippetRenderer.renderLine(dom, tmpl, line, {
         highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
-      });
-      snippet.append(codeLine);
+        collapsedOnly: !collapsedLine,
+      }));
 
       lineHighlights.forEach(highlight => {
         snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
@@ -150,23 +164,14 @@ class CodeSnippetRenderer {
       });
     }
 
-    if (isExpanded) {
-      if (!firstLineIsVisible) {
-        snippet.prepend(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
-      }
-      if (!lastLineIsVisible) {
-        snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
-      }
+    if (!firstLineIsVisible) {
+      snippet.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
+    }
+    if (!lastLineIsVisible) {
+      snippet.append(CodeSnippetRenderer.renderOmittedLines(dom, tmpl, {expandedOnly: true}));
     }
 
     return snippetOuter;
-
-    /**
-     * @param {number} lineNumber
-     */
-    function getLine(lineNumber) {
-      return lines.find(l => l.number === lineNumber);
-    }
   }
 
   /**
@@ -184,8 +189,7 @@ class CodeSnippetRenderer {
       codeSnippet.classList.toggle('lh-code-snippet--expanded');
     }));
     // better solution than double render?
-    codeSnippet.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, false));
-    codeSnippet.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, true));
+    codeSnippet.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details));
 
     codeSnippet.appendChild(codeLines);
     return codeSnippet;
@@ -198,3 +202,11 @@ if (typeof module !== 'undefined' && module.exports) {
 } else {
   self.CodeSnippetRenderer = CodeSnippetRenderer;
 }
+
+/** @typedef {{
+      highlight?: boolean;
+      highlightMessage?: boolean;
+      collapsedOnly?: boolean;
+      expandedOnly?: boolean;
+  }} LineClassOptions
+ */
