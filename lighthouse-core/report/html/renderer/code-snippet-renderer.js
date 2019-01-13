@@ -15,26 +15,38 @@
 // todo: probably write a test for this --- see crc test
 
 class CodeSnippetRenderer {
-  static renderHeader(dom, templateContext, details, isExpanded, updateFn) {
-    const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', templateContext);
-
+  /**
+   * @param {DOM} dom
+   * @param {DocumentFragment} templateContext
+   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @param {function} toggleExpandedFn
+   */
+  static renderHeader(dom, templateContext, details, toggleExpandedFn) {
     const {lineCount, title} = details;
     const showAll = lineCount <= 4;
+
+    const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', templateContext);
     dom.find('.lh-code-snippet__title', header).textContent = title;
 
     const toggleShowAllButton = dom.find('.lh-code-snippet__toggle-show-all', header);
-    toggleShowAllButton.addEventListener('click', () => {
-      updateFn();
-    });
     if (showAll) {
       toggleShowAllButton.remove();
+    } else {
+      toggleShowAllButton.addEventListener('click', () => {
+        toggleExpandedFn();
+      });
     }
+
     return header;
   }
 
   static renderLine(dom, templateContext, line, extraClasses = '') {
-    // todo: destructure line first
-    const codeLine = dom.createElement('div', 'lh-code-snippet__line ' + extraClasses );
+    const template = dom.cloneTemplate('#tmpl-lh-code-snippet__line', templateContext);
+    const codeLine = dom.find('.lh-code-snippet__line', template);
+
+    // todo: use classlist... instead of extraclasses param just use an options object
+    codeLine.className += ' ' + extraClasses;
+
     // todo: move to class
     const lineNumber = dom.createElement('div', 'lh-code-snippet__line-number');
 
@@ -147,9 +159,6 @@ class CodeSnippetRenderer {
      * @return {Element}
      */
   static render(dom, templateContext, details) {
-    // cant i just figure out which element needs to be hidden in what state and then toggle a class?
-
-
     const tmpl = dom.cloneTemplate('#tmpl-lh-code-snippet', templateContext);
     const containerEl = dom.find('.lh-code-snippet', tmpl);
 
@@ -162,7 +171,7 @@ class CodeSnippetRenderer {
     //     Util.formatMilliseconds(details.longestChain.duration);
 
     const codeLines = dom.createElement('div');
-    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, false, () =>{
+    codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, () =>{
       containerEl.classList.toggle('lh-code-snippet--expanded');
     }));
     codeLines.appendChild(CodeSnippetRenderer.renderSnippet(dom, tmpl, details, false));
