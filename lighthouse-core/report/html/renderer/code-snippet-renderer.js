@@ -17,6 +17,9 @@
 const SHOW_IF_EXPANDED_CLASS = 'lh-code-snippet__show-if-expanded';
 const SHOW_IF_COLLAPSED_CLASS = 'lh-code-snippet__show-if-collapsed';
 
+
+// todo: when rendering messages or ... lines, should there be a <code> element at all?
+
 class CodeSnippetRenderer {
   /**
    * @param {DOM} dom
@@ -46,7 +49,6 @@ class CodeSnippetRenderer {
     }
 
     const nodeContainer = dom.find('.lh-code-snippet__node', header);
-    console.log(details.node);
     if (details.node) {
       // todo: only do this if isdevtools
       // (and check that it works fine)
@@ -75,6 +77,10 @@ class CodeSnippetRenderer {
     }
     if (lineOptions.highlightMessage) {
       codeLine.classList.add('lh-code-snippet__line--highlight-message');
+    }
+    if (lineOptions.code) {
+      // todo: need thsi? right now just used for test... probs can remove some :not in test
+      codeLine.classList.add('lh-code-snippet__line--code');
     }
     if (lineOptions.collapsedOnly) {
       codeLine.classList.add(SHOW_IF_COLLAPSED_CLASS);
@@ -201,6 +207,7 @@ class CodeSnippetRenderer {
         linesEl.append(CodeSnippetRenderer.renderLine(dom, tmpl, line, {
           highlight: lineHighlights.length > 0 || hasOnlyNonLineSpecficHighlights,
           expandedOnly: !collapsedLine,
+          code: true,
         }));
         lineHighlights.forEach(highlight => {
           linesEl.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
@@ -246,6 +253,7 @@ if (typeof module !== 'undefined' && module.exports) {
       highlightMessage?: boolean;
       collapsedOnly?: boolean;
       expandedOnly?: boolean;
-      convertMarkdownLinkSnippets?: boolean
+      convertMarkdownLinkSnippets?: boolean;
+      code?: boolean;
   }} LineOptions
  */
