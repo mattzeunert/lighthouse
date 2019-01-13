@@ -79,6 +79,7 @@ module.exports = async function validate(textInput) {
 
   if (schemaOrgErrors && schemaOrgErrors.length) {
     schemaOrgErrors.forEach(error => {
+      console.log({t: error.types});
       errors.push({
         validator: 'schema-org',
         path: error.path,
@@ -87,6 +88,8 @@ module.exports = async function validate(textInput) {
         // todo: figure out if we can do this operation with inputobj instead of exp obj
         line: getLineFromJsonPath(inputObject, error.path),
         message: error.message,
+        key: error.key,
+        types: error.types,
       });
     });
 

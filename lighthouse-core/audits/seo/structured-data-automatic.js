@@ -60,13 +60,15 @@ class StructuredDataAutomatic extends Audit {
 
 
         const errorsByCode = {};
+        // console.log(errors);
 
-        errors.forEach(({message, path, line, validator, code2}) => {
+        errors.forEach((e) => {
+          let {message, path, line, validator, code2} = e;
           code2 = code2 || jsonLD;
           if (!errorsByCode[code2]) {
             errorsByCode[code2] = [];
           }
-          errorsByCode[code2].push({message, path, line, validator, code2});
+          errorsByCode[code2].push(e);
         });
 
         let topLevelType;
@@ -93,11 +95,11 @@ class StructuredDataAutomatic extends Audit {
         Object.keys(errorsByCode).forEach(code => {
           const errors = errorsByCode[code];
           const highlights = errors.map(({
-            message, line,
+            message, line, types,
           }) => {
             return {
               lineNumber: line,
-              message: message, // + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
+              message: message + (types || []).map(t => ` [${t}](${t})`), // + ' path: ' + path + ' line: ' + line + ' validator: ' + validator,
             };
           });
           const node = Audit.makeCodeSnippetDetails({

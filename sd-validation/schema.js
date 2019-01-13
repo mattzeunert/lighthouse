@@ -105,7 +105,6 @@ function validateObjectKeys(typeOrTypes, keys) {
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
     .forEach(key => {
-      console.log('unexpected proeprty', {key, types});
       errors.push({message: `Invalid schema: Unexpected property "${key}"`, key, types});
     });
 
@@ -133,12 +132,13 @@ module.exports = function validateSchemaOrg(expandedObj) {
     if (name === TYPE_KEYWORD) {
       const keyErrors = validateObjectKeys(value, Object.keys(obj));
 
-      keyErrors.forEach(({message, key}) => {
+      keyErrors.forEach(({message, key, types}) => {
         errors.push({
           // get rid of the first chunk (/@type) as it's the same for all errors
           path: '/' + [...path.slice(0, -1), ...(key ? [key] : [])].map(cleanName).join('/'),
           message,
           key,
+          types,
         });
       }
       );
