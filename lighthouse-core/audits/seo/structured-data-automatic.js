@@ -21,7 +21,8 @@ class StructuredDataAutomatic extends Audit {
         'Structured data contains rich metadata about a web page. ' +
         'The data is used in search results and social sharing. ' +
         'Invalid metadata will affect how the page appears in these contexts. ' +
-        'This audit is currently doing basic JSON-LD validation.',
+        'This audit is currently doing basic JSON-LD validation. ' +
+        'See also the manual audit below to validate other types of structured data.',
       requiredArtifacts: ['JsonLD'],
     };
   }
