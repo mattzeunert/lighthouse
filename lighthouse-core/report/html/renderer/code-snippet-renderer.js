@@ -40,7 +40,15 @@ class CodeSnippetRenderer {
     return header;
   }
 
+  /**
+   * @param {DOM} dom
+   * @param {DocumentFragment} templateContext
+   * @param {{content: string, number: number | string,truncated?: boolean}} line
+   * @param {{highlight?: boolean, highlightMessage?: boolean}} options
+   */
   static renderLine(dom, templateContext, line, options = {}) {
+    const {content, number, truncated} = line;
+
     const template = dom.cloneTemplate('#tmpl-lh-code-snippet__line', templateContext);
     const codeLine = dom.find('.lh-code-snippet__line', template);
 
@@ -51,15 +59,17 @@ class CodeSnippetRenderer {
       codeLine.classList.add('lh-code-snippet__line--highlight-message');
     }
 
-    const lineNumber = dom.find('.lh-code-snippet__line-number', codeLine);
-    lineNumber.textContent = line.number;
-
-    const code = dom.find('.lh-code-snippet__line code', codeLine);
-    code.textContent = line.content + (line.truncated ? '…' : '');
+    dom.find('.lh-code-snippet__line-number', codeLine).textContent = number.toString();
+    dom.find('.lh-code-snippet__line code', codeLine).textContent = content + (truncated ? '…' : '');
 
     return codeLine;
   }
 
+  /**
+   * @param {DOM} dom
+   * @param {DocumentFragment} templateContext
+   * @param {LH.Audit.DetailsRendererCodeSnippetHighlight} highlight
+   */
   static renderHighlightMessage(dom, templateContext, highlight) {
     return CodeSnippetRenderer.renderLine(dom, templateContext, {
       number: ' ',
@@ -70,6 +80,10 @@ class CodeSnippetRenderer {
     });
   }
 
+  /**
+   * @param {DOM} dom
+   * @param {DocumentFragment} templateContext
+   */
   static renderOmittedLinesIndicator(dom, templateContext) {
     return CodeSnippetRenderer.renderLine(dom, templateContext, {
       number: '…',
@@ -158,22 +172,14 @@ class CodeSnippetRenderer {
   }
 
   /**
-     * @param {DOM} dom
-     * @param {DocumentFragment} templateContext
-     * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
-     * @return {Element}
-     */
+   * @param {DOM} dom
+   * @param {DocumentFragment} templateContext
+   * @param {LH.Audit.DetailsRendererCodeSnippetItem} details
+   * @return {Element}
+   */
   static render(dom, templateContext, details) {
     const tmpl = dom.cloneTemplate('#tmpl-lh-code-snippet', templateContext);
     const containerEl = dom.find('.lh-code-snippet', tmpl);
-
-
-    // Fill in top summary.
-    // dom.find('.crc-initial-nav', tmpl).textContent = Util.UIStrings.crcInitialNavigation;
-    // dom.find('.lh-crc__longest_duration_label', tmpl).textContent =
-    //     Util.UIStrings.crcLongestDurationLabel;
-    // dom.find('.lh-crc__longest_duration', tmpl).textContent =
-    //     Util.formatMilliseconds(details.longestChain.duration);
 
     const codeLines = dom.createElement('div');
     codeLines.appendChild(CodeSnippetRenderer.renderHeader(dom, tmpl, details, () =>{
