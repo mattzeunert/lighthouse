@@ -16,7 +16,6 @@
  */
 
 .lh-vars {
-  --tmp-light-red-highlight: #fbf1f2;
   --text-font-family: Roboto, Helvetica, Arial, sans-serif;
   --monospace-font-family: 'Menlo', 'dejavu sans mono', 'Consolas', 'Lucida Console', monospace;
   --body-background-color: #fff;
@@ -53,6 +52,8 @@
   --report-border-color: #ccc;
   --report-secondary-border-color: #ebebeb;
   --metric-timeline-rule-color: #b3b3b3;
+  --code-snippet-highlight-light: #fbf1f2;
+  --code-snippet-highlight-dark: #ffd6d8;
   --display-value-gray: hsl(216, 5%, 39%);
   --report-width: calc(60 * var(--body-font-size));
   /* Edge doesn't support calc(var(calc())) */
@@ -782,18 +783,21 @@ details, summary {
   /* make div grow across scrollable width */
   /* display: table-row; */
 }
-.lh-code-snippet__line:first-child {
-  padding-top: 5px;
+.lh-code-snippet__line:not(.lh-code-snippet__line--highlight-message):first-child {
+  padding-top: 4px;
 }
-.lh-code-snippet__line:last-child {
-  padding-bottom: 5px;
+.lh-code-snippet__line:not(.lh-code-snippet__line--highlight-message):last-child {
+  padding-bottom: 4px;
 }
 .lh-code-snippet__line--highlighted {
-  background: var(--tmp-light-red-highlight);
+  background: var(--code-snippet-highlight-dark);
 }
 .lh-code-snippet__line--highlighted .lh-code-snippet__line-number {
   
-  background: var(--tmp-light-red-highlight);
+  
+}
+.lh-code-snippet__line--highlight-message {
+  background: var(--code-snippet-highlight-light);
 }
 .lh-code-snippet__line--highlight-message .lh-code-snippet__line-number {
   padding-top: 10px;
@@ -801,7 +805,17 @@ details, summary {
 }
 .lh-code-snippet__line--highlight-message code {
   padding: 10px;
+  color: var(--fail-color);
   font-family: var(--text-font-family);
+}
+.lh-code-snippet__line--highlight-message code:before {
+  content: "";
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 4px;
+  width: var(--lh-score-icon-width);
+  height: var(--lh-score-icon-width);
+  background-image: var(--fail-icon-url);
 }
 /* todo: review this and see how the rest of the css looks */
 .lh-code-snippet:not(.lh-code-snippet--show-all) .lh-code-snippet__line--hide-by-default {
