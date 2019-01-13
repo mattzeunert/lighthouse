@@ -28,8 +28,9 @@ class CodeSnippetRenderer {
     const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', tmpl);
     dom.find('.lh-code-snippet__title', header).textContent = title;
 
-    dom.find('.lh-code-snippet__show-if-expanded', header).textContent = Util.UIStrings.codeSnippetCollpase;
-    dom.find('.lh-code-snippet__show-if-collapsed', header).textContent = Util.UIStrings.codeSnippetExpand;
+    const {codeSnippetCollpase, codeSnippetExpand} = Util.UIStrings;
+    dom.find('.lh-code-snippet__show-if-expanded', header).textContent = codeSnippetCollpase;
+    dom.find('.lh-code-snippet__show-if-collapsed', header).textContent = codeSnippetExpand;
 
     const toggleShowAllButton = dom.find('.lh-code-snippet__toggle-show-all', header);
     if (showAll) {
@@ -119,9 +120,7 @@ class CodeSnippetRenderer {
     const snippetOuter = dom.find('.lh-code-snippet__snippet', template);
     snippetOuter.classList.toggle('lh-code-snippet__show-if-expanded', isExpanded);
     snippetOuter.classList.toggle('lh-code-snippet__show-if-collapsed', !isExpanded);
-
     const snippet = dom.find('.lh-code-snippet__snippet-inner', snippetOuter);
-
 
     if (!firstLineIsVisible && isExpanded) {
       snippet.append(CodeSnippetRenderer.renderOmittedLinesIndicator(dom, tmpl));
@@ -151,13 +150,10 @@ class CodeSnippetRenderer {
       });
       snippet.append(codeLine);
 
-
-      if (lineHighlights.length > 0) {
-        lineHighlights.forEach(highlight => {
-          snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
-          hasSeenHighlight = true;
-        });
-      }
+      lineHighlights.forEach(highlight => {
+        snippet.append(CodeSnippetRenderer.renderHighlightMessage(dom, tmpl, highlight));
+        hasSeenHighlight = true;
+      });
     }
 
     if (!lastLineIsVisible && isExpanded) {
