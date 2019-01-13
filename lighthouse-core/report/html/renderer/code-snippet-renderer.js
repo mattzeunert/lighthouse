@@ -28,6 +28,9 @@ class CodeSnippetRenderer {
     const header = dom.cloneTemplate('#tmpl-lh-code-snippet__header', templateContext);
     dom.find('.lh-code-snippet__title', header).textContent = title;
 
+    dom.find('.lh-code-snippet__show-if-expanded', header).textContent = Util.UIStrings.codeSnippetCollpase;
+    dom.find('.lh-code-snippet__show-if-collapsed', header).textContent = Util.UIStrings.codeSnippetExpand;
+
     const toggleShowAllButton = dom.find('.lh-code-snippet__toggle-show-all', header);
     if (showAll) {
       toggleShowAllButton.remove();

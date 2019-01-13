@@ -520,6 +520,11 @@ Util.UIStrings = {
   /** Label of value shown in the summary of critical request chains. Refers to the total amount of time (milliseconds) of the longest critical path chain/sequence of network requests. Example value: 2310 ms */
   crcLongestDurationLabel: 'Maximum critical path latency:',
 
+  /** Label for button that shows all lines of the code snippet when clicked */
+  codeSnippetExpand: 'Expand snippet',
+  /** Label for button that only shows a few lines of the code snippet when clicked */
+  codeSnippetCollapse: 'Collapse snippet',
+
   /** Explanation shown to users below performance results to inform them that the test was done with a 4G network connection and to warn them that the numbers they see will likely change slightly the next time they run Lighthouse. 'Lighthouse' becomes link text to additional documentation. */
   lsPerformanceCategoryDescription: '[Lighthouse](https://developers.google.com/web/tools/lighthouse/) analysis of the current page on an emulated mobile network. Values are estimated and may vary.',
   /** Title of the lab data section of the Performance category. Within this section are various speed metrics which quantify the pageload performance into values presented in seconds and milliseconds. "Lab" is an abbreviated form of "laboratory", and refers to the fact that the data is from a controlled test of a website, not measurements from real users visiting that site.  */
