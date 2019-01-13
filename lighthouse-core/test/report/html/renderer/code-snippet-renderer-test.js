@@ -57,7 +57,6 @@ const DETAILS = {
 describe('DetailsRenderer', () => {
   let dom;
 
-
   beforeAll(() => {
     global.Util = Util;
     const {document} = new jsdom.JSDOM(TEMPLATE_FILE).window;
@@ -72,17 +71,17 @@ describe('DetailsRenderer', () => {
   it('Renders code snippet', () => {
     const el = CodeSnippetRenderer.render(dom, dom.document(), DETAILS, {});
 
-    const renderedLines = Array.from(el.querySelectorAll('.lh-code-snippet__line'));
-    const codeLines = renderedLines.filter(l => l.classList.contains('lh-code-snippet__line--code'));
-    const collapsedCodeLines = codeLines.filter(l => l.classList.contains('lh-code-snippet__show-if-expanded'));
-    const highlightLines = renderedLines.filter(l => l.classList.contains('lh-code-snippet__line--highlight-message'));
+    const renderedLines = el.querySelectorAll('.lh-code-snippet__line');
+    const codeLines = el.querySelectorAll('.lh-code-snippet__line--code');
+    const collapsedCodeLines = el.querySelectorAll('.lh-code-snippet__line--code.lh-code-snippet__show-if-expanded');
+    const highlightLines = el.querySelectorAll('.lh-code-snippet__line--highlight-message');
 
     // 4 Lines are visible, 2 are collapsed
     assert.equal(collapsedCodeLines.length, 2);
     // All available lines are shown on expansion
     assert.equal(codeLines.length, DETAILS.lines.length);
     // 100 lines in total, so lines towards the end won't be shown
-    const lastLine = renderedLines.slice(-1)[0];
+    const lastLine = renderedLines[renderedLines.length - 1];
     assert.equal(lastLine.textContent, '…');
 
     // Shows highlight message for second line
