@@ -769,7 +769,11 @@ limitations under the License.
       </div>
     </template>
     <template id="tmpl-lh-code-snippet__line">
-        <div class="lh-code-snippet__line"></div>
+        <div class="lh-code-snippet__line"><!--
+          Comments to avoid whitespace showing in UI
+            --><div class="lh-code-snippet__line-number"></div><!--
+            --><code></code><!--
+        --></div>
       </template>
    
   </div>

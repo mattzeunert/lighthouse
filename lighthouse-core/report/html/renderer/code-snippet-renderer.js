@@ -47,16 +47,11 @@ class CodeSnippetRenderer {
     // todo: use classlist... instead of extraclasses param just use an options object
     codeLine.className += ' ' + extraClasses;
 
-    // todo: move to class
-    const lineNumber = dom.createElement('div', 'lh-code-snippet__line-number');
-
+    const lineNumber = dom.find('.lh-code-snippet__line-number', codeLine);
     lineNumber.textContent = line.number;
 
-    const code = dom.createElement('code');
+    const code = dom.find('.lh-code-snippet__line code', codeLine);
     code.textContent = line.content + (line.truncated ? '…' : '');
-
-    codeLine.appendChild(lineNumber);
-    codeLine.appendChild(code);
 
     return codeLine;
   }
