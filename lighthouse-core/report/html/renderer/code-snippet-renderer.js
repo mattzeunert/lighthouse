@@ -47,18 +47,18 @@ class CodeSnippetRenderer {
    * @param {DOM} dom
    * @param {DocumentFragment} templateContext
    * @param {{content: string, number: number | string,truncated?: boolean}} line
-   * @param {{highlight?: boolean, highlightMessage?: boolean}} options
+   * @param {{highlight?: boolean, highlightMessage?: boolean}} classOptions
    */
-  static renderLine(dom, templateContext, line, options = {}) {
+  static renderLine(dom, templateContext, line, classOptions = {}) {
     const {content, number, truncated} = line;
 
     const template = dom.cloneTemplate('#tmpl-lh-code-snippet__line', templateContext);
     const codeLine = dom.find('.lh-code-snippet__line', template);
 
-    if (options.highlight) {
+    if (classOptions.highlight) {
       codeLine.classList.add('lh-code-snippet__line--highlighted');
     }
-    if (options.highlightMessage) {
+    if (classOptions.highlightMessage) {
       codeLine.classList.add('lh-code-snippet__line--highlight-message');
     }
 
