@@ -34,7 +34,7 @@ const UIStrings = {
   /** Label of a table column that identifies a tap target (like a link or button) that overlaps with another tap target. */
   overlappingTargetHeader: 'Overlapping Target',
   /** Explanatory message stating that there was a failure in an audit caused by the viewport meta tag not being optimized for mobile screens, which caused tap targets like buttons and links to be too small to tap on. */
-  // eslint-disable-next-line
+  /* eslint-disable max-len */
   explanationViewportMetaNotOptimized: 'Tap targets are too small because there\'s no viewport meta tag optimized for mobile screens',
   /** Explanatory message stating that a certain percentage of the tap targets (like buttons and links) on the page are of an appropriately large size. */
   displayValue: '{decimalProportion, number, percent} appropriately sized tap targets',
