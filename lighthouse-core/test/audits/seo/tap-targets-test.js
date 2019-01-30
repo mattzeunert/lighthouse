@@ -202,6 +202,9 @@ describe('SEO: Tap targets audit', () => {
   it('fails if no meta viewport tag is provided', () => {
     const auditResult = auditTapTargets([], []);
     assert.equal(auditResult.rawValue, false);
-    assert.ok(auditResult.explanation.includes('no viewport meta tag'));
+
+    expect(auditResult.explanation).toBeDisplayString(
+      /* eslint-disable max-len */
+      'Tap targets are too small because there\'s no viewport meta tag optimized for mobile screens');
   });
 });
