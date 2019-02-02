@@ -113,6 +113,7 @@ const defaultConfig = {
       'seo/hreflang',
       'seo/embedded-content',
       'seo/canonical',
+      'seo/json-ld',
       'seo/robots-txt',
       'seo/tap-targets',
     ],
@@ -257,6 +258,7 @@ const defaultConfig = {
     'seo/hreflang',
     'seo/plugins',
     'seo/canonical',
+    'seo/structured-data-automatic',
     'seo/manual/mobile-friendly',
     'seo/manual/structured-data',
   ],
@@ -466,6 +468,7 @@ const defaultConfig = {
         {id: 'font-size', weight: 1, group: 'seo-mobile'},
         {id: 'plugins', weight: 1, group: 'seo-content'},
         {id: 'tap-targets', weight: 1, group: 'seo-mobile'},
+        {id: 'structured-data-automatic', weight: 1, group: 'seo-content'},
         // Manual audits
         {id: 'mobile-friendly', weight: 0},
         {id: 'structured-data', weight: 0},
