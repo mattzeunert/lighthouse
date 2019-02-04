@@ -116,6 +116,7 @@ describe('SEO: Tap targets audit', () => {
   it('passes when there are no tap targets', () => {
     const auditResult = auditTapTargets([]);
     assert.equal(auditResult.rawValue, true);
+    expect(auditResult.displayValue).toBeDisplayString('100% appropriately sized tap targets');
     assert.equal(auditResult.score, 1);
   });
 
