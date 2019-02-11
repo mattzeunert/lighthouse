@@ -44,14 +44,15 @@ function generateLinesArray(availableLineRanges) {
 function makeSnippetDetails({
   lineMessages,
   generalMessages,
-  availableLineRanges,
+  lines = null,
+  availableLineRanges = null,
   title = 'Snippet',
   lineCount,
 }) {
   return {
     type: 'snippet',
     title: title,
-    lines: generateLinesArray(availableLineRanges),
+    lines: lines || generateLinesArray(availableLineRanges),
     lineMessages,
     generalMessages,
     lineCount,
@@ -245,7 +246,7 @@ describe('DetailsRenderer', () => {
     assert.ok(el.classList.contains('lh-snippet--expanded'));
   });
 
-  it.only('Does not render toggle button if all available lines are already visible', () => {
+  it('Does not render toggle button if all available lines are already visible', () => {
     const details = makeSnippetDetails({
       title: 'Test Snippet',
       lineMessages: [],
@@ -256,5 +257,25 @@ describe('DetailsRenderer', () => {
     const {toggleExpandButton} = renderSnippet(details);
 
     assert.ok(!toggleExpandButton);
+  });
+
+  it('Adds ... to lines that have been truncated', () => {
+    const details = makeSnippetDetails({
+      lineMessages: [],
+      generalMessages: [],
+      lines: [{
+        content: 'abc',
+        lineNumber: 1,
+        truncated: true,
+      }, {
+        content: 'xyz',
+        lineNumber: 2,
+      }],
+      lineCount: 2,
+    });
+    const {contentLines} = renderSnippet(details);
+
+    assert.ok(contentLines[0].textContent.includes('…'));
+    assert.ok(!contentLines[1].textContent.includes('…'));
   });
 });
