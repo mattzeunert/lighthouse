@@ -65,6 +65,11 @@ declare global {
         diagnostic?: Diagnostic;
       }
 
+      export interface List {
+        type: 'list';
+        items: Snippet[]
+      }
+
       /**
        * A details type that is not rendered in the final report; usually used
        * for including diagnostic information in the LHR. Can contain anything.
@@ -163,6 +168,27 @@ declare global {
       export interface UrlValue {
         type: 'url';
         value: string;
+      }
+
+      export interface Snippet {
+        type: "snippet",
+        lines: {
+          content: string
+          /** Line number, starting from 1 */
+          lineNumber: number;
+          truncated?: boolean
+        }[],
+        title: string,
+        lineMessages: {
+          /** Line number, starting from 1 */
+          lineNumber: number,
+          message: string
+        }[];
+        generalMessages: {
+          message: string
+        }[];
+        lineCount: number,
+        node?: NodeValue,
       }
     }
   }

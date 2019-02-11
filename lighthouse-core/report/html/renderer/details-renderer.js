@@ -16,7 +16,7 @@
  */
 'use strict';
 
-/* globals self CriticalRequestChainRenderer Util URL */
+/* globals self CriticalRequestChainRenderer SnippetRenderer Util URL */
 
 /** @typedef {import('./dom.js')} DOM */
 /** @typedef {LH.Audit.Details.Opportunity} OpportunityDetails */
@@ -43,7 +43,7 @@ class DetailsRenderer {
   }
 
   /**
-   * @param {DetailsJSON|OpportunityDetails} details
+   * @param {DetailsJSON|OpportunityDetails|LH.Audit.Details.Snippet} details
    * @return {Element|null}
    */
   render(details) {
@@ -68,6 +68,15 @@ class DetailsRenderer {
       case 'table':
         // @ts-ignore - TODO(bckenny): Fix type hierarchy
         return this._renderTable(/** @type {TableDetailsJSON} */ (details));
+      case 'list':
+        return this._renderList(
+          // @ts-ignore
+          /** @type {LH.Audit.Details.List} */ (details)
+        );
+      case 'snippet':
+        return SnippetRenderer.render(this._dom, this._templateContext,
+          // @ts-ignore
+          /** @type {LH.Audit.Details.Snippet} */ (details), this);
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
       case 'node':
@@ -208,6 +217,21 @@ class DetailsRenderer {
     element.title = strValue;
     element.alt = '';
     return element;
+  }
+
+  /**
+   * @param {LH.Audit.Details.List} details
+   * @returns {Element}
+   */
+  _renderList(details) {
+    const listContainer = this._dom.createElement('div', 'lh-list');
+
+    details.items.forEach(item => {
+      // @ts-ignore TODO(bckenny): this can never be null
+      listContainer.appendChild(this.render(item));
+    });
+
+    return listContainer;
   }
 
   /**
@@ -453,6 +477,12 @@ if (typeof module !== 'undefined' && module.exports) {
       items: Array<DetailsJSON>,
       headings: Array<TableHeaderJSON>
   }} TableDetailsJSON
+ */
+
+/** @typedef {{
+      type: string,
+      items: Array<DetailsJSON>
+  }} ListDetailsJSON
  */
 
 /** @typedef {{
