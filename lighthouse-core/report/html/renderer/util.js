@@ -470,11 +470,9 @@ class Util {
     // the previous line is.
     lineMessages = lineMessages.sort((a, b) => (a.lineNumber || 0) - (b.lineNumber || 0));
     lineMessages.forEach(({lineNumber}) => {
-      if (!lineNumber) {
-        return;
-      }
       let firstSurroundingLineNumber = lineNumber - surroundingLineCount;
       let lastSurroundingLineNumber = lineNumber + surroundingLineCount;
+
       while (firstSurroundingLineNumber < 1) {
         // make sure we still show (surroundingLineCount * 2 + 1) lines in total
         firstSurroundingLineNumber++;

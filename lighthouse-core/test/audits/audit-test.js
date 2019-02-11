@@ -195,4 +195,15 @@ describe('Audit', () => {
       });
     });
   });
+
+  describe('makeListDetails', () => {
+    it('Generates list details', () => {
+      const details = Audit.makeListDetails([1, 2, 3]);
+
+      assert.deepEqual(details, {
+        type: 'list',
+        items: [1, 2, 3],
+      });
+    });
+  });
 });
