@@ -216,10 +216,11 @@ class SnippetRenderer {
     const template = dom.cloneTemplate('#tmpl-lh-snippet__content', tmpl);
     const snippetEl = dom.find('.lh-snippet__snippet-inner', template);
 
+    // First render messages that don't belong to specific lines
     details.generalMessages.forEach(m =>
       snippetEl.append(SnippetRenderer.renderMessage(dom, tmpl, m))
     );
-
+    // Then render the lines and their messages, as well as placeholders where lines are omitted
     snippetEl.append(SnippetRenderer.renderSnippetLines(dom, tmpl, details));
 
     return template;
