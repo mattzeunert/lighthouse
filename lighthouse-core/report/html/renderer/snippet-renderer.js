@@ -259,8 +259,8 @@ class SnippetRenderer {
       if (showPreviousLineWhenCollapsed && !showLineWhenCollapsed) {
         hasPendingOmittedLinesPlaceholderForCollapsedState = true;
       }
-      // If we are back to lines being visible in the collapsed state then
-      // render the placeholder if it hasn't alerady been rendered
+      // If we are back to lines being visible in the collapsed and the placeholder
+      // hasn't been rendered yet then render it now
       if (
         showLineWhenCollapsed &&
         hasPendingOmittedLinesPlaceholderForCollapsedState
@@ -285,11 +285,11 @@ class SnippetRenderer {
       ) {
         // In the collapsed state we don't show omitted lines placeholders around
         // the edges of the snippet
-        const renderedAllLinesVisibleInCollapsedState = !linesWhenCollapsed.some(
+        const hasRenderedAllLinesVisibleWhenCollapsed = !linesWhenCollapsed.some(
           l => l.lineNumber > lineNumber
         );
         const onlyShowWhenExpanded =
-          renderedAllLinesVisibleInCollapsedState || lineNumber === 1;
+          hasRenderedAllLinesVisibleWhenCollapsed || lineNumber === 1;
         lineContainer.append(
           SnippetRenderer.renderOmittedLinesPlaceholder(
             dom,
@@ -307,7 +307,7 @@ class SnippetRenderer {
         continue;
       }
 
-      // Now render the line and any highlights
+      // Now render the line and any messages
       const messages = getMessagesForLineNumber(lineMessages, lineNumber);
       const highlightLine = messages.length > 0 || hasOnlyGeneralMessages;
       const contentLineDetails = Object.assign({}, line, {

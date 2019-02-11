@@ -19,16 +19,15 @@ const TEMPLATE_FILE = fs.readFileSync(
   'utf8'
 );
 
-/* Generates an snippet lines array like this:
-  availableLineRanges: [{from: 1, to: 4}]
-  Return value: [
+/* Generates a snippet lines array like this (for a single range from 1 to 4):
+  [
     {number: 1, content 'L1'},
     {number: 2, content 'L2'},
     {number: 3, content 'L3'},
     {number: 4, content 'L4'}
   ];
 */
-function generateLinesArray(availableLineRanges) {
+function generateAvailableLinesArray(availableLineRanges) {
   const lines = [];
   availableLineRanges.forEach(({from, to}) => {
     for (let i = from; i <= to; i++) {
@@ -45,14 +44,13 @@ function makeSnippetDetails({
   lineMessages,
   generalMessages,
   lines = null,
-  availableLineRanges = null,
   title = 'Snippet',
   lineCount,
 }) {
   return {
     type: 'snippet',
     title: title,
-    lines: lines || generateLinesArray(availableLineRanges),
+    lines: lines,
     lineMessages,
     generalMessages,
     lineCount,
@@ -106,7 +104,7 @@ describe('DetailsRenderer', () => {
         },
       ],
       generalMessages: [],
-      availableLineRanges: [{from: 1, to: 6}],
+      lines: generateAvailableLinesArray([{from: 1, to: 6}]),
       lineCount: 100,
     });
     const {contentLines, messageLines, collapsedContentLines} = renderSnippet(details);
@@ -128,7 +126,7 @@ describe('DetailsRenderer', () => {
     const details = makeSnippetDetails({
       lineMessages: [],
       generalMessages: [],
-      availableLineRanges: [{from: 1, to: 6}],
+      lines: generateAvailableLinesArray([{from: 1, to: 6}]),
       lineCount: 100,
     });
     const {
@@ -156,7 +154,7 @@ describe('DetailsRenderer', () => {
           message: 'General error',
         },
       ],
-      availableLineRanges: [{from: 1, to: 6}],
+      lines: generateAvailableLinesArray([{from: 1, to: 6}]),
       lineCount: 100,
     });
     const {uncollapsedContentLines, messageLines, highlightedContentLines} = renderSnippet(details);
@@ -185,7 +183,7 @@ describe('DetailsRenderer', () => {
         },
       ],
       generalMessages: [],
-      availableLineRanges: [
+      lines: generateAvailableLinesArray([
         {
           from: 30,
           to: 50,
@@ -194,7 +192,7 @@ describe('DetailsRenderer', () => {
           from: 60,
           to: 80,
         },
-      ],
+      ]),
       lineCount: 100,
     });
     const {
@@ -229,7 +227,7 @@ describe('DetailsRenderer', () => {
           message: 'General error',
         },
       ],
-      availableLineRanges: [{from: 1, to: 6}],
+      lines: generateAvailableLinesArray([{from: 1, to: 6}]),
       lineCount: 100,
     });
     const {messageLines} = renderSnippet(details);
@@ -242,7 +240,7 @@ describe('DetailsRenderer', () => {
       title: 'Test Snippet',
       lineMessages: [],
       generalMessages: [],
-      availableLineRanges: [{from: 1, to: 6}],
+      lines: generateAvailableLinesArray([{from: 1, to: 6}]),
       lineCount: 100,
     });
     const {title, toggleExpandButton, el} = renderSnippet(details);
@@ -263,7 +261,7 @@ describe('DetailsRenderer', () => {
       lineMessages: [],
       generalMessages: [],
       // We show all 5 lines by default, so there's nothing to expand
-      availableLineRanges: [{from: 1, to: 5}],
+      lines: generateAvailableLinesArray([{from: 1, to: 5}]),
     });
     const {toggleExpandButton} = renderSnippet(details);
 

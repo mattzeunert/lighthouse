@@ -154,11 +154,12 @@ describe('Audit', () => {
         lineMessages: [
           // without the special logic for small gaps lines 71-73 would be missing
           {
+            // putting last message first to make sure makeSnippetDetails doesn't depend on order
             lineNumber: 84,
-            message: 'Highlight 2',
+            message: 'Message 2',
           }, {
             lineNumber: 60,
-            message: 'Highlight 1',
+            message: 'Message 1',
           }],
         generalMessages: [],
         maxLinesAroundMessage,
