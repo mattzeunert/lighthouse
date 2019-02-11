@@ -19,7 +19,7 @@ const TEMPLATE_FILE = fs.readFileSync(
   'utf8'
 );
 
-function makeDetails(lineMessages, generalMessages = [], lineRanges = [{from: 1, to: 6}]) {
+function generateLinesArray(lineRanges) {
   const lines = [];
   lineRanges.forEach(({from, to}) => {
     for (let i = from; i <= to; i++) {
@@ -29,11 +29,13 @@ function makeDetails(lineMessages, generalMessages = [], lineRanges = [{from: 1,
       });
     }
   });
+  return lines;
+}
 
-
+function makeSnippetDetails(lineMessages, generalMessages, lineRanges) {
   return {
     type: 'snippet',
-    lines,
+    lines: generateLinesArray(lineRanges),
     lineMessages,
     generalMessages,
     lineCount: 100,
@@ -53,8 +55,8 @@ describe('DetailsRenderer', () => {
     global.Util = undefined;
   });
 
-  function renderSnippet(lineMessages, generalMessages, lineRanges = undefined) {
-    const details = makeDetails(lineMessages, generalMessages, lineRanges);
+  function renderSnippet({lineMessages, generalMessages, lineRanges}) {
+    const details = makeSnippetDetails(lineMessages, generalMessages, lineRanges);
     const el = SnippetRenderer.render(dom, dom.document(), details, {});
 
     return {
@@ -75,13 +77,17 @@ describe('DetailsRenderer', () => {
     };
   }
 
-  it('Renders snippet with message at the very top', () => {
-    const {contentLines, messageLines, collapsedContentLines} = renderSnippet([
-      {
-        lineNumber: 1,
-        message: 'Error',
-      },
-    ]);
+  it('Renders snippet with a message at the very top', () => {
+    const {contentLines, messageLines, collapsedContentLines} = renderSnippet({
+      lineMessages: [
+        {
+          lineNumber: 1,
+          message: 'Error',
+        },
+      ],
+      generalMessages: [],
+      lineRanges: [{from: 1, to: 6}],
+    });
 
     // 5 lines are visible, 1 is collapsed
     assert.equal(collapsedContentLines.length, 1);
@@ -101,7 +107,11 @@ describe('DetailsRenderer', () => {
       uncollapsedContentLines,
       omittedLinesIndicatorsWhenExpanded,
       omittedLinesIndicatorsWhenCollapsed,
-    } = renderSnippet([]);
+    } = renderSnippet({
+      lineMessages: [],
+      generalMessages: [],
+      lineRanges: [{from: 1, to: 6}],
+    });
     const lastUncollapsedLine = uncollapsedContentLines[uncollapsedContentLines.length - 1];
 
     // Shows first 5 visible lines
@@ -112,13 +122,19 @@ describe('DetailsRenderer', () => {
   });
 
   it('Renders first few lines if there are no messages for specific lines', () => {
-    const {uncollapsedContentLines} = renderSnippet([
-      {
-        lineNumber: null,
-        message: 'General error',
-      },
-    ]);
+    const {uncollapsedContentLines, messageLines} = renderSnippet({
+      lineMessages: [],
+      generalMessages: [
+        {
+          message: 'General error',
+        },
+      ],
+      lineRanges: [{from: 1, to: 6}],
+    });
     const lastUncollapsedLine = uncollapsedContentLines[uncollapsedContentLines.length - 1];
+
+    // Shows message
+    assert.equal(messageLines.length, 1);
 
     // Shows first 5 visible lines
     assert.equal(lastUncollapsedLine.textContent.replace(/\s/g, ''), '5L5');
@@ -129,8 +145,8 @@ describe('DetailsRenderer', () => {
       collapsedContentLines,
       omittedLinesIndicatorsWhenCollapsed,
       omittedLinesIndicatorsWhenExpanded,
-    } = renderSnippet(
-      [
+    } = renderSnippet({
+      lineMessages: [
         {
           lineNumber: 40,
           message: 'Error 1',
@@ -140,8 +156,8 @@ describe('DetailsRenderer', () => {
           message: 'Error 2',
         },
       ],
-      [],
-      [
+      generalMessages: [],
+      lineRanges: [
         {
           from: 30,
           to: 50,
@@ -150,8 +166,8 @@ describe('DetailsRenderer', () => {
           from: 60,
           to: 80,
         },
-      ]
-    );
+      ],
+    });
 
     // first available line is collapsed
     assert.equal(collapsedContentLines[0].textContent.replace(/\s/g, ''), '30L30');
@@ -163,19 +179,20 @@ describe('DetailsRenderer', () => {
   });
 
   it('Can render both line-specific and non line-specific messages in one snippet', () => {
-    const {messageLines} = renderSnippet(
-      [
+    const {messageLines} = renderSnippet({
+      lineMessages: [
         {
           lineNumber: 5,
           message: 'Error on line',
         },
       ],
-      [
+      generalMessages: [
         {
           message: 'General error',
         },
-      ]
-    );
+      ],
+      lineRanges: [{from: 1, to: 6}],
+    });
 
     assert.equal(messageLines.length, 2);
   });
