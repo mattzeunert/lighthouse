@@ -80,6 +80,12 @@ function getLinesWhenCollapsed(details) {
   );
 }
 
+/**
+ * Render snippet of text with line numbers and annotations.
+ * By default we only show a few lines around each annotation and the user
+ * can click "Expand snippet" to show more.
+ * Content lines with annotations are highlighted.
+ */
 class SnippetRenderer {
   /**
    * @param {DOM} dom

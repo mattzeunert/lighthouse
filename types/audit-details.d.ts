@@ -170,25 +170,36 @@ declare global {
         value: string;
       }
 
+      /**
+       * Snippet of text with line numbers and annotations.
+       */
       export interface Snippet {
         type: "snippet",
+        title: string,
+        /** Node where the content of this snippet came from. */
+        node?: NodeValue,
+        /**
+         * The lines that should be rendered. For long snippets we only include important lines
+         * in the audit result.
+         */
         lines: {
           content: string
-          /** Line number, starting from 1 */
+          /** Line number, starting from 1. */
           lineNumber: number;
           truncated?: boolean
         }[],
-        title: string,
+        /** The total number of lines in the snippet, equal to lines.length for short snippets. */
+        lineCount: number,
+        /** Messages that provide information about a specific lines. */
         lineMessages: {
-          /** Line number, starting from 1 */
+          /** Line number, starting from 1. */
           lineNumber: number,
           message: string
         }[];
+        /** Messages that provide information about the snippet in general. */
         generalMessages: {
           message: string
         }[];
-        lineCount: number,
-        node?: NodeValue,
       }
     }
   }
