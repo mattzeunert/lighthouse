@@ -9,10 +9,9 @@
 
 /** @typedef {import('./details-renderer')} DetailsRenderer */
 
-const SURROUNDING_LINES_WHEN_COLLAPSED = 2;
-
 /** @enum {number} */
 const LineVisibility = {
+  /** Show regardless of whether the snippet is collapsed or expanded */
   ALWAYS: 0,
   WHEN_COLLAPSED: 1,
   WHEN_EXPANDED: 2,
@@ -20,13 +19,13 @@ const LineVisibility = {
 
 /** @enum {number} */
 const LineContentType = {
-  /** A line of code */
-  CODE_NORMAL: 0,
-  /** A line of code that's emphasized by setting the CSS background color */
-  CODE_HIGHLIGHTED: 1,
+  /** A line of content */
+  CONTENT_NORMAL: 0,
+  /** A line of content that's emphasized by setting the CSS background color */
+  CONTENT_HIGHLIGHTED: 1,
   /** Use when some lines are hidden, shows the "..." placeholder */
   PLACEHOLDER: 2,
-  /** A message about a line of code or the snippet in general */
+  /** A message about a line of content or the snippet in general */
   MESSAGE: 3,
 };
 
@@ -39,8 +38,8 @@ const LineContentType = {
 }} LineDetails */
 
 const classNameByContentType = {
-  [LineContentType.CODE_NORMAL]: ['lh-snippet__line--content'],
-  [LineContentType.CODE_HIGHLIGHTED]: [
+  [LineContentType.CONTENT_NORMAL]: ['lh-snippet__line--content'],
+  [LineContentType.CONTENT_HIGHLIGHTED]: [
     'lh-snippet__line--content',
     'lh-snippet__line--highlighted',
   ],
@@ -73,10 +72,11 @@ function getMessagesForLineNumber(messages, lineNumber) {
  * @returns {LH.Audit.Details.Snippet['lines']}
  */
 function getLinesWhenCollapsed(details) {
+  const SURROUNDING_LINES_TO_SHOW_WHEN_COLLAPSED = 2;
   return Util.filterRelevantLines(
     details.lines,
     details.lineMessages,
-    SURROUNDING_LINES_WHEN_COLLAPSED
+    SURROUNDING_LINES_TO_SHOW_WHEN_COLLAPSED
   );
 }
 
@@ -97,7 +97,7 @@ class SnippetRenderer {
    */
   static renderHeader(dom, tmpl, details, detailsRenderer, toggleExpandedFn) {
     const linesWhenCollapsed = getLinesWhenCollapsed(details);
-    const showAll = linesWhenCollapsed.length === details.lines.length;
+    const canExpand = linesWhenCollapsed.length < details.lines.length;
 
     const header = dom.cloneTemplate('#tmpl-lh-snippet__header', tmpl);
     dom.find('.lh-snippet__title', header).textContent = details.title;
@@ -116,15 +116,17 @@ class SnippetRenderer {
     ).textContent = snippetExpandButtonLabel;
 
     const toggleExpandButton = dom.find('.lh-snippet__toggle-expand', header);
-    // If we're already showing all the lines of the snippet, we don't need an expand/collapse
-    // button and can remove it from the DOM.
+    // If we're already showing all the available lines of the snippet, we don't need an
+    // expand/collapse button and can remove it from the DOM.
     // If we leave the button in though, wire up the click listener to toggle visibility!
-    if (showAll) {
+    if (!canExpand) {
       toggleExpandButton.remove();
     } else {
       toggleExpandButton.addEventListener('click', () => toggleExpandedFn());
     }
 
+    // We only show the source node of the snippet in DevTools because then the user can
+    // access the full element detail. Just being able to see the outer HTML isn't very useful.
     if (details.node && dom.isDevTools()) {
       const nodeContainer = dom.find('.lh-snippet__node', header);
       nodeContainer.appendChild(detailsRenderer.renderNode(details.node));
@@ -134,7 +136,7 @@ class SnippetRenderer {
   }
 
   /**
-   * Renders a line of DOM content (code, message, or empty line)
+   * Renders a line of DOM content (text content, message, or empty line)
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LineDetails} lineDetails
@@ -146,8 +148,8 @@ class SnippetRenderer {
       {content, lineNumber, truncated, contentType, visibility}
   ) {
     const clonedTemplate = dom.cloneTemplate('#tmpl-lh-snippet__line', tmpl);
-    const codeLine = dom.find('.lh-snippet__line', clonedTemplate);
-    const {classList} = codeLine;
+    const contentLine = dom.find('.lh-snippet__line', clonedTemplate);
+    const {classList} = contentLine;
 
     classNameByContentType[contentType].forEach(typeClass =>
       classList.add(typeClass)
@@ -160,7 +162,7 @@ class SnippetRenderer {
     }
 
     const lineContent = content + (truncated ? '…' : '');
-    const lineContentEl = dom.find('.lh-snippet__line code', codeLine);
+    const lineContentEl = dom.find('.lh-snippet__line code', contentLine);
     if (contentType === LineContentType.MESSAGE) {
       lineContentEl.appendChild(dom.convertMarkdownLinkSnippets(lineContent));
     } else {
@@ -169,10 +171,10 @@ class SnippetRenderer {
 
     dom.find(
       '.lh-snippet__line-number',
-      codeLine
+      contentLine
     ).textContent = lineNumber.toString();
 
-    return codeLine;
+    return contentLine;
   }
 
   /**
@@ -308,16 +310,16 @@ class SnippetRenderer {
       // Now render the line and any highlights
       const messages = getMessagesForLineNumber(lineMessages, lineNumber);
       const highlightLine = messages.length > 0 || hasOnlyGeneralMessages;
-      const codeLineDetails = Object.assign({}, line, {
+      const contentLineDetails = Object.assign({}, line, {
         contentType: highlightLine
-          ? LineContentType.CODE_HIGHLIGHTED
-          : LineContentType.CODE_NORMAL,
+          ? LineContentType.CONTENT_HIGHLIGHTED
+          : LineContentType.CONTENT_NORMAL,
         visibility: lineWhenCollapsed
           ? LineVisibility.ALWAYS
           : LineVisibility.WHEN_EXPANDED,
       });
       lineContainer.append(
-        SnippetRenderer.renderSnippetLine(dom, tmpl, codeLineDetails)
+        SnippetRenderer.renderSnippetLine(dom, tmpl, contentLineDetails)
       );
 
       messages.forEach(message => {

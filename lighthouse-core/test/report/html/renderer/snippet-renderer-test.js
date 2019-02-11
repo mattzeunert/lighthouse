@@ -96,7 +96,7 @@ describe('DetailsRenderer', () => {
     };
   }
 
-  it.only('Renders snippet with a message at the very top', () => {
+  it('Renders snippet with a message at the very top', () => {
     const details = makeSnippetDetails({
       lineMessages: [
         {
