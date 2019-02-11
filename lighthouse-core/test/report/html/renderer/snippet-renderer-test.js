@@ -78,6 +78,7 @@ describe('DetailsRenderer', () => {
     return {
       el,
       contentLines: el.querySelectorAll('.lh-snippet__line--content'),
+      highlightedContentLines: el.querySelectorAll('.lh-snippet__line--content-highlighted'),
       collapsedContentLines: el.querySelectorAll(
         '.lh-snippet__line--content.lh-snippet__show-if-expanded'
       ),
@@ -134,6 +135,7 @@ describe('DetailsRenderer', () => {
       uncollapsedContentLines,
       omittedLinesIndicatorsWhenExpanded,
       omittedLinesIndicatorsWhenCollapsed,
+      highlightedContentLines,
     } = renderSnippet(details);
     const lastUncollapsedLine = uncollapsedContentLines[uncollapsedContentLines.length - 1];
 
@@ -142,6 +144,8 @@ describe('DetailsRenderer', () => {
     // "..." after the available lines, but only shows in expanded state
     assert.equal(omittedLinesIndicatorsWhenExpanded.length, 1);
     assert.equal(omittedLinesIndicatorsWhenCollapsed.length, 0);
+    // nothing is highlighted
+    assert.equal(highlightedContentLines.length, 0);
   });
 
   it('Renders first few lines if there are no messages for specific lines', () => {
@@ -155,7 +159,7 @@ describe('DetailsRenderer', () => {
       availableLineRanges: [{from: 1, to: 6}],
       lineCount: 100,
     });
-    const {uncollapsedContentLines, messageLines} = renderSnippet(details);
+    const {uncollapsedContentLines, messageLines, highlightedContentLines} = renderSnippet(details);
     const lastUncollapsedLine = uncollapsedContentLines[uncollapsedContentLines.length - 1];
 
     // Shows message
@@ -163,6 +167,9 @@ describe('DetailsRenderer', () => {
 
     // Shows first 5 visible lines
     assert.equal(lastUncollapsedLine.textContent.replace(/\s/g, ''), '5L5');
+
+    // highlight everything (i.e. the 6 lines that are rendered)
+    assert.equal(highlightedContentLines.length, 6);
   });
 
   it('Renders snippet with multiple messages surrounded by other lines', () => {
@@ -194,6 +201,7 @@ describe('DetailsRenderer', () => {
       collapsedContentLines,
       omittedLinesIndicatorsWhenCollapsed,
       omittedLinesIndicatorsWhenExpanded,
+      highlightedContentLines,
     } = renderSnippet(details);
 
     // first available line is collapsed
@@ -203,6 +211,9 @@ describe('DetailsRenderer', () => {
     assert.equal(omittedLinesIndicatorsWhenCollapsed.length, 1);
     // puts omitted lines placeholder between the two messages and around the whole snippet
     assert.equal(omittedLinesIndicatorsWhenExpanded.length, 3);
+
+    // both lines with messages are highlighted
+    assert.equal(highlightedContentLines.length, 2);
   });
 
   it('Can render both line-specific and non line-specific messages in one snippet', () => {
@@ -263,14 +274,17 @@ describe('DetailsRenderer', () => {
     const details = makeSnippetDetails({
       lineMessages: [],
       generalMessages: [],
-      lines: [{
-        content: 'abc',
-        lineNumber: 1,
-        truncated: true,
-      }, {
-        content: 'xyz',
-        lineNumber: 2,
-      }],
+      lines: [
+        {
+          content: 'abc',
+          lineNumber: 1,
+          truncated: true,
+        },
+        {
+          content: 'xyz',
+          lineNumber: 2,
+        },
+      ],
       lineCount: 2,
     });
     const {contentLines} = renderSnippet(details);

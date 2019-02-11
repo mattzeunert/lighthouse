@@ -41,7 +41,7 @@ const classNameByContentType = {
   [LineContentType.CONTENT_NORMAL]: ['lh-snippet__line--content'],
   [LineContentType.CONTENT_HIGHLIGHTED]: [
     'lh-snippet__line--content',
-    'lh-snippet__line--highlighted',
+    'lh-snippet__line--content-highlighted',
   ],
   [LineContentType.PLACEHOLDER]: ['lh-snippet__line--placeholder'],
   [LineContentType.MESSAGE]: ['lh-snippet__line--message'],
