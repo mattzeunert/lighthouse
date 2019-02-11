@@ -138,6 +138,7 @@ describe('DetailsRenderer', () => {
         items: [snippet, snippet],
       });
 
+      assert.equal(el.localName, 'div');
       assert.ok(el.classList.contains('lh-list'), 'has list class');
       assert.ok(el.children.length, 2, 'renders all items');
       assert.ok(el.children[0].textContent.includes('Some snippet'), 'renders item content');
