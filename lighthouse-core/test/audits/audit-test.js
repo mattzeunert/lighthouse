@@ -134,7 +134,7 @@ describe('Audit', () => {
       return Array(lineCount + 1).join('-\n');
     }
 
-    it('Limits the number of lines if there are no line-specific highlights', () => {
+    it('Limits the number of lines if there are no line messages', () => {
       const details = Audit.makeSnippetDetails({
         content: makeLines(100),
         title: 'Title',
@@ -169,7 +169,7 @@ describe('Audit', () => {
       assert.equal(details.lines.length, normalExpectedLineNumber + 3);
     });
 
-    it('Limits the number of lines around highlights', () => {
+    it('Limits the number of lines around line messages', () => {
       const content = makeLines(99) + 'A\n' + makeLines(99) + '\nB';
       const allLines = content.split('\n');
       const details = Audit.makeSnippetDetails({
@@ -186,7 +186,7 @@ describe('Audit', () => {
         maxLinesAroundMessage,
       });
 
-      // 2 highlighted lines and their surounding lines, second highlight only has preceding lines
+      // 2 line messages and their surounding lines, second line with message only has preceding lines
       const lineCount = maxLinesAroundMessage * 3 + 2;
       assert.equal(details.lines.length, lineCount);
       const lastLine = details.lines.slice(-1)[0];
