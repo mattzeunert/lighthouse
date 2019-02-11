@@ -18,7 +18,6 @@
     "clients/**/*.js",
     "build/**/*.js",
     "./types/**/*.d.ts",
-    "sd-validation/typings/*.d.ts",
   ],
   "exclude": [
     "lighthouse-core/test/**/*.js",

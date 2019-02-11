@@ -64,13 +64,7 @@ async function browserifyFile(entryPath, distPath) {
     .ignore('raven')
     .ignore('mkdirp')
     .ignore('rimraf')
-    .ignore('pako/lib/zlib/inflate.js')
-    .ignore('file')
-    .ignore('system');
-
-  // there is no way to add './doug-json-parse' to ignored packages via public API
-  // w/o browserify resolving the path into an absolute path
-  bundle._ignore.push('./doug-json-parse');
+    .ignore('pako/lib/zlib/inflate.js');
 
   // Don't include the desktop protocol connection.
   bundle.ignore(require.resolve('../lighthouse-core/gather/connections/cri.js'));
