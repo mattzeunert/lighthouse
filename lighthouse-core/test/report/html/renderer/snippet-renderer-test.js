@@ -32,13 +32,20 @@ function generateLinesArray(lineRanges) {
   return lines;
 }
 
-function makeSnippetDetails(lineMessages, generalMessages, lineRanges) {
+function makeSnippetDetails({
+  lineMessages,
+  generalMessages,
+  lineRanges,
+  title = 'Snippet',
+  lineCount,
+}) {
   return {
     type: 'snippet',
+    title: title,
     lines: generateLinesArray(lineRanges),
     lineMessages,
     generalMessages,
-    lineCount: 100,
+    lineCount,
   };
 }
 
@@ -55,11 +62,11 @@ describe('DetailsRenderer', () => {
     global.Util = undefined;
   });
 
-  function renderSnippet({lineMessages, generalMessages, lineRanges}) {
-    const details = makeSnippetDetails(lineMessages, generalMessages, lineRanges);
+  function renderSnippet(details) {
     const el = SnippetRenderer.render(dom, dom.document(), details, {});
 
     return {
+      el,
       contentLines: el.querySelectorAll('.lh-snippet__line--content'),
       collapsedContentLines: el.querySelectorAll(
         '.lh-snippet__line--content.lh-snippet__show-if-expanded'
@@ -74,11 +81,13 @@ describe('DetailsRenderer', () => {
       omittedLinesIndicatorsWhenCollapsed: el.querySelectorAll(
         '.lh-snippet__line--placeholder:not(.lh-snippet__show-if-expanded)'
       ),
+      title: el.querySelector('.lh-snippet__title'),
+      toggleExpandButton: el.querySelector('.lh-snippet__toggle-expand'),
     };
   }
 
   it('Renders snippet with a message at the very top', () => {
-    const {contentLines, messageLines, collapsedContentLines} = renderSnippet({
+    const details = makeSnippetDetails({
       lineMessages: [
         {
           lineNumber: 1,
@@ -87,7 +96,9 @@ describe('DetailsRenderer', () => {
       ],
       generalMessages: [],
       lineRanges: [{from: 1, to: 6}],
+      lineCount: 100,
     });
+    const {contentLines, messageLines, collapsedContentLines} = renderSnippet(details);
 
     // 5 lines are visible, 1 is collapsed
     assert.equal(collapsedContentLines.length, 1);
@@ -103,15 +114,17 @@ describe('DetailsRenderer', () => {
   });
 
   it('Renders first few lines if there are no messages', () => {
+    const details = makeSnippetDetails({
+      lineMessages: [],
+      generalMessages: [],
+      lineRanges: [{from: 1, to: 6}],
+      lineCount: 100,
+    });
     const {
       uncollapsedContentLines,
       omittedLinesIndicatorsWhenExpanded,
       omittedLinesIndicatorsWhenCollapsed,
-    } = renderSnippet({
-      lineMessages: [],
-      generalMessages: [],
-      lineRanges: [{from: 1, to: 6}],
-    });
+    } = renderSnippet(details);
     const lastUncollapsedLine = uncollapsedContentLines[uncollapsedContentLines.length - 1];
 
     // Shows first 5 visible lines
@@ -122,7 +135,7 @@ describe('DetailsRenderer', () => {
   });
 
   it('Renders first few lines if there are no messages for specific lines', () => {
-    const {uncollapsedContentLines, messageLines} = renderSnippet({
+    const details = makeSnippetDetails({
       lineMessages: [],
       generalMessages: [
         {
@@ -130,7 +143,9 @@ describe('DetailsRenderer', () => {
         },
       ],
       lineRanges: [{from: 1, to: 6}],
+      lineCount: 100,
     });
+    const {uncollapsedContentLines, messageLines} = renderSnippet(details);
     const lastUncollapsedLine = uncollapsedContentLines[uncollapsedContentLines.length - 1];
 
     // Shows message
@@ -141,11 +156,7 @@ describe('DetailsRenderer', () => {
   });
 
   it('Renders snippet with multiple messages surrounded by other lines', () => {
-    const {
-      collapsedContentLines,
-      omittedLinesIndicatorsWhenCollapsed,
-      omittedLinesIndicatorsWhenExpanded,
-    } = renderSnippet({
+    const details = makeSnippetDetails({
       lineMessages: [
         {
           lineNumber: 40,
@@ -167,7 +178,13 @@ describe('DetailsRenderer', () => {
           to: 80,
         },
       ],
+      lineCount: 100,
     });
+    const {
+      collapsedContentLines,
+      omittedLinesIndicatorsWhenCollapsed,
+      omittedLinesIndicatorsWhenExpanded,
+    } = renderSnippet(details);
 
     // first available line is collapsed
     assert.equal(collapsedContentLines[0].textContent.replace(/\s/g, ''), '30L30');
@@ -179,7 +196,7 @@ describe('DetailsRenderer', () => {
   });
 
   it('Can render both line-specific and non line-specific messages in one snippet', () => {
-    const {messageLines} = renderSnippet({
+    const details = makeSnippetDetails({
       lineMessages: [
         {
           lineNumber: 5,
@@ -192,8 +209,43 @@ describe('DetailsRenderer', () => {
         },
       ],
       lineRanges: [{from: 1, to: 6}],
+      lineCount: 100,
     });
+    const {messageLines} = renderSnippet(details);
 
     assert.equal(messageLines.length, 2);
+  });
+
+  it('Renders a snippet header and allows toggling the expanded state', () => {
+    const details = makeSnippetDetails({
+      title: 'Test Snippet',
+      lineMessages: [],
+      generalMessages: [],
+      lineRanges: [{from: 1, to: 6}],
+      lineCount: 100,
+    });
+    const {title, toggleExpandButton, el} = renderSnippet(details);
+
+    // Renders title
+    assert.ok(title.textContent.includes('Test Snippet'));
+    // Renders toggle button
+    assert.ok(toggleExpandButton);
+    assert.ok(!el.classList.contains('lh-snippet--expanded'));
+
+    toggleExpandButton.click();
+    assert.ok(el.classList.contains('lh-snippet--expanded'));
+  });
+
+  it.only('Does not render toggle button if all available lines are already visible', () => {
+    const details = makeSnippetDetails({
+      title: 'Test Snippet',
+      lineMessages: [],
+      generalMessages: [],
+      // We show all 5 lines by default, so there's nothing to expand
+      lineRanges: [{from: 1, to: 5}],
+    });
+    const {toggleExpandButton} = renderSnippet(details);
+
+    assert.ok(!toggleExpandButton);
   });
 });

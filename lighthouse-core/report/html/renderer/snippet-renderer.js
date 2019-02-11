@@ -9,6 +9,8 @@
 
 /** @typedef {import('./details-renderer')} DetailsRenderer */
 
+const SURROUNDING_LINES_WHEN_COLLAPSED = 2;
+
 /** @enum {number} */
 const LineVisibility = {
   ALWAYS: 0,
@@ -66,6 +68,18 @@ function getMessagesForLineNumber(messages, lineNumber) {
   return messages.filter(h => h.lineNumber === lineNumber);
 }
 
+/**
+ * @param {LH.Audit.Details.Snippet} details
+ * @returns {LH.Audit.Details.Snippet['lines']}
+ */
+function getLinesWhenCollapsed(details) {
+  return Util.filterRelevantLines(
+    details.lines,
+    details.lineMessages,
+    SURROUNDING_LINES_WHEN_COLLAPSED
+  );
+}
+
 class SnippetRenderer {
   /**
    * @param {DOM} dom
@@ -76,11 +90,11 @@ class SnippetRenderer {
    * @return {DocumentFragment}
    */
   static renderHeader(dom, tmpl, details, detailsRenderer, toggleExpandedFn) {
-    const {lineCount, title} = details;
-    const showAll = lineCount <= 4;
+    const linesWhenCollapsed = getLinesWhenCollapsed(details);
+    const showAll = linesWhenCollapsed.length === details.lines.length;
 
     const header = dom.cloneTemplate('#tmpl-lh-snippet__header', tmpl);
-    dom.find('.lh-snippet__title', header).textContent = title;
+    dom.find('.lh-snippet__title', header).textContent = details.title;
 
     const {
       snippetCollapseButtonLabel,
@@ -211,7 +225,7 @@ class SnippetRenderer {
    */
   static renderSnippetLines(dom, tmpl, details) {
     const {lineMessages, generalMessages, lineCount, lines} = details;
-    const linesWhenCollapsed = Util.filterRelevantLines(lines, lineMessages, 2);
+    const linesWhenCollapsed = getLinesWhenCollapsed(details);
     const hasOnlyGeneralMessages =
       generalMessages.length > 0 && lineMessages.length === 0;
 
@@ -301,9 +315,7 @@ class SnippetRenderer {
       );
 
       messages.forEach(message => {
-        lineContainer.append(
-          SnippetRenderer.renderMessage(dom, tmpl, message)
-        );
+        lineContainer.append(SnippetRenderer.renderMessage(dom, tmpl, message));
       });
     }
 
