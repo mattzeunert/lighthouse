@@ -17,7 +17,7 @@ describe('JSON validation', () => {
     `);
 
     assert.equal(errors.length, 1);
-    assert.equal(errors[0].path, 2);
+    assert.equal(errors[0].line, 2);
     assert.ok(errors[0].message.indexOf(`Expecting '}'`) === 0);
   });
 
@@ -28,7 +28,7 @@ describe('JSON validation', () => {
     }`);
 
     assert.equal(errors.length, 1);
-    assert.equal(errors[0].path, 2);
+    assert.equal(errors[0].line, 2);
     assert.ok(errors[0].message.indexOf(`Expecting 'EOF', '}', ':', ',', ']'`) === 0);
   });
 

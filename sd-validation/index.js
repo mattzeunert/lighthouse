@@ -26,7 +26,7 @@ module.exports = async function validate(textInput) {
   if (parseOutput.error) {
     errors.push({
       validator: 'json',
-      path: parseOutput.error.line,
+      line: parseOutput.error.line,
       message: parseOutput.error.message,
     });
 
@@ -43,6 +43,7 @@ module.exports = async function validate(textInput) {
       errors.push({
         validator: 'json-ld',
         path: error.path,
+        line: getLineNumberFromJsonPath(inputObject, error.path),
         message: error.message.toString(),
       });
     });
@@ -73,6 +74,8 @@ module.exports = async function validate(textInput) {
         validator: 'schema-org',
         path: error.path,
         message: error.message,
+        line: getLineNumberFromJsonPath(inputObject, error.path),
+        types: error.types,
       });
     });
 
@@ -81,3 +84,53 @@ module.exports = async function validate(textInput) {
 
   return errors;
 };
+
+function getLineNumberFromJsonPath(obj, path) {
+  // To avoid having an extra dependency on a JSON parser we set a unique key in the
+  // object and then use that to identify the correct line
+  const searchKey = Math.random().toString();
+  obj = JSON.parse(JSON.stringify(obj));
+
+  setValueAtJsonLdPath(obj, path, searchKey);
+  const jsonLines = JSON.stringify(obj, null, 2).split('\n');
+  const lineIndex = jsonLines.findIndex(line => line.includes(searchKey));
+
+  return lineIndex === -1 ? null : lineIndex + 1;
+}
+
+function setValueAtJsonLdPath(obj, path, value) {
+  const pathParts = path.split('/').filter(p => !!p);
+  let currentObj = obj;
+  pathParts.forEach((pathPart, i) => {
+    const isLastPart = pathParts.length - 1 === i;
+
+    if (pathPart === '0' && !Array.isArray(currentObj)) {
+      // jsonld expansion turns single values into arrays
+      return;
+    }
+
+    let keyFound = false;
+    for (const key of Object.keys(currentObj)) {
+      // The actual key in JSON might be an absolute IRI like "http://schema.org/author"
+      // but key provided by validator is "author"
+      const keyParts = key.split('/');
+      const relativeKey = keyParts[keyParts.length - 1];
+      if (relativeKey === pathPart && currentObj[key] !== undefined) {
+        // If we've arrived at the end of the provided path set the value, otherwise
+        // continue iterating with the object at the key location
+        if (isLastPart) {
+          currentObj[key] = value;
+        } else {
+          currentObj = currentObj[key];
+        }
+        keyFound = true;
+        return;
+      }
+    }
+
+    if (!keyFound) {
+      // Couldn't find the key we got from validation in the original object
+      throw Error('Key not found: ' + pathPart);
+    }
+  });
+}

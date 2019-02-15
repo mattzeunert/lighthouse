@@ -21,6 +21,7 @@ function cleanName(uri) {
 
 /**
  * @param {string} type
+ * todo: fix type
  * @returns {Array<string>}
  */
 function getPropsForType(type) {
@@ -83,7 +84,7 @@ function validateObjectKeys(typeOrTypes, keys) {
   unknownTypes
     .forEach(type => {
       if (typeof type !== 'string' || SCHEMA_ORG_URL_REGEX.test(type)) {
-        errors.push(`Unrecognized schema.org type ${type}`);
+        errors.push({message: `Unrecognized schema.org type ${type}`, key: '@type'});
       }
     });
 
@@ -98,15 +99,16 @@ function validateObjectKeys(typeOrTypes, keys) {
   });
 
   const cleanKeys = keys
-    // Skip JSON-LD keywords (including invalid ones as they were already flagged in the json-ld validator)
-    .filter(key => key.indexOf('@') !== 0)
+
     .map(key => cleanName(key));
 
   cleanKeys
     // remove Schema.org input/output constraints http://schema.org/docs/actions.html#part-4
     .map(key => key.replace(/-(input|output)$/, ''))
     .filter(key => !safelist.includes(key))
-    .forEach(key => errors.push(`Unexpected property "${key}"`));
+    .forEach(key => {
+      errors.push({message: `Unexpected property "${key}"`, key, types});
+    });
 
   return errors;
 }
@@ -130,13 +132,11 @@ module.exports = function validateSchemaOrg(expandedObj) {
     if (name === TYPE_KEYWORD) {
       const keyErrors = validateObjectKeys(value, Object.keys(obj));
 
-      keyErrors.forEach(e =>
-        errors.push({
-          // get rid of the first chunk (/@type) as it's the same for all errors
-          path: '/' + path.slice(0, -1).map(cleanName).join('/'),
-          message: e,
-        })
-      );
+      keyErrors.forEach(e => {
+        // get rid of the last chunk (@type) as it's the same for all errors
+        e.path = '/' + path.slice(0, -1).concat(e.key).map(cleanName).join('/');
+        errors.push(e);
+      });
     }
   });
 

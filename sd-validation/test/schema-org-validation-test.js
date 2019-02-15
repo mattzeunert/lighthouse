@@ -29,6 +29,7 @@ describe('schema.org validation', () => {
 
     assert.equal(errors.length, 1);
     assert.equal(errors[0].message, 'Unrecognized schema.org type http://schema.org/Dog');
+    assert.equal(errors[0].line, 3);
   });
 
   it('reports unexpected fields', async () => {
@@ -46,7 +47,9 @@ describe('schema.org validation', () => {
     }`);
 
     assert.equal(errors.length, 1);
+    assert.equal(errors[0].types[0], 'http://schema.org/Article');
     assert.equal(errors[0].message, 'Unexpected property "controversial"');
+    assert.equal(errors[0].line, 11);
   });
 
   it('passes if non-schema.org context', async () => {
@@ -82,5 +85,35 @@ describe('schema.org validation', () => {
     }`);
 
     assert.equal(errors.length, 0);
+  });
+
+  it('passes if valid json-ld uses absolute IRIs as keys', async () => {
+    const errors = await validateJSONLD(`{
+      "@type": "http://schema.org/Article",
+      "http://schema.org/author": {
+        "@type": "Person",
+        "http://schema.org/name": "Cat"
+      },
+      "http://schema.org/datePublished": "Oct 29th 2017",
+      "http://schema.org/dateModified": "Oct 29th 2017"
+    }`);
+
+    assert.equal(errors.length, 0);
+  });
+
+  it('fails if invalid json-ld uses absolute IRIs as keys', async () => {
+    const errors = await validateJSONLD(`{
+      "@type": "http://schema.org/Article",
+      "http://schema.org/author": {
+        "@type": "http://schema.org/Person",
+        "http://schema.org/invalidProperty": "",
+        "http://schema.org/name": "Cat"
+      },
+      "http://schema.org/datePublished": "Oct 29th 2017",
+      "http://schema.org/dateModified": "Oct 29th 2017"
+    }`);
+
+    assert.equal(errors.length, 1);
+    assert.equal(errors[0].line, 5);
   });
 });

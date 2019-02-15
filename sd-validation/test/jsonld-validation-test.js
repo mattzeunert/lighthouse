@@ -21,6 +21,7 @@ describe('JSON-LD validation', () => {
     assert.equal(errors.length, 1);
     assert.equal(errors[0].message, 'Unknown keyword');
     assert.equal(errors[0].path, '@test');
+    assert.equal(errors[0].line, 4);
   });
 
   it('reports invalid context', async () => {
