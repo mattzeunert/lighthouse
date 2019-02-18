@@ -70,7 +70,7 @@ class DetailsRenderer {
         return this._renderTable(/** @type {TableDetailsJSON} */ (details));
       case 'list':
         return this._renderList(
-          // @ts-ignore
+          // @ts-ignore - TODO(bckenny): Fix type hierarchy
           /** @type {LH.Audit.Details.List} */ (details)
         );
       case 'snippet':
