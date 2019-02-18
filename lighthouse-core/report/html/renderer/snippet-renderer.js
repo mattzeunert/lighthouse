@@ -37,7 +37,7 @@ const LineContentType = {
     visibility?: LineVisibility;
 }} LineDetails */
 
-const classNameByContentType = {
+const classNamesByContentType = {
   [LineContentType.CONTENT_NORMAL]: ['lh-snippet__line--content'],
   [LineContentType.CONTENT_HIGHLIGHTED]: [
     'lh-snippet__line--content',
@@ -151,7 +151,7 @@ class SnippetRenderer {
     const contentLine = dom.find('.lh-snippet__line', clonedTemplate);
     const {classList} = contentLine;
 
-    classNameByContentType[contentType].forEach(typeClass =>
+    classNamesByContentType[contentType].forEach(typeClass =>
       classList.add(typeClass)
     );
 
