@@ -136,7 +136,7 @@ class SnippetRenderer {
   }
 
   /**
-   * Renders a line of DOM content (text content, message, or empty line)
+   * Renders a line (text content, message, or placeholder) as a DOM element.
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
    * @param {LineDetails} lineDetails
