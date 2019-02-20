@@ -453,8 +453,8 @@ class Util {
   /**
    * Returns only lines that are near a message, or the first few lines if there are
    * no line messages.
-   * @param {LH.Audit.Details.Snippet['lines']} lines
-   * @param {LH.Audit.Details.Snippet['lineMessages']} lineMessages
+   * @param {LH.Audit.Details.SnippetValue['lines']} lines
+   * @param {LH.Audit.Details.SnippetValue['lineMessages']} lineMessages
    * @param {number} surroundingLineCount Number of lines to include before and after
    * the message. If this is e.g. 2 this function might return 5 lines.
    */

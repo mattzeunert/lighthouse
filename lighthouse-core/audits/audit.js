@@ -139,15 +139,15 @@ class Audit {
   /** @typedef {{
    * content: string;
    * title: string;
-   * lineMessages: LH.Audit.Details.Snippet['lineMessages'];
-   * generalMessages: LH.Audit.Details.Snippet['generalMessages'];
+   * lineMessages: LH.Audit.Details.SnippetValue['lineMessages'];
+   * generalMessages: LH.Audit.Details.SnippetValue['generalMessages'];
    * node?: LH.Audit.Details.NodeValue;
    * maxLineLength?: number;
    * maxLinesAroundMessage?: number;
    * }} SnippetInfo */
   /**
    * @param {SnippetInfo} snippetInfo
-   * @return {LH.Audit.Details.Snippet}
+   * @return {LH.Audit.Details.SnippetValue}
    */
   static makeSnippetDetails({
     content,
@@ -174,12 +174,12 @@ class Audit {
   /**
    * @param {string} content
    * @param {number} maxLineLength
-   * @returns {LH.Audit.Details.Snippet['lines']}
+   * @returns {LH.Audit.Details.SnippetValue['lines']}
    */
   static _makeSnippetLinesArray(content, maxLineLength) {
     return content.split('\n').map((line, lineIndex) => {
       const lineNumber = lineIndex + 1;
-      /** @type LH.Audit.Details.Snippet['lines'][0] */
+      /** @type LH.Audit.Details.SnippetValue['lines'][0] */
       const lineDetail = {
         content: line.slice(0, maxLineLength),
         lineNumber,

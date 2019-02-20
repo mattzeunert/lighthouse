@@ -67,7 +67,7 @@ declare global {
 
       export interface List {
         type: 'list';
-        items: Snippet[]
+        items: SnippetValue[]
       }
 
       /**
@@ -173,8 +173,8 @@ declare global {
       /**
        * Snippet of text with line numbers and annotations.
        */
-      export interface Snippet {
-        type: "snippet",
+      export interface SnippetValue {
+        type: 'snippet',
         title: string,
         /** Node where the content of this snippet came from. */
         node?: NodeValue,

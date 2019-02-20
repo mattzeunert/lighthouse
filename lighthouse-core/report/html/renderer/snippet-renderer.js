@@ -48,9 +48,9 @@ const classNamesByContentType = {
 };
 
 /**
- * @param {LH.Audit.Details.Snippet['lines']} lines
+ * @param {LH.Audit.Details.SnippetValue['lines']} lines
  * @param {number} lineNumber
- * @return {{line?: LH.Audit.Details.Snippet['lines'][0], previousLine?: LH.Audit.Details.Snippet['lines'][0]}}
+ * @return {{line?: LH.Audit.Details.SnippetValue['lines'][0], previousLine?: LH.Audit.Details.SnippetValue['lines'][0]}}
  */
 function getLineAndPreviousLine(lines, lineNumber) {
   return {
@@ -60,7 +60,7 @@ function getLineAndPreviousLine(lines, lineNumber) {
 }
 
 /**
- * @param {LH.Audit.Details.Snippet["lineMessages"]} messages
+ * @param {LH.Audit.Details.SnippetValue["lineMessages"]} messages
  * @param {number} lineNumber
  */
 function getMessagesForLineNumber(messages, lineNumber) {
@@ -68,8 +68,8 @@ function getMessagesForLineNumber(messages, lineNumber) {
 }
 
 /**
- * @param {LH.Audit.Details.Snippet} details
- * @returns {LH.Audit.Details.Snippet['lines']}
+ * @param {LH.Audit.Details.SnippetValue} details
+ * @returns {LH.Audit.Details.SnippetValue['lines']}
  */
 function getLinesWhenCollapsed(details) {
   const SURROUNDING_LINES_TO_SHOW_WHEN_COLLAPSED = 2;
@@ -90,7 +90,7 @@ class SnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
-   * @param {LH.Audit.Details.Snippet} details
+   * @param {LH.Audit.Details.SnippetValue} details
    * @param {DetailsRenderer} detailsRenderer
    * @param {function} toggleExpandedFn
    * @return {DocumentFragment}
@@ -209,7 +209,7 @@ class SnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
-   * @param {LH.Audit.Details.Snippet} details
+   * @param {LH.Audit.Details.SnippetValue} details
    * @return {DocumentFragment}
    */
   static renderSnippetContent(dom, tmpl, details) {
@@ -229,7 +229,7 @@ class SnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {DocumentFragment} tmpl
-   * @param {LH.Audit.Details.Snippet} details
+   * @param {LH.Audit.Details.SnippetValue} details
    * @returns {DocumentFragment}
    */
   static renderSnippetLines(dom, tmpl, details) {
@@ -334,7 +334,7 @@ class SnippetRenderer {
   /**
    * @param {DOM} dom
    * @param {ParentNode} templateContext
-   * @param {LH.Audit.Details.Snippet} details
+   * @param {LH.Audit.Details.SnippetValue} details
    * @param {DetailsRenderer} detailsRenderer
    * @return {Element}
    */

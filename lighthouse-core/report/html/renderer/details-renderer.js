@@ -43,7 +43,7 @@ class DetailsRenderer {
   }
 
   /**
-   * @param {DetailsJSON|OpportunityDetails|LH.Audit.Details.Snippet} details
+   * @param {DetailsJSON|OpportunityDetails|LH.Audit.Details.SnippetValue} details
    * @return {Element|null}
    */
   render(details) {
@@ -73,10 +73,6 @@ class DetailsRenderer {
           // @ts-ignore - TODO(bckenny): Fix type hierarchy
           /** @type {LH.Audit.Details.List} */ (details)
         );
-      case 'snippet':
-        return SnippetRenderer.render(this._dom, this._templateContext,
-          // @ts-ignore
-          /** @type {LH.Audit.Details.Snippet} */ (details), this);
       case 'code':
         return this._renderCode(/** @type {DetailsJSON} */ (details));
       case 'node':
@@ -227,8 +223,8 @@ class DetailsRenderer {
     const listContainer = this._dom.createElement('div', 'lh-list');
 
     details.items.forEach(item => {
-      // @ts-ignore TODO(bckenny): this can never be null
-      listContainer.appendChild(this.render(item));
+      const snippetEl = SnippetRenderer.render(this._dom, this._templateContext, item, this);
+      listContainer.appendChild(snippetEl);
     });
 
     return listContainer;
@@ -477,12 +473,6 @@ if (typeof module !== 'undefined' && module.exports) {
       items: Array<DetailsJSON>,
       headings: Array<TableHeaderJSON>
   }} TableDetailsJSON
- */
-
-/** @typedef {{
-      type: string,
-      items: Array<DetailsJSON>
-  }} ListDetailsJSON
  */
 
 /** @typedef {{
