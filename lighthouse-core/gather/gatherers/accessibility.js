@@ -52,11 +52,19 @@ function runA11yChecks() {
   }).then(axeResult => {
     // Augment the node objects with outerHTML snippet & custom path string
     // @ts-ignore
+    document.documentElement.scrollTop = 0;
+
+
     axeResult.violations.forEach(v => v.nodes.forEach(node => {
       // @ts-ignore - getNodePath put into scope via stringification
       node.path = getNodePath(node.element);
       // @ts-ignore - getOuterHTMLSnippet put into scope via stringification
       node.snippet = getOuterHTMLSnippet(node.element);
+      node.textContent = node.element.textContent;
+      node.boundingRect = JSON.parse(JSON.stringify(node.element.getBoundingClientRect()));
+      if (node.boundingRect.height === 0 || node.boundingRect.width === 0) {
+        delete node.boundingRect;
+      }
       // avoid circular JSON concerns
       node.element = node.any = node.all = node.none = undefined;
     }));
