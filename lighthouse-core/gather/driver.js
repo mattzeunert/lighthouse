@@ -141,8 +141,8 @@ class Driver {
       'disabled-by-default-devtools.timeline.stack',
 
       // CPU sampling profiler data only enabled for debugging purposes
-      // 'disabled-by-default-v8.cpu_profiler',
-      // 'disabled-by-default-v8.cpu_profiler.hires',
+      'disabled-by-default-v8.cpu_profiler',
+      'disabled-by-default-v8.cpu_profiler.hires',
     ];
   }
 
